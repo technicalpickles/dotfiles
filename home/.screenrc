@@ -1,0 +1,30 @@
+# no moar annoying message
+startup_message off
+
+# Visual bell
+vbell on
+
+bell "%c bell -> %n%f %t^G"
+vbell_msg " *beep* "
+
+
+# track activity in other windows
+activity "%c activity -> %n %t"
+
+# Keeps stuff running when detached
+autodetach on
+
+# UTF plz
+defutf8 on
+
+# lotsa scrollback
+defscrollback 5000
+
+# displays status line like:
+# [             0 bash  [1*bash]              ][02/24 10:35am]
+hardstatus alwayslastline
+hardstatus string "%{gk}[%=%{wk}%?%-Lw%?%{R}[%{W}%n*%t%?(%u)%?%{R}]%{w}%?%+Lw%?%?%=%{g}][%{B}%m/%d %{G}%C%a%{g}]"
+
+# Use login shell, to get goodness in ~/.bash_profile
+shell -${SHELL}
+
