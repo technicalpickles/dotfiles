@@ -46,11 +46,4 @@
 --langmap=Markdown:+.ron
 --regex-Markdown=/^#+[ \t]*([^#]+)/\1/f,function/
 
---langdef=puppet
---langmap=puppet:.pp
---regex-puppet='/^class[ \t]*([:a-zA-Z0-9_\-]+)[ \t]*/\1/d,definition/'
---regex-puppet='/^site[ \t]*([a-zA-Z0-9_\-]+)[ \t]*/\1/d,definition/'
---regex-puppet='/^node[ \t]*([a-zA-Z0-9_\-]+)[ \t]*/\1/d,definition/' 
---regex-puppet='/^define[ \t]*([:a-zA-Z0-9_\-]+)[ \t]*/\1/d,definition/'
-
 --langmap=Ruby:+(Rakefile)
