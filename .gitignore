@@ -1,1 +1,4 @@
 home/.bash_profile.d/private
+home/.wireshark/**/recent
+home/.wireshark/**/recent_common
+home/.wireshark/.fccache-new
