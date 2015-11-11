@@ -1,0 +1,32 @@
+
+[credential]
+helper = /opt/boxen/bin/boxen-git-credential
+
+[core]
+excludesfile = /opt/boxen/config/git/gitignore
+
+[hub]
+protocol = https
+
+[alias]
+dc = diff --cached
+st = status
+co = checkout
+ci = commit
+di = diff
+
+[user]
+name = Josh Nichols
+email = technicalpickles@github.com
+
+[color]
+ui = true
+
+[filter "media"]
+clean = git-media-clean %f
+smudge = git-media-smudge %f
+
+[filter "lfs"]
+clean = git-lfs clean %f
+smudge = git-lfs smudge %f
+required = true
