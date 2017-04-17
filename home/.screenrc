@@ -1,12 +1,14 @@
 # no moar annoying message
 startup_message off
 
+# short timeout, so nvim isn't laggy
+maptimeout 10
+
 # Visual bell
 vbell on
 
 bell "%c bell -> %n%f %t^G"
 vbell_msg " *beep* "
-
 
 # track activity in other windows
 activity "%c activity -> %n %t"
@@ -27,4 +29,3 @@ hardstatus string "%{gk}[%=%{wk}%?%-Lw%?%{R}[%{W}%n*%t%?(%u)%?%{R}]%{w}%?%+Lw%?%
 
 # Use login shell, to get goodness in ~/.bash_profile
 shell -${SHELL}
-
