@@ -38,6 +38,7 @@ cask 'airfoil'
 cask 'alfred' # there is an App store version, but you can't use powerpack with it
 cask 'atom'
 cask 'cloak'
+cask 'dash'
 cask 'dayone-cli'
 cask 'docker'
 cask 'dropbox'
