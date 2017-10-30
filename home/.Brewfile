@@ -1,6 +1,7 @@
 tap 'caskroom/cask'
 tap 'caskroom/fonts'
 tap 'neovim/neovim'
+tap 'nodenv/nodenv'
 
 brew 'ack'
 brew 'bash-completion'
@@ -27,6 +28,8 @@ brew 'the_silver_searcher'
 brew 'tree'
 brew 'wget'
 brew 'youtube-dl'
+
+brew 'nodenv-package-json-engine'
 
 cask 'adobe-creative-cloud'
 cask 'adobe-creative-cloud-cleaner-tool'
