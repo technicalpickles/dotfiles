@@ -12,10 +12,31 @@ if [[ -x ~/.rvm/bin/rvm-prompt ]]; then
 fi
 
 if type rbenv | grep -q "is a function" || which -s rbenv; then
-	ruby_prompt="${BRIGHT_RED}\$(rbenv version | cut -f1 -d' ')${RESET} "
+	function rbenv_ps1_display() {
+		if [[ -n $RBENV_VERSION || -f .ruby-version ]]; then
+			version=$(rbenv version | cut -f1 -d' ')
+			echo "$version "
+		fi
+	}
+	ruby_prompt="${BRIGHT_RED}\$(rbenv_ps1_display)${RESET}"
 fi
 
-PS1_LINE2="${ruby_prompt}${BRIGHT_YELLOW}\w${vcs_prompt}"
+
+if type nodenv | grep -q "is a function" || which -s nodenv; then
+	function nodenv_ps1_display() {
+		if [[ -n $NODENV_VERSION || -f .node-version ]]; then
+			version=$(nodenv version | cut -f1 -d' ')
+			echo "$version "
+		fi
+	}
+	node_prompt="${BRIGHT_GREEN}\$(nodenv_ps1_display)${RESET}"
+fi
+
+
+PS1_LINE2="${ruby_prompt}${node_prompt}${BRIGHT_YELLOW}\w${vcs_prompt}"
 PS1_LINE3="${BRIGHT_BLUE}\$${RESET} "
 
 export PS1="\n${PS1_LINE1}\n${PS1_LINE2}\n${PS1_LINE3}"
+
+# force PS1 on new line http://jonisalonen.com/2012/your-bash-prompt-needs-this/
+export PS1="\[\033[G\]$PS1"
