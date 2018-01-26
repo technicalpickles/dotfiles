@@ -1,6 +1,7 @@
 [user]
 	name = Josh Nichols
 	email = technicalpickles@github.com
+	signingkey = E7BB2E6C
 
 [credential]
 	helper = osxkeychain
@@ -29,3 +30,9 @@
 	clean = git-lfs clean %f
 	smudge = git-lfs smudge %f
 	required = true
+[commit]
+	gpgsign = true
+[push]
+	default = simple
+[github]
+	user = technicalpickles
