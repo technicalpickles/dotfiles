@@ -31,7 +31,7 @@ brew 'tree'
 brew 'wget'
 brew 'youtube-dl'
 
-brew 'nodenv-package-json-engine'
+# brew 'nodenv-package-json-engine'
 
 cask 'adobe-creative-cloud'
 cask 'adobe-creative-cloud-cleaner-tool'
