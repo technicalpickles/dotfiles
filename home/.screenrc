@@ -19,6 +19,9 @@ autodetach on
 # UTF plz
 defutf8 on
 
+# we are fancy and have colors 
+# term "screen-256color"
+
 # lotsa scrollback
 defscrollback 5000
 
