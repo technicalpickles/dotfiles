@@ -27,5 +27,5 @@ defscrollback 5000
 hardstatus alwayslastline
 hardstatus string "%{gk}[%=%{wk}%?%-Lw%?%{R}[%{W}%n*%t%?(%u)%?%{R}]%{w}%?%+Lw%?%?%=%{g}][%{B}%m/%d %{G}%C%a%{g}]"
 
-# Use login shell, to get goodness in ~/.bash_profile
+shelltitle "$ |fish"
 shell -${SHELL}

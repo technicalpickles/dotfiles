@@ -1,0 +1,3 @@
+[submodule "home/.hammerspoon/ControlEscape.spoon"]
+	path = home/.hammerspoon/Spoons/ControlEscape.spoon
+	url = https://github.com/jasonrudolph/ControlEscape.spoon.git
