@@ -2,6 +2,8 @@ tap 'caskroom/cask'
 tap 'caskroom/fonts'
 tap 'neovim/neovim'
 tap 'nodenv/nodenv'
+tap 'homebrew/cask-drivers'
+tap 'dandavison/delta', 'https://github.com/dandavison/delta'
 
 brew 'ack'
 brew 'bash-completion'
@@ -15,6 +17,7 @@ brew 'fish'
 brew 'fzf'
 brew 'git'
 brew 'git-lfs'
+brew 'gpg'
 brew 'jq'
 brew 'macvim', args: ['with-lua', 'with-luajit', 'with-csope', 'with-python3', 'without-python']
 brew 'mas'
@@ -24,6 +27,7 @@ brew 'ncdu'
 brew 'neovim'
 brew 'nmap', args: ['with-pygtk']
 brew 'nodenv'
+brew 'pyenv'
 brew 'rbenv'
 brew 'rbenv-ctags'
 brew 'rbenv-default-gems'
@@ -41,6 +45,10 @@ brew 'youtube-dl'
 
 # brew 'nodenv-package-json-engine'
 
+# for https://github.com/drselump14/alfred-change-sound-output
+brew 'switchaudio-osx'
+brew 'terminal-notifier'
+
 cask 'adobe-creative-cloud'
 cask 'adobe-creative-cloud-cleaner-tool'
 cask 'adobe-photoshop-cc'
@@ -48,6 +56,7 @@ cask 'airfoil'
 cask 'alfred' # there is an App store version, but you can't use powerpack with it
 cask 'android-studio'
 cask 'atom'
+cask 'bartender'
 cask 'box-sync'
 cask 'ccleaner'
 cask 'cleanmymac'
@@ -67,6 +76,7 @@ cask 'iterm2'
 cask 'lastfm'
 cask 'macbreakz'
 cask 'malwarebytes'
+cask 'micro-snitch'
 cask 'minikube'
 cask 'muzzle'
 cask 'netspot'
@@ -77,7 +87,6 @@ cask 'omnigraffle'
 cask 'rescuetime'
 cask 'scansnap-manager-ix500'
 cask 'skype'
-cask 'sonos'
 cask 'spotify'
 cask 'steam'
 cask 'teamviewer'
@@ -85,9 +94,17 @@ cask 'vagrant'
 cask 'virtualbox'
 cask 'viscosity'
 cask 'vlc'
+cask 'vmware-vusion'
 cask 'wireshark'
 cask 'xquartz'
+cask 'zoomus'
 
+# drivers
+cask 'sonos'
+cask 'xbox360-controller-driver-unofficial'
+cask 'steermouse' # for madcatz cyber rat driver, since the company went out of business, then came back without the downloads
+
+# fonts
 cask 'font-fira-code'
 cask 'font-firacode-nerd-font'
 cask 'font-firacode-nerd-font-mono'
@@ -102,9 +119,10 @@ cask 'font-yellowtail'
 mas '1Password', id: 443987910
 mas 'CloudApp', id: 417602904
 mas 'Day One', id: 1055511498
+mas 'Evernote', id: 406056744
 mas 'Microsoft Remote Desktop', id: 715768417
 mas 'MindNode', id: 1289197285
 mas 'Pixelmator', id: 407963104
 mas 'Transmit', id: 403388562
-mas 'Twitter', id: 409789998
 mas 'GIPHY CAPTURE', id: 668208984
+mas 'ToothFairy', id: 1191449274
