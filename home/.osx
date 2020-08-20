@@ -1,7 +1,6 @@
 # Disable auto-correct
 defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
 
-
 # Disable press-and-hold for accented characters
 defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
 
@@ -17,6 +16,12 @@ defaults write com.apple.dock autohide -bool true
 # Prevent launchpad from reappearing
 defaults write com.apple.dock check-for-launchpad -bool true
 
+# System Preferences > Dock > Show indicators for open applications
+defaults write com.apple.dock show-process-indicators -bool true
+
+# System Preferences > Dock > Size:
+defaults write com.apple.dock tilesize -int 36
+
 # Remove all the pinned icons
 defaults write com.apple.dock persistent-apps '()'
 
@@ -25,7 +30,6 @@ defaults write com.apple.finder CreateDesktop -bool false
 
 # Disable creation of .DS_Store files on network drives.
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
-
 
 # Unhide ~/Library
 chflags nohidden ${HOME}/Library
@@ -43,5 +47,6 @@ defaults write com.apple.Terminal "Startup Window Settings" Pro
 defaults write com.apple.Terminal "Default Window Settings" Pro
 
 
+# Restart things
 killall Finder
 killall Dock
