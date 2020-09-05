@@ -1,5 +1,5 @@
 tap 'caskroom/cask'
-tap 'caskroom/fonts'
+tap 'homebrew/cask-fonts'
 tap 'neovim/neovim'
 tap 'nodenv/nodenv'
 tap 'homebrew/cask-drivers'
@@ -49,16 +49,12 @@ brew 'youtube-dl'
 brew 'switchaudio-osx'
 brew 'terminal-notifier'
 
-cask 'adobe-creative-cloud'
-cask 'adobe-creative-cloud-cleaner-tool'
-cask 'adobe-photoshop-cc'
 cask 'airfoil'
 cask 'alfred' # there is an App store version, but you can't use powerpack with it
 cask 'android-studio'
 cask 'atom'
 cask 'bartender'
 cask 'box-sync'
-cask 'ccleaner'
 cask 'cleanmymac'
 cask 'dash'
 cask 'dayone-cli'
@@ -73,14 +69,11 @@ cask 'gitter'
 cask 'google-chrome'
 cask 'hammerspoon'
 cask 'iterm2'
-cask 'lastfm'
 cask 'macbreakz'
-cask 'malwarebytes'
 cask 'micro-snitch'
 cask 'minikube'
 cask 'muzzle'
 cask 'netspot'
-cask 'nicecast'
 cask 'notion'
 cask 'omnifocus'
 cask 'omnigraffle'
@@ -88,16 +81,8 @@ cask 'rescuetime'
 cask 'scansnap-manager-ix500'
 cask 'skype'
 cask 'spotify'
-cask 'steam'
-cask 'teamviewer'
-cask 'vagrant'
-cask 'virtualbox'
 cask 'viscosity'
 cask 'vlc'
-cask 'vmware-vusion'
-cask 'wireshark'
-cask 'xquartz'
-cask 'zoomus'
 
 # drivers
 cask 'sonos'
@@ -117,12 +102,6 @@ cask 'font-source-code-pro'
 cask 'font-yellowtail'
 
 mas '1Password', id: 443987910
-mas 'CloudApp', id: 417602904
-mas 'Day One', id: 1055511498
 mas 'Evernote', id: 406056744
-mas 'Microsoft Remote Desktop', id: 715768417
-mas 'MindNode', id: 1289197285
 mas 'Pixelmator', id: 407963104
 mas 'Transmit', id: 403388562
-mas 'GIPHY CAPTURE', id: 668208984
-mas 'ToothFairy', id: 1191449274
