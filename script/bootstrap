@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 
-set -ex
+set -e
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/home"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/.."
 
 for linkable in $(find home -type f -maxdepth 1); do
   target="$HOME/$(basename $linkable)"
 
   if [ ! -L $target ]; then
     echo "🔗 Linking $target → $linkable."
-    echo ln -Ff -s $linkable $target
+    ln -Ff -s $DIR/$linkable $target
   fi
 done
