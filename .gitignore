@@ -2,3 +2,9 @@ home/.bash_profile.d/private
 home/.wireshark/**/recent
 home/.wireshark/**/recent_common
 home/.wireshark/.fccache-new
+
+# vim
+home/.vim/files/info/*
+**/doc/tags
+home/.vim/.netrwhist
+home/.vim/plugged
