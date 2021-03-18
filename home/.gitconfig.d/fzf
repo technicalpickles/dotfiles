@@ -1,0 +1,2 @@
+[alias]
+	br = !git checkout $(git branch | cut -c 3- | awk '{print $1}' | fzf +m --preview 'git show --color=always {}')

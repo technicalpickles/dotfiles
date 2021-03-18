@@ -1,0 +1,2 @@
+[mergetool "code"]
+	cmd = \"/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Renderer).app/Contents/MacOS/Code Helper (Renderer)\" \"$BASE\"
