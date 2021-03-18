@@ -4,5 +4,5 @@ dotfiles for technicalpickles dot com the human
 
 ```
 git clone https://github.com/technicalpickles/dotfiles ~/.pickles
-~/.pickles/script/bootstrap
+~/.pickles/install.sh
 ```
