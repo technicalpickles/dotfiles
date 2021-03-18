@@ -1,14 +1,15 @@
 [user]
 	name = Josh Nichols
-	email = technicalpickles@github.com
-#	signingkey = E7BB2E6C
+	email = joshua.nichols@gmail.com
 
-[credential]
-	helper = osxkeychain
+[github]
+	user = technicalpickles
+
+[includeIf "gitdir:~/github/"]
+	path = ~/.gitconfig.d/work-identity
 
 [core]
-	excludesfile = /Users/technicalpickles/.gitignore
-	pager = delta --dark
+	excludesfile = ~/.gitignore
 
 [hub]
 	protocol = https
@@ -19,7 +20,6 @@
 	co = checkout
 	ci = commit
 	di = diff
-	br = !git checkout $(git branch | cut -c 3- | awk '{print $1}' | fzf +m --preview 'git show --color=always {}')
 
 	hide = update-index --assume-unchanged
 	unhide = update-index --no-assume-unchanged
@@ -27,26 +27,15 @@
 [color]
 	ui = true
 
-[filter "media"]
-	clean = git-media-clean %f
-	smudge = git-media-smudge %f
-
-[filter "lfs"]
-	clean = git-lfs clean -- %f
-	smudge = git-lfs smudge -- %f
-	required = true
-	process = git-lfs filter-process
-#[commit]
-#	gpgsign = true
 [push]
 	default = current
-[github]
-	user = technicalpickles
+
 [color "diff-highlight"]
 	oldNormal = red bold
 	oldHighlight = red bold 52
 	newNormal = green bold
 	newHighlight = green bold 22
+
 [color "diff"]
 	meta = 11
 	frag = magenta bold
@@ -54,3 +43,10 @@
 	old = red bold
 	new = green bold
 	whitespace = red reverse
+
+[mergetool]
+	keepTemporaries = false
+	keepBackup = false
+
+[include]
+	path = ~/.gitconfig.local
