@@ -4,6 +4,12 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+if [ "$(uname)" == Darwin ]; then
+  echo "🍻 running brew bundle"
+  brew bundle | sed 's/^/  → /'
+  echo
+fi
+
 for linkable in $(find home -type f -maxdepth 1) $(find home -type d -maxdepth 1); do
   target="$HOME/$(basename $linkable)"
   display_target="${target/$HOME/~}"
