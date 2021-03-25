@@ -24,7 +24,7 @@ echo
 echo "🔨 rebuilding ~/.gitconfig.local"
 rm -f ~/.gitconfig.local
 
-if which -s delta; then
+if which delta > /dev/null; then
   echo "  → enabling delta for pager"
   git config --file ~/.gitconfig.local core.pager "delta --dark" 
 fi
@@ -35,7 +35,7 @@ if [ "$(uname)" == Darwin ]; then
   echo "  path = ~/.gitconfig.d/macos" >> ~/.gitconfig.local
 fi
 
-if which -s fzf; then
+if which fzf > /dev/null; then
   echo "  → enabling fzf specific settings"
 
   echo "[include]" >> ~/.gitconfig.local
@@ -43,9 +43,9 @@ if which -s fzf; then
 fi
 
 
-if which -s code-insiders; then
+if which code-insiders > /dev/null; then
   code="code-insiders"
-elif which -s code; then
+elif which code > /dev/null; then
   code="code"
 fi
 
