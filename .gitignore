@@ -1,10 +1,16 @@
-home/.bash_profile.d/private
+__pycache__
 home/.wireshark/**/recent
 home/.wireshark/**/recent_common
 home/.wireshark/.fccache-new
+config/fish/fishd.*
+config/fish/fish_variables
 
 # vim
 home/.vim/files/info/*
 **/doc/tags
 home/.vim/.netrwhist
 home/.vim/plugged
+
+# contains credentials and other sensitive data
+config/gh/
+home/.bash_profile.d/private

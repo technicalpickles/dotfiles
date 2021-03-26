@@ -10,6 +10,19 @@ if [ "$(uname)" == Darwin ]; then
   echo
 fi
 
+link() {
+  linkable="$1"
+  target="$2"
+  display_target="${target/$HOME/~}"
+
+  if [ ! -L "$target" ]; then
+    echo "🔗 $display_target → linking from $linkable"
+    ln -Ff -s "$DIR/$linkable" "$target"
+  else
+    echo "🔗 $display_target → already linked"
+  fi
+}
+
 for linkable in $(find home -type f -maxdepth 1) $(find home -type d -maxdepth 1); do
   target="$HOME/$(basename $linkable)"
   display_target="${target/$HOME/~}"
@@ -18,13 +31,21 @@ for linkable in $(find home -type f -maxdepth 1) $(find home -type d -maxdepth 1
     continue
   fi
 
-  if [ ! -L "$target" ]; then
-    echo "🔗 $display_target → linking from $linkable."
-    ln -Ff -s "$DIR/$linkable" "$target"
-  else
-    echo "🔗 $display_target → already linked"
-  fi
+  link "$linkable" "$target"
 done
+
+mkdir -p "$HOME/.config"
+for linkable in $(find config -type f -maxdepth 1) $(find config -type d -maxdepth 1); do
+  target="$HOME/.config/$(basename $linkable)"
+  display_target="${target/$HOME/~}"
+
+  if [ "$linkable" = "config" ]; then
+    continue
+  fi
+
+  link "$linkable" "$target"
+done
+
 
 echo
 echo "🔨 rebuilding ~/.gitconfig.local"
