@@ -20,6 +20,7 @@
 	co = checkout
 	ci = commit
 	di = diff
+	default-branch = !git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'
 
 	hide = update-index --assume-unchanged
 	unhide = update-index --no-assume-unchanged
@@ -50,3 +51,15 @@
 
 [include]
 	path = ~/.gitconfig.local
+
+[init]
+	defaultBranch = main
+
+[pull]
+	rebase = false
+
+[fetch]
+	prune = true
+
+[branch]
+	autosetupmerge = always
