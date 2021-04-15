@@ -35,3 +35,10 @@ set theme_color_scheme terminal2-dark-white
 
 set -x GOPATH ~/golang
 set PATH $PATH $GOPATH/bin
+
+if [ (uname) = "Darwin" ]
+  set HB_CNF_HANDLER (brew --repository)"/Library/Taps/homebrew/homebrew-command-not-found/handler.fish"
+  if test -f $HB_CNF_HANDLER
+    source $HB_CNF_HANDLER
+  end
+end
