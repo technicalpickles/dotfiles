@@ -2,8 +2,9 @@ tap 'homebrew/cask-fonts'
 tap 'dandavison/delta', 'https://github.com/dandavison/delta'
 tap 'homebrew/command-not-found'
 
-# primary shell
+# core shell environment stuff
 brew 'fish'
+brew 'direnv'
 
 # git
 brew 'git-lfs'
@@ -12,16 +13,21 @@ brew 'git'
 # general utilities
 brew 'ack'
 brew 'bash-completion'
+brew 'bat'
 brew 'coreutils'
+brew 'exa'
+brew 'fd'
 brew 'findutils'
 brew 'fzf'
 brew 'jq'
-brew 'mas'
-brew 'the_silver_searcher'
 brew 'the_silver_searcher'
 brew 'tmux'
 brew 'tree'
 brew 'watch'
+brew "mackup"
+brew "mas"
+brew "tree"
+brew "pstree"
 
 # networky
 brew 'mtr'
@@ -48,6 +54,8 @@ brew 'youtube-dl'
 brew 'switchaudio-osx'
 brew 'terminal-notifier'
 
+brew 'mas'
+
 cask 'alfred' # there is an App store version, but you can't use powerpack with it
 cask 'bartender'
 cask 'dash'
@@ -64,6 +72,8 @@ cask 'omnigraffle'
 cask 'rescuetime'
 cask 'spotify'
 cask 'viscosity'
+cask "obsidian"
+cask "signal"
 
 # drivers
 cask 'sonos'
@@ -83,3 +93,13 @@ cask 'font-quicksand'
 cask 'font-roboto'
 cask 'font-source-code-pro'
 cask 'font-yellowtail'
+
+mas "Slack", id: 803453959
+mas "Microsoft Remote Desktop", id: 715768417
+mas "LiquidText", id: 922765270
+mas "Pixelmator", id: 407963104
+mas "Mocha Keyboard", id: 953949626
+mas "Irvue", id: 1039633667
+mas "GoodNotes", id: 1444383602
+mas "Evernote", id: 406056744
+mas "Dice", id: 1479250666
