@@ -2,30 +2,13 @@
 
 set -e
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
+# shellcheck source=somefile
 source functions.sh
 
-for linkable in $(find home -type f -maxdepth 1) $(find home -type d -maxdepth 1); do
-  target="$HOME/$(basename $linkable)"
-
-  if [ "$linkable" = "home" ]; then
-    continue
-  fi
-
-  link "$linkable" "$target"
-done
+link_directory_contents home
 
 mkdir -p "$HOME/.config"
-for linkable in $(find config -type f -maxdepth 1) $(find config -type d -maxdepth 1); do
-  if [ "$linkable" = "config" ]; then
-    continue
-  fi
-
-  target="$HOME/.config/$(basename "$linkable")"
-  link "$linkable" "$target"
-done
-
+link_directory_contents config
 
 echo
 echo "🔨 rebuilding ~/.gitconfig.local"
@@ -36,19 +19,18 @@ if which delta > /dev/null; then
   git config --file ~/.gitconfig.local core.pager "delta --dark" 
 fi
 
-if [ "$(uname)" == Darwin ]; then
-  echo "  → enabling macOS specific settings"
+if running_macos; then
+  echo "  → enabling running_macos specific settings"
   echo "[include]" >> ~/.gitconfig.local
-  echo "  path = ~/.gitconfig.d/macos" >> ~/.gitconfig.local
+  echo "  path = ~/.gitconfig.d/running_macos" >> ~/.gitconfig.local
 fi
 
-if which fzf > /dev/null; then
+if fzf_available; then
   echo "  → enabling fzf specific settings"
 
   echo "[include]" >> ~/.gitconfig.local
   echo "  path = ~/.gitconfig.d/fzf" >> ~/.gitconfig.local
 fi
-
 
 if which code-insiders > /dev/null; then
   code="code-insiders"
@@ -59,9 +41,9 @@ fi
 if [ -n "${code}" ]; then
   echo "  → enabling vscode specific settings"
 
-  if [ "$(uname)" == Darwin ]; then
+  if running_macos; then
     echo "[include]" >> ~/.gitconfig.local
-    echo "  path = ~/.gitconfig.d/vscode-macos" >> ~/.gitconfig.local
+    echo "  path = ~/.gitconfig.d/vscode-running_macos" >> ~/.gitconfig.local
   else
     git config --file ~/.gitconfig.local mergetool.code.cmd "${code}"
   fi
@@ -70,7 +52,7 @@ if [ -n "${code}" ]; then
   echo "  path = ~/.gitconfig.d/vscode" >> ~/.gitconfig.local
 fi
 
-if macos; then
+if running_macos; then
   brew_bundle
 fi
 
