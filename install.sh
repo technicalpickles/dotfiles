@@ -4,24 +4,7 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if [ "$(uname)" == Darwin ]; then
-  echo "🍻 running brew bundle"
-  brew bundle | sed 's/^/  → /'
-  echo
-fi
-
-link() {
-  linkable="$1"
-  target="$2"
-  display_target="${target/$HOME/~}"
-
-  if [ ! -L "$target" ]; then
-    echo "🔗 $display_target → linking from $linkable"
-    ln -Ff -s "$DIR/$linkable" "$target"
-  else
-    echo "🔗 $display_target → already linked"
-  fi
-}
+source functions.sh
 
 for linkable in $(find home -type f -maxdepth 1) $(find home -type d -maxdepth 1); do
   target="$HOME/$(basename $linkable)"
@@ -89,5 +72,8 @@ if [ -n "${code}" ]; then
   echo "[include]" >> ~/.gitconfig.local
   echo "  path = ~/.gitconfig.d/vscode" >> ~/.gitconfig.local
 fi
+
+brew_bundle
+vim_plugins
 
 echo "✅ Done"
