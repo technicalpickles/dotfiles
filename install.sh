@@ -8,7 +8,6 @@ source functions.sh
 
 for linkable in $(find home -type f -maxdepth 1) $(find home -type d -maxdepth 1); do
   target="$HOME/$(basename $linkable)"
-  display_target="${target/$HOME/~}"
 
   if [ "$linkable" = "home" ]; then
     continue
@@ -19,13 +18,11 @@ done
 
 mkdir -p "$HOME/.config"
 for linkable in $(find config -type f -maxdepth 1) $(find config -type d -maxdepth 1); do
-  target="$HOME/.config/$(basename $linkable)"
-  display_target="${target/$HOME/~}"
-
   if [ "$linkable" = "config" ]; then
     continue
   fi
 
+  target="$HOME/.config/$(basename "$linkable")"
   link "$linkable" "$target"
 done
 
@@ -73,7 +70,10 @@ if [ -n "${code}" ]; then
   echo "  path = ~/.gitconfig.d/vscode" >> ~/.gitconfig.local
 fi
 
-brew_bundle
+if macos; then
+  brew_bundle
+fi
+
 vim_plugins
 
 echo "✅ Done"

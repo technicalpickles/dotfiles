@@ -1,3 +1,10 @@
+#!/usr/bin/env bash
+
+macos() {
+  [ "$(uname)" == Darwin ]
+  return $?
+}
+
 link() {
   linkable="$1"
   target="$2"
@@ -12,11 +19,9 @@ link() {
 }
 
 brew_bundle() {
-  if [ "$(uname)" == Darwin ]; then
-    echo "🍻 running brew bundle"
-    brew bundle | sed 's/^/  → /'
-    echo
-  fi
+  echo "🍻 running brew bundle"
+  brew bundle | sed 's/^/  → /'
+  echo
 }
 
 vim_plugins() {
