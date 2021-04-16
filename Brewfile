@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 tap 'homebrew/cask-fonts'
 tap 'dandavison/delta', 'https://github.com/dandavison/delta'
 tap 'homebrew/command-not-found'
@@ -11,48 +12,31 @@ brew 'git-lfs'
 brew 'git'
 
 # general utilities
-brew 'ack'
-brew 'bash-completion'
 brew 'bat'
 brew 'coreutils'
 brew 'exa'
-brew 'fd'
 brew 'findutils'
 brew 'fzf'
 brew 'jq'
 brew 'the_silver_searcher'
-brew 'tmux'
 brew 'tree'
 brew 'watch'
-brew "mackup"
-brew "mas"
-brew "tree"
-brew "pstree"
+brew 'mackup'
+brew 'mas'
+brew 'tree'
+brew 'pstree'
 
 # networky
 brew 'mtr'
 brew 'nmap', args: ['with-pygtk']
-brew 'rdesktop'
 brew 'socat'
 brew 'wget'
 
-# ruby stuff
+# programming languages
 brew 'rbenv'
-brew 'rbenv-ctags'
-brew 'rbenv-default-gems'
-
-# other languages' stuff
 brew 'nodenv'
 brew 'pyenv'
 brew 'shellcheck'
-
-# audio/video
-brew 'ffmpeg'
-brew 'youtube-dl'
-
-# for https://github.com/drselump14/alfred-change-sound-output
-brew 'switchaudio-osx'
-brew 'terminal-notifier'
 
 brew 'mas'
 
@@ -67,18 +51,15 @@ cask 'iterm2'
 cask 'macbreakz'
 cask 'macvim'
 cask 'muzzle'
-cask 'netspot'
+cask 'obsidian'
 cask 'omnigraffle'
 cask 'rescuetime'
+cask 'signal'
 cask 'spotify'
 cask 'viscosity'
-cask "obsidian"
-cask "signal"
 
 # drivers
-cask 'sonos'
-cask 'steermouse' # for madcatz cyber rat driver, since the company went out of business, then came back without the downloads
-cask 'xbox360-controller-driver-unofficial'
+cask 'steermouse'
 
 # fonts
 cask 'font-fira-code'
@@ -94,12 +75,8 @@ cask 'font-roboto'
 cask 'font-source-code-pro'
 cask 'font-yellowtail'
 
-mas "Slack", id: 803453959
-mas "Microsoft Remote Desktop", id: 715768417
-mas "LiquidText", id: 922765270
-mas "Pixelmator", id: 407963104
-mas "Mocha Keyboard", id: 953949626
-mas "Irvue", id: 1039633667
-mas "GoodNotes", id: 1444383602
-mas "Evernote", id: 406056744
-mas "Dice", id: 1479250666
+mas 'Evernote', id: 406_056_744
+mas 'GoodNotes', id: 1_444_383_602
+mas 'LiquidText', id: 922_765_270
+mas 'Pixelmator', id: 407_963_104
+mas 'Slack', id: 803_453_959
