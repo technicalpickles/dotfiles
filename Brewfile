@@ -1,4 +1,8 @@
 # frozen_string_literal: true
+tap 'homebrew/cask'
+tap 'homebrew/core'
+tap 'homebrew/services'
+
 tap 'homebrew/cask-fonts'
 tap 'dandavison/delta', 'https://github.com/dandavison/delta'
 tap 'homebrew/command-not-found'
