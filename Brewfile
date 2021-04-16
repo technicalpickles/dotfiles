@@ -32,7 +32,7 @@ brew 'pstree'
 
 # networky
 brew 'mtr'
-brew 'nmap', args: ['with-pygtk']
+brew 'nmap'
 brew 'socat'
 brew 'wget'
 
@@ -61,6 +61,7 @@ cask 'rescuetime'
 cask 'signal'
 cask 'spotify'
 cask 'viscosity'
+cask 'visual-studio-code'
 
 # drivers
 cask 'steermouse'
@@ -75,9 +76,7 @@ cask 'font-inconsolata'
 cask 'font-lobster'
 cask 'font-press-start-2p'
 cask 'font-quicksand'
-cask 'font-roboto'
 cask 'font-source-code-pro'
-cask 'font-yellowtail'
 
 mas 'Evernote', id: 406_056_744
 mas 'GoodNotes', id: 1_444_383_602
