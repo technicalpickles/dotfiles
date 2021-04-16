@@ -6,6 +6,7 @@ config/fish/fishd.*
 config/fish/fish_variables
 
 # vim
+home/.vim/sessions/default.vim
 home/.vim/files/info/*
 **/doc/tags
 home/.vim/.netrwhist
