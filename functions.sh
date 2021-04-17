@@ -19,11 +19,19 @@ find_targets() {
 link_directory_contents() {
   local directory="$1"
   for linkable in $(find_targets "${directory}"); do
-    if [ "$linkable" = "config" ]; then
+    if [ "$linkable" = "config" -o "${linkable}" = "home" ]; then
       continue
     fi
 
-    target="$HOME/.config/$(basename "$linkable")"
+    if [ "$directory" = "home" ]; then
+      target="$HOME/$(basename "$linkable")"
+    elif [ "${directory}" = "config" ]; then
+      target="$HOME/.config/$(basename "$linkable")"
+    else
+      echo "don't know where to put ${directory} links"
+      return 1
+    fi
+    
     link "$linkable" "$target"
   done
 }
@@ -33,9 +41,18 @@ link() {
   local target="$2"
   local display_target="${target/$HOME/~}"
 
+
   if [ ! -L "$target" ]; then
     echo "🔗 $display_target → linking from $linkable"
-    ln -Ff -s "$DIR/$linkable" "$target"
+    ln -Ff -s "$DIR/$linkable" "$target"    
+  elif [ "$(readlink "$target")" != "${DIR}/${linkable}" ]; then
+    echo "🔗 $display_target → already linked to $(readlink ${target})"
+    read -p "Overwrite it to link to ${DIR}/${linkable}? " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      echo "🔗 $display_target → linking from $linkable"
+      ln -Ff -s "$DIR/$linkable" "$target"
+    fi
   else
     echo "🔗 $display_target → already linked"
   fi
