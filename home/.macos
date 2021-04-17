@@ -13,8 +13,12 @@
 osascript -e 'tell application "System Preferences" to quit'
 
 ########
-# Global
+# General UI/UX
 ########
+
+# Set highlight color to graphite
+# TODO figure out how to use the colorpicker to find the current value of this 
+# defaults write NSGlobalDomain AppleHighlightColor -string "0.780400 0.815700 0.858800"
 
 
 # Expand the Save panel by default.
@@ -48,9 +52,14 @@ defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
 # (e.g. enable Tab in modal dialogs)
 defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
 
-# Set a blazingly fast keyboard repeat rate
-defaults write NSGlobalDomain KeyRepeat -int 1
-defaults write NSGlobalDomain InitialKeyRepeat -int 10
+# Set a custom keyboard repeat rate
+# Experimented by opening Keyboard preferences, and a Terminal, and then changing the value in Keyboard,
+# and then finding two that felt about right, then run:
+#  - defaults read NSGlobalDomain InitialKeyRepeat
+#  - defaults read NSGlobalDomain KeyRepeat
+# And then run the following with adjustments
+defaults write NSGlobalDomain KeyRepeat -int 4
+defaults write NSGlobalDomain InitialKeyRepeat -int 20
 
 ######
 # Dock, Dashboard, and hot corners
