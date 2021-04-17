@@ -5,7 +5,7 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export DIR
 
-# shellcheck source=somefile
+# shellcheck source=functions.sh
 source functions.sh
 
 git submodule init
@@ -38,12 +38,7 @@ if fzf_available; then
   echo "  path = ~/.gitconfig.d/fzf" >> ~/.gitconfig.local
 fi
 
-if which code-insiders > /dev/null; then
-  code="code-insiders"
-elif which code > /dev/null; then
-  code="code"
-fi
-
+code=$(vscode_command)
 if [ -n "${code}" ]; then
   echo "  → enabling vscode specific settings"
 
@@ -63,6 +58,8 @@ fi
 #   ~/.macos
 # fi
 
-# vim_plugins
+# if ! running_codespaces; then
+#   vim_plugins
+# fi
 
 echo "✅ Done"

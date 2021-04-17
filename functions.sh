@@ -5,11 +5,25 @@ running_macos() {
   return $?
 }
 
+running_codespaces() {
+  [ "$CODESPACES" = true ]
+  return $?
+}
+
 fzf_available() {
   which fzf > /dev/null
   return $?
 }
 
+vscode_command() {
+  if which code-insiders > /dev/null; then
+    code="code-insiders"
+  elif which code > /dev/null; then
+    code="code"
+  fi
+
+  echo "$code"
+}
 
 find_targets() {
   local directory="$1"
