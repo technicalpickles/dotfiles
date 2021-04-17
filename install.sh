@@ -2,8 +2,14 @@
 
 set -e
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export DIR
+
 # shellcheck source=somefile
 source functions.sh
+
+git submodule init
+git submodule update
 
 link_directory_contents home
 
@@ -52,10 +58,11 @@ if [ -n "${code}" ]; then
   echo "  path = ~/.gitconfig.d/vscode" >> ~/.gitconfig.local
 fi
 
-if running_macos; then
-  brew_bundle
-fi
+# if running_macos; then
+#   brew_bundle
+#   ~/.osx
+# fi
 
-vim_plugins
+# vim_plugins
 
 echo "✅ Done"
