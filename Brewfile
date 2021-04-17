@@ -15,6 +15,7 @@ brew 'thefuck'
 # git
 brew 'git-lfs'
 brew 'git'
+brew 'delta'
 
 # general utilities
 brew 'bat'
