@@ -60,7 +60,7 @@ fi
 
 # if running_macos; then
 #   brew_bundle
-#   ~/.osx
+#   ~/.macos
 # fi
 
 # vim_plugins

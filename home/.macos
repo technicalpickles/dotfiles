@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+#
+# Usage: ~/.osx
+#
+# Based on https://mths.be/macos
+# Resources:
+# - https://github.com/kevinSuttle/macOS-Defaults/
+# - https://macos-defaults.com/
+
+
+# Close any open System Preferences panes, to prevent them from overriding
+# settings we’re about to change
+osascript -e 'tell application "System Preferences" to quit'
+
+########
+# Global
+########
+
+
+# Expand the Save panel by default.
+defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
+defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
+
+# Disable press-and-hold for keys in favor of key repeat
+defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
+
+# Disable automatic capitalization as it’s annoying when typing code
+defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
+
+# Disable smart quotes as they’re annoying when typing code
+defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
+
+# Save to disk (not to iCloud) by default
+defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
+
+##################
+# Keyboard & Input
+##################
+
+
+# Disable auto-correct
+defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
+
+# Disable press-and-hold for accented characters
+defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
+
+# Enable full keyboard access for all controls
+# (e.g. enable Tab in modal dialogs)
+defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
+
+# Set a blazingly fast keyboard repeat rate
+defaults write NSGlobalDomain KeyRepeat -int 1
+defaults write NSGlobalDomain InitialKeyRepeat -int 10
+
+######
+# Dock, Dashboard, and hot corners
+######
+
+#  Causes the dock to hide itself when you're not pointing at it.
+defaults write com.apple.dock autohide -bool true
+
+# Prevent launchpad from reappearing
+defaults write com.apple.dock check-for-launchpad -bool true
+
+# System Preferences > Dock > Show indicators for open applications
+defaults write com.apple.dock show-process-indicators -bool true
+
+# System Preferences > Dock > Size:
+defaults write com.apple.dock tilesize -int 48
+
+# Wipe all (default) app icons from the Dock
+# This is only really useful when setting up a new Mac, or if you don’t use
+# the Dock to launch apps.
+defaults write com.apple.dock persistent-apps -array
+
+# Hot corners
+# Possible values:
+#  0: no-op
+#  2: Mission Control
+#  3: Show application windows
+#  4: Desktop
+#  5: Start screen saver
+#  6: Disable screen saver
+#  7: Dashboard
+# 10: Put display to sleep
+# 11: Launchpad
+# 12: Notification Center
+# 13: Lock Screen
+# Top left screen corner → Disable screensaver
+defaults write com.apple.dock wvous-tl-corner -int 6
+defaults write com.apple.dock wvous-tl-modifier -int 0
+# Bottom left screen corner → Start screen saver
+defaults write com.apple.dock wvous-bl-corner -int 5
+defaults write com.apple.dock wvous-bl-modifier -int 0
+
+#########
+# Finder
+#########
+
+# Don't show icons on the desktop
+defaults write com.apple.finder CreateDesktop -bool false
+
+# Disable creation of .DS_Store files on network drives.
+defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
+
+####
+# Screen
+########
+
+# Require password immediately after sleep or screen saver begins
+# FIXME does not seem to work... or needs a restart?
+#defaults write com.apple.screensaver askForPassword -int 1
+#defaults write com.apple.screensaver askForPasswordDelay -int 0
+
+
+# Enable subpixel font rendering on non-Apple LCDs
+# Reference: https://github.com/kevinSuttle/macOS-Defaults/issues/17#issuecomment-266633501
+defaults write NSGlobalDomain AppleFontSmoothing -int 1
+
+# Unhide ~/Library
+chflags nohidden ${HOME}/Library
+
+# Remaps capslock to control on attached keyboards
+# does not seem to work anymore
+# ioreg -n IOHIDKeyboard -r | grep -E 'VendorID"|ProductID' | awk '{ print $4 }' | paste -s -d'-\n' - |
+# xargs -I{} defaults -currentHost write -g "com.apple.keyboard.modifiermapping.{}-0" -array "<dict><key>HIDKeyboardModifierMappingDst</key><integer>2</integer><key>HIDKeyboardModifierMappingSrc</key><integer>0</integer></dict>"
+
+#################################################################################
+
+# Restart things
+killall Finder
+killall Dock
