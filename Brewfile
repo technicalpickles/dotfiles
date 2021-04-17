@@ -10,6 +10,7 @@ tap 'homebrew/command-not-found'
 # core shell environment stuff
 brew 'fish'
 brew 'direnv'
+brew 'thefuck'
 
 # git
 brew 'git-lfs'
@@ -45,12 +46,14 @@ brew 'shellcheck'
 brew 'mas'
 
 cask 'alfred' # there is an App store version, but you can't use powerpack with it
+cask 'calibre'
 cask 'bartender'
 cask 'dash'
 cask 'discord'
 cask 'fantastical'
 cask 'google-chrome'
 cask 'hammerspoon'
+cask 'hookshot'
 cask 'iterm2'
 cask 'macbreakz'
 cask 'macvim'
@@ -59,9 +62,11 @@ cask 'obsidian'
 cask 'omnigraffle'
 cask 'rescuetime'
 cask 'signal'
+cask 'slack'
 cask 'spotify'
 cask 'viscosity'
 cask 'visual-studio-code'
+
 
 # drivers
 cask 'steermouse'
