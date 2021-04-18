@@ -74,8 +74,6 @@ cask 'steermouse'
 
 # fonts
 cask 'font-fira-code'
-cask 'font-firacode-nerd-font-mono'
-cask 'font-firacode-nerd-font'
 cask 'font-hack'
 cask 'font-hammersmith-one'
 cask 'font-inconsolata'
