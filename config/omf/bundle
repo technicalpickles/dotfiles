@@ -1,8 +1,0 @@
-package direnv
-package foreign-env
-package nodenv
-package pyenv
-package rbenv
-package thefuck
-theme bobthefish
-theme default
