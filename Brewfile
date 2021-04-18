@@ -46,6 +46,7 @@ brew 'shellcheck'
 
 brew 'mas'
 
+cask 'aerial'
 cask 'alfred' # there is an App store version, but you can't use powerpack with it
 cask 'calibre'
 cask 'bartender'

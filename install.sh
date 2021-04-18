@@ -8,6 +8,11 @@ export DIR
 # shellcheck source=./functions.sh
 source ./functions.sh
 
+if running_macos; then
+  # Prevent sleeping during script execution, as long as the machine is on AC power
+  caffeinate -s -w $$ &
+fi
+
 git submodule init
 git submodule update
 
@@ -26,9 +31,13 @@ fi
 
 
 # if running_macos; then
+#   if !brew_available; then
+#     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+#   fi
 #   brew_bundle
 #   ~/.macos
 # fi
+
 
 # if ! running_codespaces; then
 #   vim_plugins
