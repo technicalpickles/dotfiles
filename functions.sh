@@ -15,6 +15,11 @@ fzf_available() {
   return $?
 }
 
+fish_available() {
+  which fish > /dev/null
+  return $?
+}
+
 vscode_command() {
   if which code-insiders > /dev/null; then
     code="code-insiders"
