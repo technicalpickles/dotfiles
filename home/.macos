@@ -11,6 +11,7 @@
 # Close any open System Preferences panes, to prevent them from overriding
 # settings we’re about to change
 osascript -e 'tell application "System Preferences" to quit'
+osascript -e 'tell application "Safari" to quit'
 
 ########
 # General UI/UX
@@ -112,19 +113,31 @@ defaults write com.apple.finder CreateDesktop -bool false
 # Disable creation of .DS_Store files on network drives.
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
 
-####
+########
 # Screen
 ########
 
-# Require password immediately after sleep or screen saver begins
-# FIXME does not seem to work... or needs a restart?
-#defaults write com.apple.screensaver askForPassword -int 1
-#defaults write com.apple.screensaver askForPasswordDelay -int 0
 
 
 # Enable subpixel font rendering on non-Apple LCDs
 # Reference: https://github.com/kevinSuttle/macOS-Defaults/issues/17#issuecomment-266633501
 defaults write NSGlobalDomain AppleFontSmoothing -int 1
+
+###########
+# Security
+###########
+defaults write com.apple.Safari \
+  com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaEnabled \
+  -bool false
+defaults write com.apple.Safari \
+  com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaEnabledForLocalFiles \
+  -bool false
+
+# Require password immediately after sleep or screen saver begins
+# FIXME does not seem to work... or needs a restart?
+defaults write com.apple.screensaver askForPassword -int 1
+defaults write com.apple.screensaver askForPasswordDelay -int 0
+
 
 # Unhide ~/Library
 chflags nohidden ${HOME}/Library
