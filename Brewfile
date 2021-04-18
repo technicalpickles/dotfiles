@@ -68,7 +68,6 @@ cask 'spotify'
 cask 'viscosity'
 cask 'visual-studio-code'
 
-
 # drivers
 cask 'steermouse'
 
