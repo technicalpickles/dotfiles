@@ -52,6 +52,7 @@ cask 'calibre'
 cask 'bartender'
 cask 'dash'
 cask 'discord'
+cask 'evernote'
 cask 'fantastical'
 cask 'google-chrome'
 cask 'hammerspoon'
@@ -82,8 +83,6 @@ cask 'font-press-start-2p'
 cask 'font-quicksand'
 cask 'font-source-code-pro'
 
-mas 'Evernote', id: 406_056_744
 mas 'GoodNotes', id: 1_444_383_602
 mas 'LiquidText', id: 922_765_270
 mas 'Pixelmator', id: 407_963_104
-mas 'Slack', id: 803_453_959
