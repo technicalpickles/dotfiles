@@ -1,9 +1,12 @@
+.venv
 __pycache__
 home/.wireshark/**/recent
 home/.wireshark/**/recent_common
 home/.wireshark/.fccache-new
 config/fish/fishd.*
 config/fish/fish_variables
+# can't check this in, because not everything is going to be available. instead this generated in fish.sh
+config/omf/bundle
 
 # vim
 home/.vim/sessions/default.vim
