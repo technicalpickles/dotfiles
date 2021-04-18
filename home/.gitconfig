@@ -10,6 +10,9 @@
 [includeIf "gitdir:~/src/github/"]
 	path = ~/.gitconfig.d/work-identity
 
+[includeIf "gitdir:/usr/local/Homebrew/"]
+	path = ~/.gitconfig.d/personal-identity
+
 [core]
 	excludesfile = ~/.gitignore
 
