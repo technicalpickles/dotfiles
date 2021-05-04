@@ -4,8 +4,8 @@ tap 'homebrew/core'
 tap 'homebrew/services'
 
 tap 'homebrew/cask-fonts'
-tap 'dandavison/delta', 'https://github.com/dandavison/delta'
 tap 'homebrew/command-not-found'
+tap 'homebrew/cask-drivers'
 
 # core shell environment stuff
 brew 'fish'
@@ -66,6 +66,7 @@ cask 'omnigraffle'
 cask 'rescuetime'
 cask 'signal'
 cask 'slack'
+cask 'sony-ps4-remote-play'
 cask 'spotify'
 cask 'viscosity'
 cask 'visual-studio-code'
