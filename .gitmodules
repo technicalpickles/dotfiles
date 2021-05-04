@@ -8,3 +8,6 @@
 [submodule "vendor/vim-plug"]
 	path = vendor/vim-plug
 	url = https://github.com/junegunn/vim-plug.git
+[submodule "vendor/sbp"]
+	path = vendor/sbp
+	url = https://github.com/brujoand/sbp.git
