@@ -49,10 +49,11 @@ brew 'mas'
 
 cask 'aerial'
 cask 'alfred' # there is an App store version, but you can't use powerpack with it
-cask 'calibre'
 cask 'bartender'
+cask 'calibre'
 cask 'dash'
 cask 'discord'
+cask 'docker'
 cask 'evernote'
 cask 'fantastical'
 cask 'google-chrome'
@@ -71,6 +72,7 @@ cask 'sony-ps4-remote-play'
 cask 'spotify'
 cask 'viscosity'
 cask 'visual-studio-code'
+cask 'zoom'
 
 # drivers
 cask 'steermouse'
