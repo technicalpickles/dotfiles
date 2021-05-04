@@ -18,6 +18,10 @@ home/.vim/plugged
 config/gh/
 home/.bash_profile.d/private
 
+# sbp
+config/sbp/cache
+config/sbp/hook.log
+
 # fish
 # the current theme manages some of the files, so ignore those
 config/fish/functions/fish_prompt.fish
