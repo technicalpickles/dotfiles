@@ -51,6 +51,7 @@ cask 'aerial'
 cask 'alfred' # there is an App store version, but you can't use powerpack with it
 cask 'bartender'
 cask 'calibre'
+cask 'cleanshot'
 cask 'dash'
 cask 'discord'
 cask 'docker'
