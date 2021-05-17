@@ -74,6 +74,7 @@ cask 'spotify'
 cask 'viscosity'
 cask 'visual-studio-code'
 cask 'zoom'
+cask 'karabiner-elements'
 
 # drivers
 cask 'steermouse'

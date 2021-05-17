@@ -1,5 +1,6 @@
 hs.loadSpoon('ControlEscape'):start() -- Load Hammerspoon bits from https://github.com/jasonrudolph/ControlEscape.spoo
 
+require('hyper')
 
 
 -- require("hs.ipc")
