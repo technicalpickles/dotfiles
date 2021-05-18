@@ -24,9 +24,6 @@ fi
 # always output colors in less
 export LESS="-R"
 
-# vim bindings please
-set -o vi
-
 # I am admin, give me the goods!
 export PATH=${PATH}:/sbin:/usr/sbin:/usr/local/sbin
 
