@@ -51,8 +51,10 @@ current_file="${BASH_SOURCE[0]}"
 if [[ -L "${current_file}" ]]; then
 	dotfiles=$(dirname "$(dirname "$(readlink "${current_file}")")")
 
-	if [[ -d "${dotfiles}/vendor/sbp" ]]; then
-		SBP_PATH="${dotfiles}/vendor/sbp"
-		. "${SBP_PATH}/sbp.bash"
-	fi
+	. "${dotfiles}/home/.bash_profile.d/prompt.sh"
+
+# 	if [[ -d "${dotfiles}/vendor/sbp" ]]; then
+# 		SBP_PATH="${dotfiles}/vendor/sbp"
+# 		. "${SBP_PATH}/sbp.bash"
+# 	fi
 fi
