@@ -8,7 +8,9 @@
 set -g fish_user_paths "/usr/local/sbin" $fish_user_paths
 
 # vscode is pretty alright when we're in it
-if [ "$TERM_PROGRAM" = vscode ] && which code >/dev/null
+if string match -r -q insider "$TERM_PROGRAM_VERSION" && which code-insiders >/dev/null
+    export EDITOR="code-insiders -w"
+else if [ "$TERM_PROGRAM" = vscode ] && which code >/dev/null
     set -Ux EDITOR "code -w"
 # we like vim. see https://github.com/technicalpickles/pickled-vim for settings
 else if which mvim >/dev/null
