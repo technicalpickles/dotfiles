@@ -1,5 +1,8 @@
 # make sure to set EDITOR so git, and other things know what to open
 # vscode is pretty alright when we're in it
+if [[ "$TERM_PROGRAM_VERSION" =~ insider ]] && which code-insiders >/dev/null; then
+	export EDITOR="code-insiders -w"
+fi
 if [ "$TERM_PROGRAM" = vscode ] && which code >/dev/null; then
 	export EDITOR="code -w"
 # we like vim
