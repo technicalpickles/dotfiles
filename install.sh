@@ -29,6 +29,8 @@ if fish_available; then
   ./fish.sh
 fi
 
+./gh-shorthand.sh
+
 
 # if running_macos; then
 #   if !brew_available; then
