@@ -47,7 +47,12 @@ brew 'nodenv'
 brew 'pyenv'
 brew 'shellcheck'
 
-brew 'mas'
+# benchmarking
+brew "hyperfine"
+
+# container stuff
+cask 'docker'
+brew "container-diff"
 
 cask 'aerial'
 cask 'alfred' # there is an App store version, but you can't use powerpack with it
@@ -56,13 +61,14 @@ cask 'calibre'
 cask 'cleanshot'
 cask 'dash'
 cask 'discord'
-cask 'docker'
 cask 'evernote'
 cask 'fantastical'
 cask 'google-chrome'
 cask 'hammerspoon'
+cask 'hook'
 cask 'hookshot'
 cask 'iterm2'
+cask 'karabiner-elements'
 cask 'macbreakz'
 cask 'macvim'
 cask 'muzzle'
@@ -76,7 +82,7 @@ cask 'spotify'
 cask 'viscosity'
 cask 'visual-studio-code'
 cask 'zoom'
-cask 'karabiner-elements'
+cask "hazel"
 
 # drivers
 cask 'steermouse'
@@ -90,7 +96,3 @@ cask 'font-lobster'
 cask 'font-press-start-2p'
 cask 'font-quicksand'
 cask 'font-source-code-pro'
-
-mas 'GoodNotes', id: 1_444_383_602
-mas 'LiquidText', id: 922_765_270
-mas 'Pixelmator', id: 407_963_104
