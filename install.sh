@@ -29,7 +29,9 @@ if fish_available; then
   ./fish.sh
 fi
 
-./gh-shorthand.sh
+if running_macos; then
+  ./gh-shorthand.sh
+fi
 
 
 # if running_macos; then
