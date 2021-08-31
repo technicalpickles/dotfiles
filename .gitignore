@@ -30,3 +30,6 @@ config/fish/fishd.*
 
 # global variables, I'm worried this may end up with sensitive info
 config/fish/fish_variables
+
+# cheat
+config/cheat/cheatsheets
