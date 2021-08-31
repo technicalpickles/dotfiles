@@ -14,6 +14,11 @@ elif which -s vi >/dev/null; then
 	export EDITOR=vi
 fi
 
+
+if which fzf >/dev/null
+  export CHEAT_USE_FZF=true
+fi
+
 # we like fancy command line things if present
 if which exa >/dev/null; then
   alias ls=exa
