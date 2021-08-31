@@ -8,7 +8,7 @@ source functions.sh
 echo "🔨 rebuilding ~/.gitconfig.local"
 rm -f ~/.gitconfig.local
 
-if which delta > /dev/null; then
+if command_available delta; then
   echo "  → enabling delta for pager"
   git config --file ~/.gitconfig.local core.pager "delta --dark" 
 fi

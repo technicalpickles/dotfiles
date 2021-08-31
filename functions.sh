@@ -10,20 +10,22 @@ running_codespaces() {
   return $?
 }
 
+command_available() {
+  which "$1" > /dev/null
+}
+
 fzf_available() {
-  which fzf > /dev/null
-  return $?
+  command_available fzf
 }
 
 fish_available() {
-  which fish > /dev/null
-  return $?
+  command_available fish
 }
 
 vscode_command() {
-  if which code-insiders > /dev/null; then
+  if command_available code-insiders; then
     code="code-insiders"
-  elif which code > /dev/null; then
+  elif command_available code; then
     code="code"
   fi
 
