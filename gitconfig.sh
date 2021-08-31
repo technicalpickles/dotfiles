@@ -32,7 +32,7 @@ if [ -n "${code}" ]; then
 
   if running_macos; then
     echo "[include]" >> ~/.gitconfig.local
-    echo "  path = ~/.gitconfig.d/vscode-running_macos" >> ~/.gitconfig.local
+    echo "  path = ~/.gitconfig.d/vscode-macos" >> ~/.gitconfig.local
   else
     git config --file ~/.gitconfig.local mergetool.code.cmd "${code}"
   fi
