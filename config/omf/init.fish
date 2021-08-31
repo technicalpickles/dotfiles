@@ -26,6 +26,10 @@ else if which -s vi >/dev/null
     set -Ux EDITOR vi
 end
 
+if which fzf >/dev/null
+  set -U CHEAT_USE_FZF true
+end
+
 # we like fancy command line things if present
 if which exa >/dev/null
   alias ls=exa
