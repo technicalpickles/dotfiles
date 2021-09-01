@@ -13,6 +13,16 @@ if command_available delta; then
   git config --file ~/.gitconfig.local core.pager "delta --dark" 
 fi
 
+if command_available gpg; then
+  echo "  → enabling gpg"
+  git config --file ~/.gitconfig.local gpg.program "gpg" 
+
+  if gpg --list-keys | grep -q C9A25EB8; then
+    git config --file ~/.gitconfig.local user.signingkey "C9A25EB8" 
+    git config --file ~/.gitconfig.local commit.gpgsign true
+  fi
+fi
+
 if running_macos; then
   echo "  → enabling running_macos specific settings"
   echo "[include]" >> ~/.gitconfig.local
