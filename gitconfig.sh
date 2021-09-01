@@ -14,8 +14,10 @@ if command_available delta; then
 fi
 
 if command_available gpg; then
+  # https://gist.github.com/danieleggert/b029d44d4a54b328c0bac65d46ba4c65
+  
   echo "  → enabling gpg"
-  git config --file ~/.gitconfig.local gpg.program "gpg" 
+  git config --file ~/.gitconfig.local gpg.program `which gpg`
 
   if gpg --list-keys | grep -q C9A25EB8; then
     git config --file ~/.gitconfig.local user.signingkey "C9A25EB8" 
