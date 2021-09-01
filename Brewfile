@@ -17,6 +17,12 @@ brew 'git-lfs'
 brew 'git'
 brew 'git-delta'
 
+# gpg
+brew 'gpg2'
+brew 'gnupg'
+brew 'pinentry-mac'
+cask 'gpg-suite'
+
 # general utilities
 brew 'bat'
 brew 'cheat'
