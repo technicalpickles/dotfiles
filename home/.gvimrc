@@ -48,9 +48,9 @@ if has('gui_macvim') || has('gui_vimr') || exists("neovim_dot_app")
     map <silent> <D-9> :tabn 9<CR>
 
   " use vim search instead of pop up
-    if has('gui_macvim')
-      macmenu Edit.Find.Find\.\.\. key=<nop>
-    endif
+    " if has('gui_macvim')
+    "   macmenu Edit.Find.Find\.\.\. key=<nop>
+    " endif
     " FIXME in neovim-dot-app, unbind full screen from this and rebind to something else?
     map <D-f> /
 
