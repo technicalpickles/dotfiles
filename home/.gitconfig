@@ -1,5 +1,6 @@
 [user]
 	name = Josh Nichols
+	email = joshua.nichols@gmail.com
 
 [github]
 	user = technicalpickles
@@ -7,7 +8,7 @@
 [includeIf "gitdir:~/src/"]
 	path = ~/.gitconfig.d/personal-identity
 
-[includeIf "gitdir:~/src/github/"]
+[includeIf "gitdir:~/workspace/"]
 	path = ~/.gitconfig.d/work-identity
 
 [includeIf "gitdir:/usr/local/Homebrew/"]
