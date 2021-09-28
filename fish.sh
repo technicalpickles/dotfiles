@@ -4,10 +4,15 @@ if ! test -d "${HOME}/.local/share/omf/"; then
   curl -L https://get.oh-my.fish | fish
 fi
 
+
+theme=bobthefish
+echo theme $theme > ~/.config/omf/bundle
+if ! test -d "${HOME}/.local/share/omf/themes/bobthefish"; then
+  omf theme $theme
+fi
+
 rm ~/.config/omf/bundle
 echo package foreign-env > ~/.config/omf/bundle
-echo theme bobthefish > ~/.config/omf/bundle
-
 
 for package in direnv nodenv pyenv rbenv thefuck; do
   if which "$package" >/dev/null; then
