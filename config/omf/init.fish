@@ -53,3 +53,11 @@ if [ (uname) = "Darwin" ]
     source $HB_CNF_HANDLER
   end
 end
+
+if test -e /usr/local/share/chruby/chruby.fish
+  source /usr/local/share/chruby/chruby.fish
+end
+
+if test -e /usr/local/share/chruby/auto.fish
+  source /usr/local/share/chruby/auto.fish
+end
