@@ -21,6 +21,11 @@ if command_available gpg; then
     git config --file ~/.gitconfig.local user.signingkey "C9A25EB8" 
     git config --file ~/.gitconfig.local commit.gpgsign true
   fi
+
+  if gpg --list-keys | grep -q F446606B90EA1DB1; then
+    git config --file ~/.gitconfig.local user.signingkey "F446606B90EA1DB1" 
+    git config --file ~/.gitconfig.local commit.gpgsign true
+  fi
 fi
 
 if running_macos; then
