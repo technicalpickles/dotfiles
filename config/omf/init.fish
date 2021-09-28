@@ -7,6 +7,10 @@
 # sup sbin
 set -g fish_user_paths "/usr/local/sbin" $fish_user_paths
 
+# untracked files in git can be slow in large repos
+set -g theme_display_git_untracked no
+
+
 # use code-insiders by default
 alias code=code-insiders
 
