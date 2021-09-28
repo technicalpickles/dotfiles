@@ -30,17 +30,13 @@ if fish_available; then
 fi
 
 if running_macos; then
-  ./gh-shorthand.sh
+  if !brew_available; then
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  fi
+  brew_bundle
+  ~/.macos
+  # ./gh-shorthand.sh
 fi
-
-
-# if running_macos; then
-#   if !brew_available; then
-#     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-#   fi
-#   brew_bundle
-#   ~/.macos
-# fi
 
 
 # if ! running_codespaces; then
