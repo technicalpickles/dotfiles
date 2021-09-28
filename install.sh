@@ -40,7 +40,7 @@ fi
 
 
 # if ! running_codespaces; then
-#   vim_plugins
+  vim_plugins
 # fi
 
 echo "✅ Done"
