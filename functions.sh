@@ -22,6 +22,10 @@ fish_available() {
   command_available fish
 }
 
+brew_available() {
+  command_available brew
+}
+
 vscode_command() {
   if command_available code-insiders; then
     code="code-insiders"
