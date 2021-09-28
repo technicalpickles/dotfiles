@@ -15,7 +15,7 @@ elif which -s vi >/dev/null; then
 fi
 
 
-if which fzf >/dev/null
+if which fzf >/dev/null; then
   export CHEAT_USE_FZF=true
 fi
 
