@@ -5,6 +5,25 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export DIR
 
+if [[ -f .env ]]; then
+  source .env
+fi
+
+if [[ -n "${DOTPICKLES_ROLE}" ]]; then
+  while true; do
+    read -p "What role is this machine used for? (work or personal) " DOTPICKLES_ROLE
+    case $yn in
+      [Ww]* ) DOTPICKLES_ROLE=work; break;;
+      [Pp]* ) DOTPICKLES_ROLE=personal; break;;
+      * ) echo "Please answer work or personal.";;
+    esac
+    export DOTPICKLES_ROLE
+    echo "export DOTPICKLES_ROLE=${DOTPICKLES_ROLE}" >> .env
+  done
+fi
+
+echo "role: $DOTPICKLES_ROLE"
+
 # shellcheck source=./functions.sh
 source ./functions.sh
 
@@ -34,7 +53,6 @@ if running_macos; then
 
   if ! brew_available; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
     load_brew_shellenv
   fi
 
@@ -44,8 +62,8 @@ if running_macos; then
 fi
 
 
-# if ! running_codespaces; then
+if ! running_codespaces; then
   vim_plugins
-# fi
+fi
 
 echo "✅ Done"

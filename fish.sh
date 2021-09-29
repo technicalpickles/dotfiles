@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+if test -f /etc/shells && ! grep -q "$(which fish)" /etc/shells; then
+  sudo bash -c "which fish >> /etc/shells"
+fi
+
 if ! test -d "${HOME}/.local/share/omf/"; then
   curl -L https://get.oh-my.fish | fish
 fi
