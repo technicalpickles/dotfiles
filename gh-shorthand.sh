@@ -3,6 +3,8 @@ set -e
 
 rm -f ~/.gh-shorthand.yml
 
+editor=$(which code-insiders || which code)
+
 cat > ~/.gh-shorthand.yml <<EOF
 ---
 # The default repository, if none is provided. This can be empty/unset.
@@ -21,7 +23,7 @@ project_dirs:
   - ~/src/*
 
 # The command or script to open the editor.
-editor: "/usr/local/bin/code-insiders -n"
+editor: "${editor} -n"
 
 # GitHub API token (requires 'read:org,repo,user' permission)
 # enables live search results and annotations
