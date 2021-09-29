@@ -26,6 +26,18 @@ brew_available() {
   command_available brew
 }
 
+load_brew_shellenv() {
+  if test -x /opt/homebrew/bin/brew; then
+    brew=/opt/homebrew/bin/brew
+  elif -x /usr/local/bin/brew; then
+    brew=/usr/local/bin/brew
+  fi
+
+  if test -n "${brew}"; then
+    eval "$($brew shellenv)"
+  fi
+}
+
 vscode_command() {
   if command_available code-insiders; then
     code="code-insiders"
@@ -56,7 +68,7 @@ link_directory_contents() {
       echo "don't know where to put ${directory} links"
       return 1
     fi
-    
+
     link "$linkable" "$target"
   done
 }
@@ -69,7 +81,7 @@ link() {
 
   if [ ! -L "$target" ]; then
     echo "🔗 $display_target → linking from $linkable"
-    ln -Ff -s "$DIR/$linkable" "$target"    
+    ln -Ff -s "$DIR/$linkable" "$target"
   elif [ "$(readlink "$target")" != "${DIR}/${linkable}" ]; then
     echo "🔗 $display_target → already linked to $(readlink ${target})"
     read -p "Overwrite it to link to ${DIR}/${linkable}? " -n 1 -r
