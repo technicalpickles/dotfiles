@@ -30,9 +30,14 @@ if fish_available; then
 fi
 
 if running_macos; then
-  if !brew_available; then
+  load_brew_shellenv
+
+  if ! brew_available; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+    load_brew_shellenv
   fi
+
   brew_bundle
   ~/.macos
   # ./gh-shorthand.sh
