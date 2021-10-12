@@ -39,6 +39,7 @@ brew 'the_silver_searcher'
 brew 'tree'
 brew 'tree'
 brew 'watch'
+brew 'gh'
 
 # networky
 brew 'mtr'
@@ -47,12 +48,8 @@ brew 'socat'
 brew 'wget'
 
 # programming languages
-case ENV["DOTPICKLES_ROLE"]
-when "work"
-  brew 'rbenv'
-when "personal"
-  brew 'chruby'
-end
+# see Brewfile.* for ruby stuff
+brew 'rbspy'
 brew 'nodenv'
 brew 'pyenv'
 brew 'shellcheck'
@@ -70,7 +67,6 @@ cask 'bartender'
 cask 'cleanshot'
 cask 'dash'
 cask 'evernote'
-cask 'google-chrome'
 cask 'hammerspoon'
 cask 'hook'
 cask 'hookshot'
@@ -81,21 +77,10 @@ cask 'macvim'
 cask 'obsidian'
 cask 'rescuetime'
 cask 'signal'
-cask 'slack'
 cask 'spotify'
 cask 'viscosity'
 cask 'visual-studio-code'
-cask 'zoom' unless ENV["DOTPICKLES_ROLE"] == "work"
 cask "hazel"
-
-case ENV["DOTPICKLES_ROLE"]
-when "work"
-when "personal"
-	cask 'discord'
-	cask 'calibre'
-	cask 'fantastical'
-	cask 'sony-ps4-remote-play'
-end
 
 # drivers
 cask 'steermouse'
@@ -108,3 +93,4 @@ cask 'font-inconsolata'
 cask 'font-lobster'
 cask 'font-press-start-2p'
 cask 'font-quicksand'
+# trailing newline so make sure there's not a syntax error when joining with Brewfile.*
