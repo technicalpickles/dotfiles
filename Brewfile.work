@@ -1,0 +1,3 @@
+brew 'chruby'
+brew 'chruby-fish'
+cask 'meetingbar'
