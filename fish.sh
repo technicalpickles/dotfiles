@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+echo "🐟 configuring fish"
 if test -f /etc/shells && ! grep -q "$(which fish)" /etc/shells; then
   sudo bash -c "which fish >> /etc/shells"
 fi
@@ -9,6 +10,7 @@ if ! test -d "${HOME}/.local/share/omf/"; then
 fi
 
 rm -f ~/.config/omf/bundle
+touch ~/.config/omf/bundle
 
 theme=bobthefish
 if ! test -d "${HOME}/.local/share/omf/themes/${theme}"; then
@@ -25,3 +27,5 @@ for package in direnv nodenv pyenv rbenv thefuck; do
 done
 
 fish -c "omf install"
+
+echo
