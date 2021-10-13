@@ -44,6 +44,7 @@ for key, application in pairs(hyperModeAppMappings) do
   local choice = {
     text = application,
     subText = "✧"..key
+    -- TODO track down finder
     image = hs.image.iconForFile("/Applications/"..application..".app")
     -- make sure the application name is available, so we don't have to try to figure out later if the name is in the text or subText
     application = application
