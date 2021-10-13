@@ -16,6 +16,7 @@ brew 'thefuck'
 brew 'git-lfs'
 brew 'git'
 brew 'git-delta'
+brew 'gh'
 
 # gpg
 brew 'gpg2'
