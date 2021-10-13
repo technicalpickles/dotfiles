@@ -34,5 +34,5 @@ config/fish/fish_variables
 config/cheat/cheatsheets
 
 # gh
-# config/gh/state.yml
-# config/gh/hosts.yml
+config/gh/state.yml
+config/gh/hosts.yml
