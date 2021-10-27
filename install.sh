@@ -9,16 +9,17 @@ if [[ -f .env ]]; then
   source .env
 fi
 
-if [[ -n "${DOTPICKLES_ROLE}" ]]; then
+if [[ -z "${DOTPICKLES_ROLE}" ]]; then
   while true; do
     read -p "What role is this machine used for? (work or personal) " DOTPICKLES_ROLE
-    case $yn in
+    case $DOTPICKLES_ROLE in
       [Ww]* ) DOTPICKLES_ROLE=work; break;;
       [Pp]* ) DOTPICKLES_ROLE=personal; break;;
       * ) echo "Please answer work or personal.";;
     esac
     export DOTPICKLES_ROLE
     echo "export DOTPICKLES_ROLE=${DOTPICKLES_ROLE}" >> .env
+    source .env
   done
 fi
 
@@ -57,7 +58,11 @@ if running_macos; then
   fi
 
   brew_bundle
+
+  echo "🍎 configuring macOS defaults"
   ~/.macos
+  echo
+
   # ./gh-shorthand.sh
 fi
 
