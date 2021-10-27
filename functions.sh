@@ -97,10 +97,12 @@ link() {
 
 brew_bundle() {
   echo "🍻 running brew bundle"
-  brew bundle | sed 's/^/  → /'
+  cat Brewfile Brewfile.${DOTPICKLES_ROLE} 2>/dev/null | brew bundle --file=- | sed 's/^/  → /'
   echo
 }
 
 vim_plugins() {
+  echo "⌨️️ configuring vim"
   vim +PlugInstall +qall
+  echo
 }

@@ -61,10 +61,14 @@ if [ (uname) = "Darwin" ]
   end
 end
 
-if test -e /usr/local/share/chruby/chruby.fish
-  source /usr/local/share/chruby/chruby.fish
-end
+if [ -n "$HOMEBREW_PREFIX" ]
+  set -g CHRUBY_ROOT "$HOMEBREW_PREFIX"
 
-if test -e /usr/local/share/chruby/auto.fish
-  source /usr/local/share/chruby/auto.fish
+  if [ -f "$HOMEBREW_PREFIX/share/chruby/chruby.fish" ]
+    source "$HOMEBREW_PREFIX/share/chruby/chruby.fish"
+  end
+
+  if [ -f $HOMEBREW_PREFIX/share/chruby/auto.fish ]
+    source "$HOMEBREW_PREFIX/share/chruby/auto.fish"
+  end
 end

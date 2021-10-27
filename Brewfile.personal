@@ -1,0 +1,10 @@
+brew 'rbenv'
+
+
+cask 'calibre'
+cask 'discord'
+cask 'fantastical'
+cask 'google-chrome'
+cask 'slack'
+cask 'sony-ps4-remote-play'
+cask 'zoom'
