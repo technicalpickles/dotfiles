@@ -1,3 +1,8 @@
+
+#### FIG ENV VARIABLES ####
+# Please make sure this block is at the start of this file.
+[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh
+#### END FIG ENV VARIABLES ####
 # make sure to set EDITOR so git, and other things know what to open
 # vscode is pretty alright when we're in it
 if [[ "$TERM_PROGRAM_VERSION" =~ insider ]] && which code-insiders >/dev/null; then
@@ -63,3 +68,7 @@ if [[ -L "${current_file}" ]]; then
 # 		. "${SBP_PATH}/sbp.bash"
 # 	fi
 fi
+#### FIG ENV VARIABLES ####
+# Please make sure this block is at the end of this file.
+[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh
+#### END FIG ENV VARIABLES ####
