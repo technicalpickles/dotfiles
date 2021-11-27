@@ -16,38 +16,55 @@ end
 
 -- https://github.com/jasonrudolph/keyboard/blob/main/hammerspoon/hyper-apps-defaults.lua
 hyperModeAppMappings = {
-  d = 'Discord',
-  f = 'Finder',
-  o = 'Obsidian',
-  p = 'PS Remote Play',
-  s = 'Slack',
-  v = 'Visual Studio Code - Insiders',
+  ["Discord"] = {
+    key = "d",
+  },
+  ["Finder"] = {
+    key = "f",
+    image = "/System/Library/CoreServices/Dock.app/Contents/Resources/finder@2x.png",
+  },
+  ["Obsidian"] = {
+    key = "o",
+  },
+  ["Slack"] = {
+    key = "s",
+  },
+  ["Visual Studio Code - Insiders"] = {
+    key = "v",
+  }
 }
 
 local hyper = {'shift', 'ctrl', 'alt', 'cmd'}
 
 -- https://github.com/jasonrudolph/keyboard/blob/main/hammerspoon/hyper.lua
-for key, app in pairs(hyperModeAppMappings) do
+local choices = {}
+for name, app in pairs(hyperModeAppMappings) do
+  local key = app.key
   hs.hotkey.bind(hyper, key, function()
     if (type(app) == 'string') then
-      hs.application.open(app)
+      hs.application.open(name)
     elseif (type(app) == 'function') then
       app()
     else
       hs.logger.new('hyper'):e('Invalid mapping for Hyper +', key)
     end
   end)
-end
 
-local choices = {}
-for key, application in pairs(hyperModeAppMappings) do
+
+  local image
+  if app.image then
+    image = hs.image.imageFromPath(app.image)
+  else
+    image = hs.image.iconForFile("/Applications/"..name..".app")
+  end
+
   local choice = {
-    text = application,
-    subText = "✧"..key
+    text = name,
+    subText = "✧"..key,
     -- TODO track down finder
-    image = hs.image.iconForFile("/Applications/"..application..".app")
+    image = image,
     -- make sure the application name is available, so we don't have to try to figure out later if the name is in the text or subText
-    application = application
+    application = name,
   }
   table.insert(choices, choice)
 end
