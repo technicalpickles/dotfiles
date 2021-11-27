@@ -2,7 +2,7 @@
 
 if test -x /opt/homebrew/bin/brew
 	set brew /opt/homebrew/bin/brew
-else if -x /usr/local/bin/brew
+else if test -x /usr/local/bin/brew
 	set brew /usr/local/bin/brew
 end
 
