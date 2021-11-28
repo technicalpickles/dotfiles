@@ -68,7 +68,7 @@ fi
 
 
 if ! running_codespaces; then
-  vim_plugins
+  ./vim.sh
 fi
 
 echo "✅ Done"
