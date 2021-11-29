@@ -19,6 +19,8 @@ fi
 
 rm ~/.config/omf/bundle
 echo package foreign-env >> ~/.config/omf/bundle
+echo package z >> ~/.config/omf/bundle
+
 
 for package in direnv nodenv pyenv rbenv thefuck; do
   if which "$package" >/dev/null; then
@@ -27,5 +29,7 @@ for package in direnv nodenv pyenv rbenv thefuck; do
 done
 
 fish -c "omf install"
+fish -c "omf install https://github.com/PatrickF1/fzf.fish"
+fish -c "omf install https://github.com/zimski/ssh_agent"
 
 echo
