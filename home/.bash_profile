@@ -25,9 +25,9 @@ if which fzf >/dev/null; then
 fi
 
 # we like fancy command line things if present
-if which exa >/dev/null; then
-  alias ls=exa
-fi
+# if which exa >/dev/null; then
+#   alias ls=exa
+# fi
 
 if which bat >/dev/null; then
   export MANPAGER="sh -c 'col -bx | bat --language man --plain --paging=always'"
