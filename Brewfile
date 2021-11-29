@@ -7,6 +7,8 @@ tap 'homebrew/cask-fonts'
 tap 'homebrew/command-not-found'
 tap 'homebrew/cask-drivers'
 
+tap  'tophat/bar'
+
 # core shell environment stuff
 brew 'fish'
 brew 'direnv'
@@ -55,6 +57,7 @@ brew 'rbspy'
 brew 'nodenv'
 brew 'pyenv'
 brew 'shellcheck'
+brew 'yvm'
 
 # benchmarking
 brew "hyperfine"
