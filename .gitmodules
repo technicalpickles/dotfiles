@@ -14,9 +14,6 @@
 [submodule "config/cheat/cheatsheets/community"]
 	path = config/cheat/cheatsheets/community
 	url = https://github.com/cheat/cheatsheets
-[submodule "config/cheat/personal"]
-	path = config/cheat/personal
-	url = https://github.com/technicalpickles/cheatsheets.git
 [submodule "config/cheat/cheatsheets/personal"]
 	path = config/cheat/cheatsheets/personal
 	url = https://github.com/technicalpickles/cheatsheets.git
