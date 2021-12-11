@@ -1,1 +1,0 @@
-/Users/technicalpickles/.fig/shell/pre.fish
