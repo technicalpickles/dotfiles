@@ -26,6 +26,8 @@ config/sbp/hook.log
 # the current theme manages some of the files, so ignore those
 config/fish/functions/fish_prompt.fish
 config/fish/fishd.*
+# fig symlinks these from $HOME/.fig which will vary depending on the user
+config/fish/conf.d/*_fig_*.fish
 
 # global variables, I'm worried this may end up with sensitive info
 config/fish/fish_variables

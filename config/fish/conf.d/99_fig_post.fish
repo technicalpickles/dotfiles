@@ -1,1 +1,0 @@
-/Users/technicalpickles/.fig/shell/post.fish
