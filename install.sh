@@ -63,6 +63,9 @@ if running_macos; then
   ~/.macos
   echo
 
+  echo "🔐 configuring SSH to use keychain"
+  ssh-add --apple-load-keychain
+
   # ./gh-shorthand.sh
 fi
 
