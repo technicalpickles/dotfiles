@@ -61,6 +61,10 @@ if [ (uname) = "Darwin" ]
   end
 end
 
+if [ (uname) = "Darwin" ]
+  ssh-add --apple-load-keychain
+end
+
 if [ -n "$HOMEBREW_PREFIX" ]
   set -g CHRUBY_ROOT "$HOMEBREW_PREFIX"
 
