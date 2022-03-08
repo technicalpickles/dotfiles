@@ -7,8 +7,6 @@
 # sup sbin
 set -g fish_user_paths "/usr/local/sbin" $fish_user_paths
 
-# untracked files in git can be slow in large repos
-set -g theme_display_git_untracked no
 
 
 # use code-insiders by default
@@ -49,7 +47,10 @@ end
 
 # bobthefish theme
 # https://github.com/oh-my-fish/oh-my-fish/blob/master/docs/Themes.md#bobthefish-1
-set theme_color_scheme terminal2-dark-white
+set -g theme_color_scheme terminal2-dark-white
+# untracked files in git can be slow in large repos
+set -g theme_display_git_untracked no
+
 
 set -x GOPATH ~/golang
 set PATH $PATH $GOPATH/bin
