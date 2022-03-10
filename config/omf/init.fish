@@ -1,34 +1,13 @@
 # init.fish - Custom script sourced after shell start
-#
-# It's highly recommended that your custom startup commands go into init.fish
-# file instead of ~/.config/fish/config.fish, as this allows you to keep the
-# whole $OMF_CONFIG directory under version control.
 
 # sup sbin
-set -g fish_user_paths "/usr/local/sbin" $fish_user_paths
-
-
+fish_add_path -g /usr/local/sbin
 
 # use code-insiders by default
 if which code-insiders >/dev/null
   alias code=code-insiders
 else
   alias code=code
-end
-
-# vscode is pretty alright when we're in it
-if string match -r -q insider "$TERM_PROGRAM_VERSION" && which code-insiders >/dev/null
-    export EDITOR="code-insiders -w"
-else if [ "$TERM_PROGRAM" = vscode ] && which code >/dev/null
-    set -Ux EDITOR "code -w"
-    # use stable while running inside stable
-# we like vim. see https://github.com/technicalpickles/pickled-vim for settings
-else if which mvim >/dev/null
-    set -Ux EDITOR "mvim -f"
-else if which -s vim >/dev/null
-    set -Ux EDITOR vim
-else if which -s vi >/dev/null
-    set -Ux EDITOR vi
 end
 
 if which fzf >/dev/null
@@ -45,13 +24,6 @@ if which bat >/dev/null
   alias less=bat
 end
 
-# bobthefish theme
-# https://github.com/oh-my-fish/oh-my-fish/blob/master/docs/Themes.md#bobthefish-1
-set -g theme_color_scheme terminal2-dark-white
-# untracked files in git can be slow in large repos
-set -g theme_display_git_untracked no
-
-
 set -x GOPATH ~/golang
 set PATH $PATH $GOPATH/bin
 
@@ -64,21 +36,4 @@ end
 
 if [ (uname) = "Darwin" ]
   ssh-add --apple-load-keychain
-end
-
-if [ -n "$HOMEBREW_PREFIX" ]
-  set -g CHRUBY_ROOT "$HOMEBREW_PREFIX"
-
-  if [ -f "$HOMEBREW_PREFIX/share/chruby/chruby.fish" ]
-    source "$HOMEBREW_PREFIX/share/chruby/chruby.fish"
-  end
-
-  if [ -f $HOMEBREW_PREFIX/share/chruby/auto.fish ]
-    source "$HOMEBREW_PREFIX/share/chruby/auto.fish"
-  end
-
-  set -x YVM_DIR $HOMEBREW_PREFIX/opt/yvm
-  if [ -r $YVM_DIR/yvm.fish ]
-    source $YVM_DIR/yvm.fish
-  end
 end

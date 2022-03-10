@@ -57,7 +57,6 @@ brew 'rbspy'
 brew 'nodenv'
 brew 'pyenv'
 brew 'shellcheck'
-brew 'yvm'
 
 # benchmarking
 brew "hyperfine"
