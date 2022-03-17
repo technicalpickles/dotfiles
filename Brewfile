@@ -19,6 +19,7 @@ brew 'git-lfs'
 brew 'git'
 brew 'git-delta'
 brew 'gh'
+brew 'git-extras'
 
 # gpg
 brew 'gpg2'

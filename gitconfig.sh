@@ -8,6 +8,14 @@ source functions.sh
 echo "🔨 rebuilding ~/.gitconfig.local"
 rm -f ~/.gitconfig.local
 
+if [ -d ~/workspace ]; then
+  echo "  → enabling maintenance for repositories"
+  for git_dir in $HOME/workspace/*/.git; do
+    repo_dir=$(dirname "$git_dir")
+    git config --file ~/.gitconfig.local --add maintenance.repo "$repo_dir"
+  done
+fi
+
 if command_available delta; then
   echo "  → enabling delta for pager"
   git config --file ~/.gitconfig.local core.pager "delta --dark" 
