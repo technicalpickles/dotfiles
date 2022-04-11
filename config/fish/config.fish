@@ -5,10 +5,9 @@ else
     alias code=code
 end
 
-# Commands to run in interactive sessions can go here
 if status is-interactive
     if command -q fzf
-        set -U CHEAT_USE_FZF true
+        set -g CHEAT_USE_FZF true
     end
 
     if command -q bat
@@ -22,6 +21,14 @@ if status is-interactive
             ssh-add -K
         else
             ssh-add --apple-load-keychain
+        end
+
+        if test -f  $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
+            source $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
+        end
+
+        if test -d "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
+            fish_add_path --global --prepend "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
         end
     end
 end
