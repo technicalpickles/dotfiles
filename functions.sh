@@ -11,7 +11,7 @@ running_codespaces() {
 }
 
 command_available() {
-  command -q "$1"
+  which "$1" >/dev/null 2>&1
 }
 
 fzf_available() {
