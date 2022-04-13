@@ -42,7 +42,6 @@ brew 'moreutils'
 brew 'pstree'
 brew 'the_silver_searcher'
 brew 'tree'
-brew 'tree'
 brew 'watch'
 brew 'gh'
 
