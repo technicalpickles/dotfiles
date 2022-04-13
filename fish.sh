@@ -15,6 +15,6 @@ if running_macos; then
   fi
 fi
 
-curl -sL https://git.io/fisher | source && fisher update
+fish -c ". (curl -sL https://git.io/fisher | psub) && fisher update"
 
 echo
