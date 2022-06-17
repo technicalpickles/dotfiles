@@ -1,6 +1,6 @@
 " And pretty fonts
   set macligatures
-  set guifont=FuraCode\ Nerd\ Font:h14
+  set guifont=DankMono\ Nerd\ Font\ Mono:14
 
 
 " Section: IdentLine
@@ -17,7 +17,19 @@
   set columns=120
 
 " Mac Keybindings
-if has('gui_macvim') || has('gui_vimr') || exists("neovim_dot_app")
+if has('gui_macvim') || has('gui_vimr') || exists("neovim_dot_app") || exists('g:neovide')
+
+  " Allow copy paste in neovim
+    if exists("g:neovide")
+      let g:neovide_input_use_logo = 1
+      let g:clipboard = 1
+
+      map <D-v> "+p<CR>
+      map! <D-v> <C-R>+
+      tmap <D-v> <C-R>+
+      vmap <D-c> "+y<CR>
+    endif
+
   " bind command-/ to toggle comment
     nmap <D-/> ,c<space>
     vmap <D-/> ,c<space>
