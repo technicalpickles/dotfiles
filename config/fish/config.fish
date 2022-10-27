@@ -1,11 +1,29 @@
-# use code-insiders by default
-if command -q code-insiders
-    alias code=code-insiders
-else
-    alias code=code
+
+if [ (uname) = Darwin ]
+    set major_version (sw_vers -productVersion | cut -d . -f 1)
+    if test "$major_version" -lt 12
+	ssh-add -K
+    else
+	ssh-add --apple-load-keychain
+    end
+
+    if test -f  $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
+	source $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
+    end
+
+    if test -d "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
+	fish_add_path --global --prepend "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
+    end
 end
 
 if status is-interactive
+    # use code-insiders by default
+    if command -q code-insiders
+        alias code=code-insiders
+    else
+        alias code=code
+    end
+
     if command -q fzf
         set -g CHEAT_USE_FZF true
     end
@@ -15,20 +33,4 @@ if status is-interactive
         alias less=bat
     end
 
-    if [ (uname) = Darwin ]
-        set major_version (sw_vers -productVersion | cut -d . -f 1)
-        if test "$major_version" -lt 12
-            ssh-add -K
-        else
-            ssh-add --apple-load-keychain
-        end
-
-        if test -f  $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
-            source $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
-        end
-
-        if test -d "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
-            fish_add_path --global --prepend "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
-        end
-    end
 end
