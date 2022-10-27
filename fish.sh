@@ -20,7 +20,6 @@ if ! fish -c "type fisher >/dev/null"; then
   fish -c "curl -sL https://git.io/fisher | source && fisher update"
 fi
 
-
 plugins=(
   jorgebucaran/fisher
   IlanCosman/tide@v5

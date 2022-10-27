@@ -11,7 +11,7 @@ running_codespaces() {
 }
 
 command_available() {
-  command -q "$1"
+  which "$1" >/dev/null 2>&1
 }
 
 fzf_available() {
@@ -29,7 +29,7 @@ brew_available() {
 load_brew_shellenv() {
   if test -x /opt/homebrew/bin/brew; then
     brew=/opt/homebrew/bin/brew
-  elif -x /usr/local/bin/brew; then
+  elif test -x /usr/local/bin/brew; then
     brew=/usr/local/bin/brew
   fi
 
