@@ -1,6 +1,6 @@
 [user]
 	name = Josh Nichols
-	email = joshua.nichols@gmail.com
+	email = josh.nichols@gusto.com
 
 [github]
 	user = technicalpickles
@@ -16,16 +16,22 @@
 
 [core]
 	excludesfile = ~/.gitignore
+	hooksPath = /Users/josh.nichols/.gusto/githooks
 
 [hub]
 	protocol = https
 
 [alias]
-	dc = diff --cached
+	ds = diff --staged
 	st = status
 	co = checkout
 	ci = commit
 	di = diff
+  sw = switch
+  rs = restore
+  empty = commit --allow-empty 
+
+  main = !git switch main && git pull
 	default-branch = !git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'
 
 	hide = update-index --assume-unchanged
@@ -35,7 +41,8 @@
 	ui = true
 
 [push]
-	default = current
+ 	default = current
+	autoSetupRemote = true
 
 [color "diff-highlight"]
 	oldNormal = red bold
@@ -66,10 +73,6 @@
 
 [fetch]
 	prune = true
-
-[branch]
-	autosetupmerge = always
-
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
@@ -81,3 +84,23 @@
 	prune = true
 [maintenance]
 	repo = /Users/josh.nichols/workspace/zenpayroll
+	repo = /Users/josh.nichols/workspace/dotfiles
+	repo = /Users/josh.nichols/workspace/pickled-nvim
+[credential]
+	helper = osxkeychain
+[duet "env"]
+	git-author-initials = me
+	git-author-name = Josh Nichols
+	git-author-email = josh.nichols@gusto.com
+	mtime = 1653423628
+	git-committer-initials = 
+	git-committer-name = 
+	git-committer-email = 
+[remote]
+ 	pushdefault = origin
+[credential "https://github.com"]
+	helper = 
+	helper = !/opt/homebrew/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/opt/homebrew/bin/gh auth git-credential
