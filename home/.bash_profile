@@ -72,3 +72,10 @@ fi
 # Please make sure this block is at the end of this file.
 [ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh
 #### END FIG ENV VARIABLES ####
+
+# export YVM_DIR=/opt/homebrew/opt/yvm
+# [ -r $YVM_DIR/yvm.sh ] && . $YVM_DIR/yvm.sh
+
+. "$HOME/.cargo/env"
+
+eval "$(/Users/josh.nichols/workspace/gdev-shell/bin/gdev-shell init - bash)"
