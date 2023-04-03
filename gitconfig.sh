@@ -7,6 +7,9 @@ source functions.sh
 
 echo "🔨 rebuilding ~/.gitconfig.local"
 rm -f ~/.gitconfig.local
+rm -f ~/.gitconfig.d/1password
+
+op_ensure_signed_in
 
 if [ -d ~/workspace ]; then
   echo "  → enabling maintenance for repositories"
