@@ -57,4 +57,36 @@ if status is-interactive
         set -gx MANPAGER "sh -c 'col -bx | bat --language man --plain --paging=always'"
         alias less=bat
     end
+
+    if command -q pstree
+      # nicer graphics for pstree
+      alias pstree="pstree -g 2"
+    end
+end
+
+# fix PATH to make sure ruby and node aren't using system ruby
+for i in (seq (count $PATH))
+  if test $PATH[$i] = "$HOME/.rbenv/shims"
+    set rbenv_i $i
+  end
+
+  if test $PATH[$i] = "$HOME/.nodenv/shims"
+    set nodenv_i $i
+  end
+
+  if test $PATH[$i] = "$HOMEBREW_PREFIX/bin"
+    set homebrew_i $i
+  end
+
+  if test $PATH[$i] = "/usr/bin"
+    set bin_i $i
+  end
+end
+
+if test "$bin_i" -lt "$rbenv_i" -o "$homebrew_i" -lt "$rbenv_i"
+  set -g --prepend PATH "$HOME/.rbenv/shims"
+end
+
+if test "$bin_i" -lt $nodenv_i -o "$homebrew_i" -lt "$nodenv_i"
+  set -g --prepend PATH "$HOME/.nodenv/shims"
 end
