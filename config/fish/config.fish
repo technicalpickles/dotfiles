@@ -1,20 +1,20 @@
-if [ (uname) = Darwin ]
-    if test -f  $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
-      source $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
-    end
+#if [ (uname) = Darwin ]
+#    if test -f  $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
+#      source $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
+#    end
+#
+#    if test -d "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
+#      fish_add_path --global --prepend "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
+#    end
+#end
+#
+#if [ "$DOTPICKLES_ROLE" = "home" ]
+#  if test -f  $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
+#      source $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
+#  end
+#end
 
-    if test -d "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
-      fish_add_path --global --prepend "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
-    end
-end
-
-if [ "$DOTPICKLES_ROLE" = "home" ]
-  if test -f  $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
-      source $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
-  end
-end
-
-status --is-interactive; and /Users/josh.nichols/workspace/gdev-shell/bin/gdev-shell init - fish | source
+/Users/josh.nichols/workspace/gdev-shell/bin/gdev-shell init - fish | source
 
 # if test -d "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
 #   fish_add_path --global --prepend "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
