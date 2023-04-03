@@ -20,6 +20,11 @@ status --is-interactive; and /Users/josh.nichols/workspace/gdev-shell/bin/gdev-s
 #   fish_add_path --global --prepend "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
 # end
 
+set possible_ssh_auth_sock $HOME/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
+if test -f $possible_ssh_auth_sock
+  set -gx SSH_AUTH_SOCK $possible_ssh_auth_sock
+end
+
 if test -d "$HOME/.cargo/bin"
   fish_add_path --global "$HOME/.cargo/bin"
 end
