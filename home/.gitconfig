@@ -16,7 +16,6 @@
 
 [core]
 	excludesfile = ~/.gitignore
-	hooksPath = /Users/josh.nichols/.gusto/githooks
 
 [hub]
 	protocol = https
@@ -29,7 +28,7 @@
 	di = diff
   sw = switch
   rs = restore
-  empty = commit --allow-empty 
+  empty = commit --allow-empty
 
   main = !git switch main && git pull
 	default-branch = !git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'
@@ -93,14 +92,8 @@
 	git-author-name = Josh Nichols
 	git-author-email = josh.nichols@gusto.com
 	mtime = 1653423628
-	git-committer-initials = 
-	git-committer-name = 
-	git-committer-email = 
+	git-committer-initials =
+	git-committer-name =
+	git-committer-email =
 [remote]
  	pushdefault = origin
-[credential "https://github.com"]
-	helper = 
-	helper = !/opt/homebrew/bin/gh auth git-credential
-[credential "https://gist.github.com"]
-	helper = 
-	helper = !/opt/homebrew/bin/gh auth git-credential
