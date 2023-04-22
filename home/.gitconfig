@@ -21,6 +21,8 @@
 	protocol = https
 
 [alias]
+  ; investigate if have more problem
+  ; commit = !sh -c 'if test -f .git/COMMIT_EDITMSG; then git commit --edit --file=.git/COMMIT_EDITMSG "$@"; else git commit "$@"'
 	ds = diff --staged
 	st = status
 	co = checkout
