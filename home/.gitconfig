@@ -59,6 +59,16 @@
 	new = green bold
 	whitespace = red reverse
 
+[color "status"]
+  ; header = 
+  added = green bold
+  changed = blue bold
+  deleted = red bold strikethrough
+  untracked = magenta bold italic
+  branch = cyan bold italic ul
+  no-branch = white red bold underlined italic
+  unmerged = white red bold ul 
+
 [mergetool]
 	keepTemporaries = false
 	keepBackup = false
