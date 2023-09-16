@@ -1,21 +1,12 @@
-
 if [ (uname) = Darwin ]
     set major_version (sw_vers -productVersion | cut -d . -f 1)
 
-    if test -d "$HOME/.ssh"
-        if test "$major_version" -lt 12
-            ssh-add -K
-        else
-            ssh-add --apple-load-keychain
-        end
-    end
-
     if test -f  $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
-	source $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
+      source $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
     end
 
     if test -d "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
-	fish_add_path --global --prepend "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
+      fish_add_path --global --prepend "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
     end
 end
 
@@ -39,5 +30,4 @@ if status is-interactive
         set -gx MANPAGER "sh -c 'col -bx | bat --language man --plain --paging=always'"
         alias less=bat
     end
-
 end
