@@ -1,10 +1,13 @@
 
 if [ (uname) = Darwin ]
     set major_version (sw_vers -productVersion | cut -d . -f 1)
-    if test "$major_version" -lt 12
-	ssh-add -K
-    else
-	ssh-add --apple-load-keychain
+
+    if test -d "$HOME/.ssh"
+        if test "$major_version" -lt 12
+            ssh-add -K
+        else
+            ssh-add --apple-load-keychain
+        end
     end
 
     if test -f  $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
@@ -14,6 +17,10 @@ if [ (uname) = Darwin ]
     if test -d "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
 	fish_add_path --global --prepend "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
     end
+end
+
+if test -d "$HOME/.cargo/bin"
+  fish_add_path --global --prepend "$HOME/.cargo/bin"
 end
 
 if status is-interactive

@@ -1,6 +1,6 @@
 # vscode is pretty alright when we're in it
 if string match -r -q insider "$TERM_PROGRAM_VERSION" && which code-insiders >/dev/null
-    set -gx EDITOR="code-insiders -w"
+    set -gx EDITOR "code-insiders -w"
 else if [ "$TERM_PROGRAM" = vscode ] && which code >/dev/null
     set -gx EDITOR "code -w"
     # use stable while running inside stable
