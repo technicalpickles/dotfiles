@@ -9,18 +9,13 @@ if [[ -f .env ]]; then
   source .env
 fi
 
+
 if [[ -z "${DOTPICKLES_ROLE}" ]]; then
-  while true; do
-    read -p "What role is this machine used for? (work or personal) " DOTPICKLES_ROLE
-    case $DOTPICKLES_ROLE in
-      [Ww]* ) DOTPICKLES_ROLE=work; break;;
-      [Pp]* ) DOTPICKLES_ROLE=personal; break;;
-      * ) echo "Please answer work or personal.";;
-    esac
-    export DOTPICKLES_ROLE
-    echo "export DOTPICKLES_ROLE=${DOTPICKLES_ROLE}" >> .env
-    source .env
-  done
+  if [[ `hostname` = "josh-nichols-*" ]]; then
+    DOTPICKLES_ROLE="work"
+  else
+    DOTPICKLES_ROLE="personal"
+  fi
 fi
 
 echo "role: $DOTPICKLES_ROLE"
