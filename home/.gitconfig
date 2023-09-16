@@ -1,6 +1,6 @@
 [user]
 	name = Josh Nichols
-	email = joshua.nichols@gmail.com
+	email = josh.nichols@gusto.com
 
 [github]
 	user = technicalpickles
@@ -21,11 +21,18 @@
 	protocol = https
 
 [alias]
-	dc = diff --cached
+  ; investigate if have more problem
+  ; commit = !sh -c 'if test -f .git/COMMIT_EDITMSG; then git commit --edit --file=.git/COMMIT_EDITMSG "$@"; else git commit "$@"'
+	ds = diff --staged
 	st = status
 	co = checkout
 	ci = commit
 	di = diff
+  sw = switch
+  rs = restore
+  empty = commit --allow-empty
+
+  main = !git switch main && git pull
 	default-branch = !git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'
 
 	hide = update-index --assume-unchanged
@@ -35,7 +42,8 @@
 	ui = true
 
 [push]
-	default = current
+ 	default = current
+	autoSetupRemote = true
 
 [color "diff-highlight"]
 	oldNormal = red bold
@@ -50,6 +58,16 @@
 	old = red bold
 	new = green bold
 	whitespace = red reverse
+
+[color "status"]
+  ; header = 
+  added = green bold
+  changed = blue bold
+  deleted = red bold strikethrough
+  untracked = magenta bold italic
+  branch = cyan bold italic ul
+  no-branch = white red bold underlined italic
+  unmerged = white red bold ul 
 
 [mergetool]
 	keepTemporaries = false
@@ -66,10 +84,6 @@
 
 [fetch]
 	prune = true
-
-[branch]
-	autosetupmerge = always
-
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
@@ -81,3 +95,17 @@
 	prune = true
 [maintenance]
 	repo = /Users/josh.nichols/workspace/zenpayroll
+	repo = /Users/josh.nichols/workspace/dotfiles
+	repo = /Users/josh.nichols/workspace/pickled-nvim
+[credential]
+	helper = osxkeychain
+[duet "env"]
+	git-author-initials = me
+	git-author-name = Josh Nichols
+	git-author-email = josh.nichols@gusto.com
+	mtime = 1653423628
+	git-committer-initials =
+	git-committer-name =
+	git-committer-email =
+[remote]
+ 	pushdefault = origin

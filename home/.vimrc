@@ -99,6 +99,10 @@
 
 " Section: configuration
 
+if has("gui_running")
+  so ~/.mvimrc
+endif
+
   scriptencoding utf-8
 
   " I like pretty colors

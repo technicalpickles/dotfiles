@@ -106,3 +106,11 @@ vim_plugins() {
   vim +PlugInstall +qall
   echo
 }
+
+# make sure op is logged in
+op_ensure_signed_in() {
+  local op=$(which op)
+  if ! op whoami >/dev/null 2>&1; then
+    op signin
+  fi
+}

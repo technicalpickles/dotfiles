@@ -1,9 +1,8 @@
-jorgebucaran/fisher
-jorgebucaran/nvm.fish
+IlanCosman/tide@v5
 PatrickF1/fzf.fish
+danhper/fish-ssh-agent
+gazorby/fish-abbreviation-tips
 halostatue/fish-direnv
 jethrokuan/z
 jorgebucaran/autopair.fish
-gazorby/fish-abbreviation-tips
-IlanCosman/tide@v5
-danhper/fish-ssh-agent
+jorgebucaran/fisher
