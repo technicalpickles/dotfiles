@@ -5,8 +5,8 @@ else if [ "$TERM_PROGRAM" = vscode ] && which code >/dev/null
     set -gx EDITOR "code -w"
     # use stable while running inside stable
 # we like vim. see https://github.com/technicalpickles/pickled-vim for settings
-else if which mvim >/dev/null
-    set -gx EDITOR "mvim -f"
+else if which -s nvim >/dev/null
+    set -gx EDITOR nvim
 else if which -s vim >/dev/null
     set -gx EDITOR vim
 else if which -s vi >/dev/null

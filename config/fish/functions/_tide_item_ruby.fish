@@ -1,8 +1,16 @@
-# set -U tide_ruby_bg_color CC342D                                                                                                                                                     ─╯
-# set -U tide_ruby_color 000000
-# set -U tide_ruby_icon ''
+# custom ruby item, which isn't hard-coded to chruby
 function _tide_item_ruby
-    if test -e .ruby-version -o -n "$RUBY_VERSION" || test -e .tool-versions && grep -q ruby .tool-versions 2>/dev/null
-      _tide_print_item ruby $tide_ruby_icon' ' (ruby --version | sed -e 's/ruby //' -e 's/p.*$//')
-    end
+  # only show when there's an explicit configuration or environment variable
+  if test -e .ruby-version \
+    -o -n "$RUBY_VERSION" \
+    -o -n "$RBENV_VERSION" \
+    -o -n "$ASDF_RUBY_VERSION" \
+
+    # example output: ruby 3.1.4p223 (2023-03-30 revision 957bb7cb81) [arm64-darwin22]
+    # example output: ruby 3.2.2 (2023-03-30 revision 957bb7cb81) [arm64-darwin22]
+    set ruby_version (ruby --version | sed -e 's/ruby //' -e 's/p.*$//' -e 's/ (.*$//')
+    # re-use chruby so will appear the same for
+    # print item     with this name   and this icon           with this text
+    _tide_print_item chruby           $tide_chruby_icon' '    "$ruby_version"
+  end
 end

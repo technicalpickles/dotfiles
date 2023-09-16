@@ -82,7 +82,6 @@ cask 'obsidian'
 cask 'rescuetime'
 cask 'signal'
 cask 'spotify'
-cask 'viscosity'
 cask 'visual-studio-code'
 cask "hazel"
 
