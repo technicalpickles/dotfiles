@@ -1,0 +1,10 @@
+# https://dandavison.github.io/delta/
+[core]
+    pager = delta --dark
+
+[merge]
+    conflictstyle = diff3
+
+[delta]
+    line-numbers = true
+    hyperlinks = true
