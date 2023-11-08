@@ -17,8 +17,8 @@ if [ (uname) = Darwin ]
   end
 end
 
-if test -d "$HOME/workspace/gdev-shell"; then
-  $HOME/workspace/gdev-shell//gdev-shell/bin/gdev-shell init - fish | source
+if test -d "$HOME/workspace/gdev-shell"
+  $HOME/workspace/gdev-shell/bin/gdev-shell init - fish | source
 end
 
 if test -d "$HOME/Python/3.9/bin"
