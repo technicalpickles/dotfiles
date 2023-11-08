@@ -1,0 +1,2 @@
+settings set interpreter.save-session-on-quit true
+settings set interpreter.save-session-directory ~/.lldblog
