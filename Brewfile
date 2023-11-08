@@ -13,6 +13,8 @@ tap  'tophat/bar'
 brew 'fish'
 brew 'direnv'
 brew 'thefuck'
+brew 'tmux'
+brew 'reattach-to-user-namespace'
 
 # git
 brew 'git-lfs'

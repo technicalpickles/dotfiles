@@ -68,14 +68,16 @@ if [[ -L "${current_file}" ]]; then
 # 		. "${SBP_PATH}/sbp.bash"
 # 	fi
 fi
+
 #### FIG ENV VARIABLES ####
 # Please make sure this block is at the end of this file.
 [ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh
 #### END FIG ENV VARIABLES ####
 
-# export YVM_DIR=/opt/homebrew/opt/yvm
-# [ -r $YVM_DIR/yvm.sh ] && . $YVM_DIR/yvm.sh
+if [[ -f "$HOME/.cargo/env" ]]; then
+  . "$HOME/.cargo/env"
+fi
 
-. "$HOME/.cargo/env"
-
-eval "$(/Users/josh.nichols/workspace/gdev-shell/bin/gdev-shell init - bash)"
+if [[ -d "$HOME/workspace/gdev-shell/" ]]; then
+  eval "$($HOME/workspace/gdev-shell/bin/gdev-shell init - bash)"
+fi
