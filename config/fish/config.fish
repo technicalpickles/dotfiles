@@ -1,7 +1,14 @@
+if string match -q (hostname) "josh-nichols"
+  set DOTPICKLES_ROLE work
+else
+  set DOTPICKLES_ROLE home
+end
+
 if [ (uname) = Darwin ]
   if [ "$DOTPICKLES_ROLE" = "home" ]
-    if test -f  $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
-        source $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.fish
+    set asdf_path (brew --prefix asdf)/libexec/asdf.fish
+    if test -f $asdf_path
+      source $asdf_path
     end
   end
 
@@ -12,10 +19,6 @@ end
 
 if test -d "$HOME/workspace/gdev-shell"; then
   $HOME/workspace/gdev-shell//gdev-shell/bin/gdev-shell init - fish | source
-end
-
-if test -d "$HOME/.cargo/bin"
-  fish_add_path --global "$HOME/.cargo/bin"
 end
 
 if test -d "$HOME/Python/3.9/bin"
@@ -47,14 +50,15 @@ if status is-interactive
       alias vim=nvim
     end
 
-    if command -q vivd
-      set -g LS_COLORS $(vivid generate molokai)
+    if command -q vivid
+      set -g LS_COLORS $(vivid generate one-dark)
     end
 
     if command -q bat
         set -gx MANPAGER "sh -c 'col -bx | bat --language man --plain --paging=always'"
         alias less=bat
     end
+
     if command -q pstree
       # nicer graphics for pstree
       alias pstree="pstree -g 2"
