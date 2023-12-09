@@ -10,3 +10,6 @@ pager:
 aliases:
     co: pr checkout
     default-branch: '!gh api repos/:owner/:repo | jq --raw-output .default_branch'
+    sup: pr checks
+    sw: pr checkout
+version: "1"
