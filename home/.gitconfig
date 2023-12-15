@@ -24,7 +24,6 @@
 
 [core]
 	excludesfile = ~/.gitignore
-	hooksPath = /Users/josh.nichols/.gusto/githooks
 
 [fetch]
   prune = true
