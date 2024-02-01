@@ -5,8 +5,16 @@
 [github]
 	user = technicalpickles
 
+[include]
+  path = ~/.gitconfig.local
+  path = ~/.gitconfig.d/alias
+  path = ~/.gitconfig.d/color
+
 [includeIf "gitdir:~/src/"]
 	path = ~/.gitconfig.d/personal-identity
+
+[includeIf "gitdir:~/github/"]
+  path = ~/.gitconfig.d/personal-identity
 
 [includeIf "gitdir:~/workspace/"]
 	path = ~/.gitconfig.d/work-identity
@@ -17,88 +25,41 @@
 [core]
 	excludesfile = ~/.gitignore
 
-[hub]
-	protocol = https
+[fetch]
+  prune = true
 
-[alias]
-  ; investigate if have more problem
-  ; commit = !sh -c 'if test -f .git/COMMIT_EDITMSG; then git commit --edit --file=.git/COMMIT_EDITMSG "$@"; else git commit "$@"'
-	ds = diff --staged
-	st = status
-	co = checkout
-	ci = commit
-	di = diff
-  sw = switch
-  rs = restore
-  empty = commit --allow-empty
-
-  main = !git switch main && git pull
-	default-branch = !git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'
-
-	hide = update-index --assume-unchanged
-	unhide = update-index --no-assume-unchanged
-
-[color]
-	ui = true
+[pull]
+  rebase = false
 
 [push]
  	default = current
 	autoSetupRemote = true
 
-[color "diff-highlight"]
-	oldNormal = red bold
-	oldHighlight = red bold 52
-	newNormal = green bold
-	newHighlight = green bold 22
-
-[color "diff"]
-	meta = 11
-	frag = magenta bold
-	commit = yellow bold
-	old = red bold
-	new = green bold
-	whitespace = red reverse
-
-[color "status"]
-  ; header = 
-  added = green bold
-  changed = blue bold
-  deleted = red bold strikethrough
-  untracked = magenta bold italic
-  branch = cyan bold italic ul
-  no-branch = white red bold underlined italic
-  unmerged = white red bold ul 
-
 [mergetool]
 	keepTemporaries = false
 	keepBackup = false
 
-[include]
-	path = ~/.gitconfig.local
-
 [init]
 	defaultBranch = main
 
-[pull]
-	rebase = false
-
-[fetch]
-	prune = true
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+
 [commit]
 	verbose = true
+
+[remote]
+  pushdefault = origin
+
 [remote "origin"]
 	prune = true
-[maintenance]
-	repo = /Users/josh.nichols/workspace/zenpayroll
-	repo = /Users/josh.nichols/workspace/dotfiles
-	repo = /Users/josh.nichols/workspace/pickled-nvim
+
 [credential]
 	helper = osxkeychain
+
 [duet "env"]
 	git-author-initials = me
 	git-author-name = Josh Nichols
@@ -107,5 +68,6 @@
 	git-committer-initials =
 	git-committer-name =
 	git-committer-email =
-[remote]
- 	pushdefault = origin
+
+[merge]
+	audoedit = no

@@ -1,0 +1,18 @@
+[alias]
+  ; investigate if have more problem
+  ; commit = !sh -c 'if test -f .git/COMMIT_EDITMSG; then git commit --edit --file=.git/COMMIT_EDITMSG "$@"; else git commit "$@"'
+  ds = diff --staged
+  st = status
+  co = checkout
+  ci = commit
+  di = diff
+  sw = switch
+  rs = restore
+  empty = commit --allow-empty
+
+  main = !git switch main && git pull
+  default-branch = !git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'
+
+  hide = update-index --assume-unchanged
+  unhide = update-index --no-assume-unchanged
+

@@ -21,7 +21,7 @@ fi
 
 if command_available delta; then
   echo "  → enabling delta for pager"
-  git config --file ~/.gitconfig.local core.pager "delta --dark" 
+  git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/delta
 fi
 
 if running_macos; then
