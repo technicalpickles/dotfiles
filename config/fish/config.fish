@@ -1,7 +1,7 @@
 if string match -q (hostname) "josh-nichols"
-  set DOTPICKLES_ROLE work
+  set -gx DOTPICKLES_ROLE work
 else
-  set DOTPICKLES_ROLE home
+  set -gx DOTPICKLES_ROLE home
 end
 
 if [ (uname) = Darwin ]
