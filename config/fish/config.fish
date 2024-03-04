@@ -55,7 +55,7 @@ if status is-interactive
     end
 
     if command -q bat
-        set -gx MANPAGER "sh -c 'col -bx | bat --language man --plain --paging=always'"
+        set -gx MANPAGER "sh -c 'col -bx | bat --language man --style=plain --paging=always'"
         alias less=bat
     end
 
