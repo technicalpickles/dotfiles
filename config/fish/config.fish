@@ -13,7 +13,7 @@ if [ (uname) = Darwin ]
   end
 
   if test -d "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
-    fish_add_path --global --prepend "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
+    fish_add_path --global --prepend --move "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
   end
 end
 
@@ -93,3 +93,5 @@ if test -z "$RBENV" -o -z "$NODENV"
     set -g --prepend PATH "$HOME/.nodenv/shims"
   end
 end
+
+set -g --prepend PATH "$HOME/bin"
