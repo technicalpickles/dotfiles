@@ -4,6 +4,12 @@ else
   set DOTPICKLES_ROLE home
 end
 
+function fish_greeting
+  if test -d ~/workspace/fancy-motd
+    ~/workspace/fancy-motd/motd.sh
+  end
+end
+
 if [ (uname) = Darwin ]
   if [ "$DOTPICKLES_ROLE" = "home" ]
     set asdf_path (brew --prefix asdf)/libexec/asdf.fish
