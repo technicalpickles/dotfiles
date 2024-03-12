@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 set -e
 
+# shellcheck source=./functions.sh
+source ./functions.sh
+
+if ! command_available fortune; then
+  echo "Missing fortune command"
+  exit 1
+fi
+
+if ! command_available strfile; then
+  echo "Missing strfile command"
+  exit 1
+fi
+
 fortunes_dir="$(brew --prefix fortune)/share/games/fortunes/"
 echo "Processing fortunes/*.yaml"
 
@@ -14,5 +27,5 @@ for file in fortunes/*.yaml; do
   # generate the .dat so fortune can access
   strfile -s "$fortune_file"
 
-  paste <(echo "") <(fortune "$fortune_basename" | fold -sw 80)
+  paste <(echo "") <(fortune "$fortune_basename" | fold -w 80)
 done
