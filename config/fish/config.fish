@@ -86,3 +86,5 @@ if test -n "$NODENV"
 end
 
 set -g --prepend PATH "$HOME/bin"
+
+set -gx GIT_MERGE_AUTOEDIT no
