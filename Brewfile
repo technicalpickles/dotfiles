@@ -56,9 +56,8 @@ brew 'wget'
 # programming languages
 # see Brewfile.* for ruby stuff
 brew 'rbspy'
-brew 'nodenv'
-brew 'pyenv'
 brew 'shellcheck'
+brew 'mise'
 
 # benchmarking
 brew "hyperfine"
