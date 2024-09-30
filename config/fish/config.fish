@@ -16,7 +16,24 @@ function fish_greeting
 end
 
 if [ (uname) = Darwin ]
-  if [ "$DOTPICKLES_ROLE" = "home" ]
+  # setup version manager
+  if [ -x "$HOMEBREW_PREFIX/bin/mise" ]
+    # don't try to auto-install, so we things like the tide prompt don't trigger installations
+    set -gx MISE_NOT_FOUND_AUTO_INSTALL false
+
+    # show the ruby installation happening, since it can take awhile
+    set -gx MISE_RUBY_VERBOSE_INSTALL true
+
+    mise activate --shims fish | source
+  else if test -d "$HOME/workspace/gdev-shell"
+    $HOME/workspace/gdev-shell/bin/gdev-shell init - fish | source
+    # if command -q pyenv
+    #   set -Ux PYENV_ROOT $HOME/.pyenv
+    #   set -U fish_user_paths $PYENV_ROOT/bin $fish_user_paths
+    # 
+    #   pyenv init - | source
+    # end
+  else if [ "$DOTPICKLES_ROLE" = "home" ]
     set asdf_path (brew --prefix asdf)/libexec/asdf.fish
     if test -f $asdf_path
       source $asdf_path
@@ -28,20 +45,13 @@ if [ (uname) = Darwin ]
   end
 end
 
-if test -d "$HOME/workspace/gdev-shell"
-  $HOME/workspace/gdev-shell/bin/gdev-shell init - fish | source
-end
-
-if test -d "$HOME/Python/3.9/bin"
-  fish_add_path --global "$HOME/Python/3.9/bin"
-end
-
 # if running in nvim with unception, set the pipe for what neovim-remote will use
 if test -n "$NVIM_UNCEPTION_PIPE_PATH"
   set -g NVIM_LISTEN_ADDRESS "$NVIM_UNCEPTION_PIPE_PATH"
 end
 
-if test -d "$HOME/.cargo/bin"
+
+if test -z "$MISE_SHELL" && test -d "$HOME/.cargo/bin"
   fish_add_path --global --prepend "$HOME/.cargo/bin"
 end
 
@@ -67,7 +77,7 @@ if status is-interactive
 
     if command -q bat
         set -gx MANPAGER "sh -c 'col -bx | bat --language man --style=plain --paging=always'"
-        alias less=bat
+        alias less="bat --style=plain"
     end
 
     if command -q pstree
@@ -77,13 +87,17 @@ if status is-interactive
 end
 
 # fix PATH to make sure ruby and node aren't using system or homebrew ruby
-if test -n "$RBENV"
-  set -g --prepend --move PATH "$HOME/.rbenv/shims"
+if test -n "$RBENV_SHELL"
+  fish_add_path -g --prepend --move PATH "$HOME/.rbenv/shims"
 end
 
-if test -n "$NODENV"
-  set -g --prepend --move PATH "$HOME/.nodenv/shims"
+if test -n "$NODENV_SHELL"
+  fish_add_path -g --prepend --move PATH "$HOME/.nodenv/shims"
 end
+
+# if test -n "$PYENV_ROOT"
+#   fish_add_path -g --prepend --move PATH "$PYENV_ROOT/shims"
+# end
 
 set -g --prepend PATH "$HOME/bin"
 

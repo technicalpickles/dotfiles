@@ -50,7 +50,9 @@ vscode_command() {
 
 find_targets() {
   local directory="$1"
-  find "$directory" -maxdepth 1
+  # only get the top level files/directories
+  # also exclude the directory itself
+  find "$directory" -mindepth -maxdepth 1
 }
 
 link_directory_contents() {

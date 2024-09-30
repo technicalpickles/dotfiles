@@ -21,7 +21,6 @@
 - |-
   "In theory, theory and practice are the same. In practice, they’re not."
   - Yoggi Berra
-
 - |-
   "Beware of bugs in the above code; I have only proved it correct, not tried it."
   - Donald E. Knuth.
@@ -43,12 +42,9 @@
 - |-
   "Debugging is twice as hard as writing the code in the first place. Therefore, if you write the code as cleverly as possible, you are, by definition, not smart enough to debug it."
   - Brian Kernighan
-
 - |
   "I realized that a large part of my life from then on was going to be spent in finding mistakes in my own programs."
   - Maurice Wilkes
-
 - |
   "Talk is cheap. Show me the code."
   - Linus Torvalds
-
