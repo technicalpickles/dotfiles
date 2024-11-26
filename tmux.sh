@@ -8,3 +8,8 @@ if [[ ! -d "$tpm_destination" ]]; then
 fi
 
 "$tpm_destination/bin/install_plugins"
+
+if [[ -n "$TMUX" ]]; then
+    echo "🔳 reloading tmux"
+    tmux source-file ~/.tmux.conf
+fi
