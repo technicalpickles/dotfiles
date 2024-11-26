@@ -52,7 +52,7 @@ find_targets() {
   local directory="$1"
   # only get the top level files/directories
   # also exclude the directory itself
-  find "$directory" -mindepth -maxdepth 1
+  find "$directory" -mindepth 1 -maxdepth 1
 }
 
 link_directory_contents() {
@@ -111,7 +111,10 @@ vim_plugins() {
 
 # make sure op is logged in
 op_ensure_signed_in() {
-  local op=$(which op)
+  if ! which op >/dev/null 2>/dev/null; then
+    brew install 1password-cli
+  fi
+
   if ! op whoami >/dev/null 2>&1; then
     op signin
   fi
