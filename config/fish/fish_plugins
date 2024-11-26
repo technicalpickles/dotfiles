@@ -1,8 +1,6 @@
-IlanCosman/tide@v5
-PatrickF1/fzf.fish
-danhper/fish-ssh-agent
-gazorby/fish-abbreviation-tips
-halostatue/fish-direnv
+jorgebucaran/fisher
+ilancosman/tide@v5
 jethrokuan/z
 jorgebucaran/autopair.fish
-jorgebucaran/fisher
+gazorby/fish-abbreviation-tips
+jtomaszewski/fish-asdf@patch-1
