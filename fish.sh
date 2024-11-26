@@ -3,6 +3,11 @@
 # shellcheck source=./functions.sh
 source ./functions.sh
 
+if ! which fish >/dev/null 2>/dev/null; then
+  echo "missing fish :("
+  exit 1
+fi
+
 echo "🐟 configuring fish"
 fish_path=$(which fish)
 if test -f /etc/shells && ! grep -q "$fish_path" /etc/shells; then
@@ -15,13 +20,12 @@ if running_macos; then
   fi
 fi
 
-if ! fish -c "type fisher >/dev/null"; then
+if ! fish -c "type fisher >/dev/null 2>/dev/null"; then
   echo "installing fisher"
-  fish -c "curl -sL https://git.io/fisher | source && fisher update"
+  fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher"
 fi
 
 plugins=(
-  jorgebucaran/fisher
   IlanCosman/tide@v5
   jethrokuan/z
   jorgebucaran/autopair.fish
