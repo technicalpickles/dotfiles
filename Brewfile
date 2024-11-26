@@ -1,12 +1,6 @@
 # frozen_string_literal: true
-tap 'homebrew/cask'
-tap 'homebrew/core'
 tap 'homebrew/services'
-
-tap 'homebrew/cask-fonts'
 tap 'homebrew/command-not-found'
-tap 'homebrew/cask-drivers'
-
 tap  'tophat/bar'
 
 # core shell environment stuff
@@ -29,11 +23,16 @@ brew 'gnupg'
 brew 'pinentry-mac'
 cask 'gpg-suite'
 
+# nvim
+brew 'nvim'
+brew 'neovide'
+
+# tmux
+
 # general utilities
 brew 'bat'
 brew 'cheat'
 brew 'coreutils'
-brew 'exa'
 brew 'fd'
 brew 'findutils'
 brew 'fzf'
@@ -63,31 +62,18 @@ brew 'mise'
 brew "hyperfine"
 
 # container stuff
-cask 'docker'
 brew "container-diff"
 
 cask 'aerial'
-cask 'alfred' # there is an App store version, but you can't use powerpack with it
 cask 'bartender'
 cask 'cleanshot'
 cask 'dash'
-cask 'evernote'
 cask 'hammerspoon'
-cask 'hook'
+cask 'hookmark'
 cask 'hookshot'
-cask 'iterm2'
-cask 'karabiner-elements'
 cask 'macbreakz'
-cask 'macvim'
 cask 'obsidian'
-cask 'rescuetime'
-cask 'signal'
-cask 'spotify'
-cask 'visual-studio-code'
 cask "hazel"
-
-# drivers
-cask 'steermouse'
 
 # fonts
 cask 'font-fira-code'
