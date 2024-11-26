@@ -9,6 +9,8 @@ echo "🔨 rebuilding ~/.gitconfig.local"
 rm -f ~/.gitconfig.local
 rm -f ~/.gitconfig.d/1password
 
+mkdir -p ~/.gitconfig.d
+
 op_ensure_signed_in
 
 if [ -d ~/workspace ]; then
