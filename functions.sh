@@ -58,7 +58,7 @@ find_targets() {
 link_directory_contents() {
   local directory="$1"
   for linkable in $(find_targets "${directory}"); do
-    if [ "$linkable" = "config" -o "${linkable}" = "home" ]; then
+    if [[ "$linkable" = "config" ]] || [[ "${linkable}" = "home" ]]; then
       continue
     fi
 
@@ -80,12 +80,11 @@ link() {
   local target="$2"
   local display_target="${target/$HOME/~}"
 
-
   if [ ! -L "$target" ]; then
     echo "🔗 $display_target → linking from $linkable"
     ln -Ff -s "$DIR/$linkable" "$target"
   elif [ "$(readlink "$target")" != "${DIR}/${linkable}" ]; then
-    echo "🔗 $display_target → already linked to $(readlink ${target})"
+    echo "🔗 $display_target → already linked to $(readlink "${target}")"
     read -p "Overwrite it to link to ${DIR}/${linkable}? " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -99,7 +98,7 @@ link() {
 
 brew_bundle() {
   echo "🍻 running brew bundle"
-  cat Brewfile Brewfile.${DOTPICKLES_ROLE} 2>/dev/null | brew bundle --file=- | sed 's/^/  → /'
+  cat Brewfile "Brewfile.${DOTPICKLES_ROLE}" 2>/dev/null | brew bundle --file=- | sed 's/^/  → /'
   echo
 }
 

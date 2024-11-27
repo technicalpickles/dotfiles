@@ -40,10 +40,6 @@ echo
 
 ./gitconfig.sh
 
-if fish_available; then
-  ./fish.sh
-fi
-
 if running_macos; then
   load_brew_shellenv
 
@@ -62,6 +58,10 @@ if running_macos; then
   ssh-add --apple-load-keychain
 
   # ./gh-shorthand.sh
+fi
+
+if fish_available; then
+  ./fish.sh
 fi
 
 
