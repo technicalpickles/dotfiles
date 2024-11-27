@@ -15,7 +15,7 @@ if test -f /etc/shells && ! grep -q "$fish_path" /etc/shells; then
 fi
 
 if running_macos; then
-  if ! dscl . -read /Users/$USER UserShell | grep -q "$fish_path"; then
+  if ! dscl . -read "$HOME" UserShell | grep -q "$fish_path"; then
     chsh -s "$fish_path"
   fi
 fi
@@ -46,7 +46,7 @@ fi
 
 echo "previous plugins:"
 if [ -f ~/.config/fish/fish_plugins ]; then
-  cat < ~/.config/fish/fish_plugins
+  cat <~/.config/fish/fish_plugins
 fi
 
 rm -f ~/.config/fish/fish_plugins
@@ -58,6 +58,5 @@ for plugin in "${plugins[@]}"; do
   echo "$plugin"
   fish -c "fisher install $plugin"
 done
-
 
 echo
