@@ -5,4 +5,3 @@ if command -q bat
 
   alias less="bat --style=plain"
 end
-

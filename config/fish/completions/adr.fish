@@ -1,20 +1,20 @@
 function __fish_adr_commands
-	adr --help 2>&1 | sed \
-		# delete up to and including: COMMAND is one of:
-		-e '1,/^COMMAND/d' \
-		# delete "Run 'adr help COMMAND' for help on a specific command." and onwards
-		-e '/Run /,$d' \
-		# remove leading spaces
-		-e 's/^  //'
+  adr --help 2>&1 | sed \
+    # delete up to and including: COMMAND is one of:
+    -e '1,/^COMMAND/d' \
+    # delete "Run 'adr help COMMAND' for help on a specific command." and onwards
+    -e '/Run /,$d' \
+    # remove leading spaces
+    -e 's/^  //'
 end
 
 
 function __fish_adr_numbers
-	adr list | sed \
-		# delete up to last slash, ie doc/adr/
-		-e 's/^.*\///' \
-		# delete after first dash, ie -record-architecture-decisions.md
-		-e 's/-.*//'
+  adr list | sed \
+    # delete up to last slash, ie doc/adr/
+    -e 's/^.*\///' \
+    # delete after first dash, ie -record-architecture-decisions.md
+    -e 's/-.*//'
 end
 
 complete --no-files --command adr --condition "not __fish_seen_subcommand_from (__fish_adr_commands)" -a new -d 'Creates a new, numbered ADR'

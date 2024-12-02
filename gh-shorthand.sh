@@ -34,7 +34,7 @@ EOF
 # SecKeychainSearchCopyNext: The specified item could not be found in the keychain
 token=$(security find-internet-password -a technicalpickles -s github.com -l 'gh-shorthand token' -w)
 if [ -z "$token" ]; then
-	echo "missing Token. Run the following to set: security add-internet-password -a technicalpickles -s github.com -l 'gh-shorthand token' -w"
+  echo "missing Token. Run the following to set: security add-internet-password -a technicalpickles -s github.com -l 'gh-shorthand token' -w"
 fi
 
 echo "token: ${token}" >> ~/.gh-shorthand.yml
