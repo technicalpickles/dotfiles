@@ -125,3 +125,6 @@ config/gh/hosts.yml
 
 # direnv
 .direnv
+
+# php
+vendor/

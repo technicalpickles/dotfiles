@@ -1,0 +1,36 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# Wireshark config files
+[!home/.wireshark/profiles/IP-ID/preferences]
+
+
+# Unix-style newlines with a newline ending every file
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+
+# Shell scripts
+[*.{sh,bash,fish}]
+indent_style = space
+indent_size = 2
+
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Git config files
+[.git{config,modules}]
+indent_style = tab
+indent_size = 4
+
+# Vim files
+[*.vim]
+indent_style = space
+indent_size = 2
+
+
