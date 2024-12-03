@@ -29,7 +29,6 @@ plugins=(
   IlanCosman/tide@v5
   jethrokuan/z
   jorgebucaran/autopair.fish
-  gazorby/fish-abbreviation-tips
 )
 
 if command_available fzf; then
@@ -38,10 +37,6 @@ fi
 
 if command_available direnv; then
   plugins+=(halostatue/fish-direnv)
-fi
-
-if ! [ "$DOTPICKLES_ROLE" = "work" ]; then
-  plugins+=(jtomaszewski/fish-asdf@patch-1)
 fi
 
 echo "previous plugins:"
