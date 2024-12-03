@@ -2,16 +2,15 @@
 
 set -e
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DIR
 
 if [[ -f .env ]]; then
   source .env
 fi
 
-
 if [[ -z "${DOTPICKLES_ROLE}" ]]; then
-  if [[ `hostname` = "josh-nichols-*" ]]; then
+  if [[ $(hostname) =~ ^josh-nichols- ]]; then
     DOTPICKLES_ROLE="work"
   else
     DOTPICKLES_ROLE="personal"
@@ -60,13 +59,10 @@ if running_macos; then
   # ./gh-shorthand.sh
 fi
 
-if fish_available; then
-  ./fish.sh
-fi
-
-
 if ! running_codespaces; then
   ./vim.sh
+  ./tmux.sh
+  ./fish.sh
 fi
 
 echo "✅ Done"
