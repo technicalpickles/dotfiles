@@ -1,0 +1,61 @@
+{
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "printWidth": 80,
+  "endOfLine": "lf",
+  "plugins": ["prettier-plugin-ignored", "prettier-plugin-sh"],
+  "overrides": [
+    {
+      "files": ["*.sh", "*.bash", "bin/prettier"],
+      "options": {
+        "parser": "sh",
+        "tabWidth": 2,
+        "useTabs": false
+      }
+    },
+    {
+      "files": "*.yml",
+      "options": {
+        "tabWidth": 2,
+        "useTabs": false
+      }
+    },
+    {
+      "files": "*.yaml",
+      "options": {
+        "tabWidth": 2,
+        "useTabs": false
+      }
+    },
+    {
+      "files": ".gitconfig",
+      "options": {
+        "tabWidth": 4,
+        "useTabs": true
+      }
+    },
+    {
+      "files": ".gitmodules",
+      "options": {
+        "tabWidth": 4,
+        "useTabs": true
+      }
+    },
+    {
+      "files": "*.vim",
+      "options": {
+        "tabWidth": 2,
+        "useTabs": false
+      }
+    },
+    {
+      "files": [".gitignore", "**/ignore"],
+      "options": {
+        "parser": "ignored"
+      }
+    }
+  ]
+}

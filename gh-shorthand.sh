@@ -5,7 +5,7 @@ rm -f ~/.gh-shorthand.yml
 
 editor=$(which code-insiders || which code)
 
-cat > ~/.gh-shorthand.yml <<EOF
+cat > ~/.gh-shorthand.yml << EOF
 ---
 # The default repository, if none is provided. This can be empty/unset.
 # default_repo:
@@ -28,7 +28,6 @@ editor: "${editor} -n"
 # GitHub API token (requires 'read:org,repo,user' permission)
 # enables live search results and annotations
 EOF
-
 
 # FIXME when empty, this fails and stops the script with:
 # SecKeychainSearchCopyNext: The specified item could not be found in the keychain

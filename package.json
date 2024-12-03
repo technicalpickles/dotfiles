@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "prettier": "^3.4.1",
+    "prettier-plugin-ignored": "^1.0.0",
+    "prettier-plugin-sh": "^0.14.0"
+  }
+}

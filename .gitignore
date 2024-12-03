@@ -128,3 +128,7 @@ config/gh/hosts.yml
 
 # php
 vendor/
+
+# prettier
+.config/prettier/cache.json
+node_modules

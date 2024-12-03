@@ -11,7 +11,7 @@ running_codespaces() {
 }
 
 command_available() {
-  which "$1" >/dev/null 2>&1
+  which "$1" > /dev/null 2>&1
 }
 
 fzf_available() {
@@ -98,7 +98,7 @@ link() {
 
 brew_bundle() {
   echo "🍻 running brew bundle"
-  cat Brewfile "Brewfile.${DOTPICKLES_ROLE}" 2>/dev/null | brew bundle --file=- | sed 's/^/  → /'
+  cat Brewfile "Brewfile.${DOTPICKLES_ROLE}" 2> /dev/null | brew bundle --file=- | sed 's/^/  → /'
   echo
 }
 
@@ -110,11 +110,11 @@ vim_plugins() {
 
 # make sure op is logged in
 op_ensure_signed_in() {
-  if ! which op >/dev/null 2>/dev/null; then
+  if ! which op > /dev/null 2> /dev/null; then
     brew install 1password-cli
   fi
 
-  if ! op whoami >/dev/null 2>&1; then
+  if ! op whoami > /dev/null 2>&1; then
     op signin
   fi
 }

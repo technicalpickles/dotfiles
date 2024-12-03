@@ -1,0 +1,9 @@
+# Git submodules
+home/.hammerspoon/Spoons/ControlEscape.spoon
+vendor/vim-pathogen
+vendor/vim-plug
+vendor/sbp
+config/cheat/cheatsheets/community
+config/cheat/cheatsheets/personal
+
+home/.vim/plugged
