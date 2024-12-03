@@ -13,11 +13,11 @@
 #       run: bundle audit
 #
 pre-commit:
-#   parallel: true
+  #   parallel: true
   commands:
-    editorconfig:
+    prettier:
       stage_fixed: true
-      run: vendor/bin/ec --exclude config/cheat/cheatsheets/community --fix {staged_files}
+      run: npx prettier --ignore-path .prettierignore --ignore-path .gitignore --write {staged_files}
 #     rubocop:
 #       tags: backend style
 #       glob: "*.rb"

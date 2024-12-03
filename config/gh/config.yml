@@ -8,8 +8,8 @@ prompt: enabled
 pager:
 # Aliases allow you to create nicknames for gh commands
 aliases:
-    co: pr checkout
-    default-branch: '!gh api repos/:owner/:repo | jq --raw-output .default_branch'
-    sup: pr checks
-    sw: pr checkout
-version: "1"
+  co: pr checkout
+  default-branch: '!gh api repos/:owner/:repo | jq --raw-output .default_branch'
+  sup: pr checks
+  sw: pr checkout
+version: '1'
