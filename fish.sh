@@ -3,7 +3,7 @@
 # shellcheck source=./functions.sh
 source ./functions.sh
 
-if ! which fish >/dev/null 2>/dev/null; then
+if ! which fish > /dev/null 2> /dev/null; then
   echo "missing fish :("
   exit 1
 fi
@@ -41,7 +41,7 @@ fi
 
 echo "previous plugins:"
 if [ -f ~/.config/fish/fish_plugins ]; then
-  cat <~/.config/fish/fish_plugins
+  cat < ~/.config/fish/fish_plugins
 fi
 
 rm -f ~/.config/fish/fish_plugins

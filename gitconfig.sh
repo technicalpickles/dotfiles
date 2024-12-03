@@ -41,7 +41,7 @@ if running_macos; then
     git config --file ~/.gitconfig.d/1password gpg.ssh.program "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
     git config --file ~/.gitconfig.d/1password commit.gpgsign true
 
-    signing_key=$(op item list  --tags 'ssh signing','work' --format=json | op item get - --fields 'public key')
+    signing_key=$(op item list --tags 'ssh signing','work' --format=json | op item get - --fields 'public key')
     if [[ -n "$signing_key" ]]; then
       git config --file ~/.gitconfig.d/1password user.signingkey "$signing_key"
     else

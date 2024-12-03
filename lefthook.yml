@@ -17,7 +17,7 @@ pre-commit:
   commands:
     prettier:
       stage_fixed: true
-      run: npx prettier --ignore-path .prettierignore --ignore-path .gitignore --write {staged_files}
+      run: bin/prettier --write {staged_files}
 #     rubocop:
 #       tags: backend style
 #       glob: "*.rb"
