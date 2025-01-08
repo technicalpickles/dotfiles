@@ -14,3 +14,4 @@ config/fish/fish_plugins
 
 # stuff without prettier support
 *.fish
+.editorconfig
