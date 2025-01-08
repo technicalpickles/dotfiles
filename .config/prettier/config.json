@@ -6,8 +6,18 @@
   "trailingComma": "es5",
   "printWidth": 80,
   "endOfLine": "lf",
-  "plugins": ["prettier-plugin-ignored", "prettier-plugin-sh"],
+  "plugins": [
+    "prettier-plugin-ignored",
+    "prettier-plugin-sh",
+    "prettier-plugin-toml"
+  ],
   "overrides": [
+    {
+      "files": "*.toml",
+      "options": {
+        "parser": "toml"
+      }
+    },
     {
       "files": ["*.sh", "*.bash", "bin/prettier"],
       "options": {
