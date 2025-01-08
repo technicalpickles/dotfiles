@@ -63,6 +63,7 @@ if ! running_codespaces; then
   ./vim.sh
   ./tmux.sh
   ./fish.sh
+  ./bash.sh
 fi
 
 echo "✅ Done"
