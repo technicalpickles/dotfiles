@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+if [[ -f ~/.bashrc ]]; then
+  source ~/.bashrc
+fi
+
 # make sure to set EDITOR so git, and other things know what to open
 # vscode is pretty alright when we're in it
 if [[ "$TERM_PROGRAM_VERSION" =~ insider ]] && which code-insiders > /dev/null; then
@@ -42,19 +46,9 @@ export HISTFILESIZE=1000000000
 
 # fzf bindings
 # created with $(brew --prefix)/opt/fzf/install
-
 if [[ -f ~/.fzf.bash ]]; then
   # shellcheck disable=SC1091
   source "$HOME/.fzf.bash"
-fi
-
-which rbenv > /dev/null 2>&1 && eval "$(rbenv init -)"
-which nodenv > /dev/null 2>&1 && eval "$(nodenv init -)"
-
-if which brew > /dev/null 2>&1; then
-  BREW_CELLAR=$(brew --cellar)
-  BREW_PREFIX=$(brew --prefix)
-  export BREW_CELLAR BREW_PREFIX
 fi
 
 current_file="${BASH_SOURCE[0]}"
@@ -70,21 +64,30 @@ if [[ -L "${current_file}" ]]; then
 # 	fi
 fi
 
-if [[ -f "$HOME/.cargo/env" ]]; then
-  # shellcheck disable=SC1091
-  . "$HOME/.cargo/env"
-fi
-
-if [[ -d "$HOME/workspace/gdev-shell/" ]]; then
-  eval "$("$HOME/workspace/gdev-shell/bin/gdev-shell" init - bash)"
-fi
-
-if [[ -f "$HOME/.gusto/init.sh" ]]; then
-  # shellcheck disable=SC1091
-  source "$HOME/.gusto/init.sh"
-fi
-
 lm_studio_path="$HOME/.cache/lm-studio/bin"
 if [[ -d "$lm_studio_path" ]]; then
   export PATH="$PATH:$lm_studio_path"
+fi
+
+if [[ -f ~/.gusto/init.sh ]]; then
+  # shellcheck disable=SC1091
+  source ~/.gusto/init.sh
+else
+  if [[ -f "$HOME/.cargo/env" ]]; then
+    # shellcheck disable=SC1091
+    . "$HOME/.cargo/env"
+  fi
+
+  which rbenv > /dev/null 2>&1 && eval "$(rbenv init -)"
+  which nodenv > /dev/null 2>&1 && eval "$(nodenv init -)"
+
+  if which brew > /dev/null 2>&1; then
+    BREW_CELLAR=$(brew --cellar)
+    BREW_PREFIX=$(brew --prefix)
+    export BREW_CELLAR BREW_PREFIX
+  fi
+fi
+
+if [[ $- == *i* ]]; then
+  welcome2u
 fi
