@@ -6,4 +6,11 @@ vendor/sbp
 config/cheat/cheatsheets/community
 config/cheat/cheatsheets/personal
 
+# automatically pulled
 home/.vim/plugged
+
+# stuff that doesn't need formatting
+config/fish/fish_plugins
+
+# stuff without prettier support
+*.fish
