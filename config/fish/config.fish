@@ -7,7 +7,6 @@ end
 if test -f  ~/.gusto/init.fish
   source ~/.gusto/init.fish
 else
-  echo "using default init"
   if test -z "$MISE_SHELL" && test -d "$HOME/.cargo/bin"
       fish_add_path --global --prepend "$HOME/.cargo/bin"
   end
