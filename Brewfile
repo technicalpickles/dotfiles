@@ -17,17 +17,9 @@ brew 'git-delta'
 brew 'gh'
 brew 'git-extras'
 
-# gpg
-brew 'gpg2'
-brew 'gnupg'
-brew 'pinentry-mac'
-cask 'gpg-suite'
-
 # nvim
 brew 'nvim'
 brew 'neovide'
-
-# tmux
 
 # general utilities
 brew 'bat'
