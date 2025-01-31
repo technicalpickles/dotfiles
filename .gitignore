@@ -1,3 +1,6 @@
+# doesn't really track versions, so ignore it
+Brewfile.lock.json
+
 .venv
 __pycache__
 home/.wireshark/**/recent
