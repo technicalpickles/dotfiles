@@ -30,7 +30,6 @@ pager: less -FRX
 # commands. So, if you want to view the 'tar' cheatsheet that is tagged as
 # 'community' rather than your own, you can use: cheat tar -t community
 cheatpaths:
-
   # Paths that come earlier are considered to be the most "global", and will
   # thus be overridden by more local cheatsheets. That being the case, you
   # should probably list community cheatsheets first.
@@ -48,14 +47,14 @@ cheatpaths:
   # you downloaded the community cheatsheets.
   - name: community
     path: ~/.config/cheat/cheatsheets/community
-    tags: [ community ]
+    tags: [community]
     readonly: true
 
   # If you have personalized cheatsheets, list them last. They will take
   # precedence over the more global cheatsheets.
   - name: personal
     path: ~/.config/cheat/cheatsheets/personal
-    tags: [ personal ]
+    tags: [personal]
     readonly: false
 
   # While it requires no configuration here, it's also worth noting that

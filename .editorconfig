@@ -1,0 +1,43 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# note: we use prettier, which will use the indentation settings, so we don't need to include those in its config
+
+# top-most EditorConfig file
+root = true
+
+# Wireshark config files
+[!home/.wireshark/profiles/IP-ID/preferences]
+
+
+# Unix-style newlines with a newline ending every file
+[*]
+# Non-configurable Prettier behaviors
+insert_final_newline = true
+charset = utf-8
+# Prettier Behaviors
+end_of_line = lf
+trim_trailing_whitespace = true
+max_line_length = 80
+indent_size = 2
+indent_style = space
+
+# Shell scripts
+[{*.{sh,bash,fish},bin/prettier}]
+indent_style = space
+indent_size = 2
+
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Git config files
+[.git{config,modules}]
+indent_style = tab
+indent_size = 4
+
+# Vim files
+[*.vim]
+indent_style = space
+indent_size = 2
+
+

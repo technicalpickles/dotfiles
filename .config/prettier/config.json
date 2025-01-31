@@ -1,0 +1,30 @@
+{
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "plugins": [
+    "prettier-plugin-ignored",
+    "prettier-plugin-sh",
+    "prettier-plugin-toml"
+  ],
+  "overrides": [
+    {
+      "files": "*.toml",
+      "options": {
+        "parser": "toml"
+      }
+    },
+    {
+      "files": ["*.sh", "*.bash", "bin/prettier"],
+      "options": {
+        "parser": "sh"
+      }
+    },
+    {
+      "files": [".gitignore", "**/ignore"],
+      "options": {
+        "parser": "ignored"
+      }
+    }
+  ]
+}

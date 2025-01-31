@@ -1,37 +1,36 @@
-if string match -q (hostname) "josh-nichols"
-  set -gx DOTPICKLES_ROLE work
+if string match --quiet --regex '^josh-nichols-' (hostname)
+    set -gx DOTPICKLES_ROLE work
 else
-  set -gx DOTPICKLES_ROLE home
+    set -gx DOTPICKLES_ROLE home
 end
 
-if [ (uname) = Darwin ]
-  if [ "$DOTPICKLES_ROLE" = "home" ]
-    set asdf_path (brew --prefix asdf)/libexec/asdf.fish
-    if test -f $asdf_path
-      source $asdf_path
+if test -f  ~/.gusto/init.fish
+  source ~/.gusto/init.fish
+else
+  if test -z "$MISE_SHELL" && test -d "$HOME/.cargo/bin"
+      fish_add_path --global --prepend "$HOME/.cargo/bin"
+  end
+
+  if [ (uname) = Darwin ]
+    # setup version manager
+    if [ -x "$HOMEBREW_PREFIX/bin/mise" ]
+      # don't try to auto-install, so we things like the tide prompt don't trigger installations
+      set -gx MISE_NOT_FOUND_AUTO_INSTALL false
+
+      # show the ruby installation happening, since it can take awhile
+      set -gx MISE_RUBY_VERBOSE_INSTALL true
+
+      set -gx MISE_NODE_COREPACK true
+
+      mise activate --shims fish | source
     end
   end
-
-  if test -d "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
-    fish_add_path --global --prepend "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
-  end
 end
 
-if test -d "$HOME/workspace/gdev-shell"
-  $HOME/workspace/gdev-shell/bin/gdev-shell init - fish | source
-end
-
-if test -d "$HOME/Python/3.9/bin"
-  fish_add_path --global "$HOME/Python/3.9/bin"
-end
-
-# if running in nvim with unception, set the pipe for what neovim-remote will use
-if test -n "$NVIM_UNCEPTION_PIPE_PATH"
-  set -g NVIM_LISTEN_ADDRESS "$NVIM_UNCEPTION_PIPE_PATH"
-end
-
-if test -d "$HOME/.cargo/bin"
-  fish_add_path --global --prepend "$HOME/.cargo/bin"
+if [ -n "$HOMEBREW_PREFIX" ]
+    if test -d "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
+        fish_add_path --global --prepend --move "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
+    end
 end
 
 if status is-interactive
@@ -47,49 +46,30 @@ if status is-interactive
     end
 
     if command -q nvim
-      alias vim=nvim
+        alias vim=nvim
     end
 
     if command -q vivid
-      set -g LS_COLORS $(vivid generate one-dark)
+        set -g LS_COLORS $(vivid generate one-dark)
     end
 
     if command -q bat
-        set -gx MANPAGER "sh -c 'col -bx | bat --language man --plain --paging=always'"
-        alias less=bat
+        set -gx MANPAGER "sh -c 'col -bx | bat --language man --style=plain --paging=always'"
+        alias less="bat --style=plain"
     end
 
     if command -q pstree
-      # nicer graphics for pstree
-      alias pstree="pstree -g 2"
+        # nicer graphics for pstree
+        alias pstree="pstree -g 2"
     end
 end
 
-# fix PATH to make sure ruby and node aren't using system ruby
-if test -z "$RBENV" -o -z "$NODENV"
-  for i in (seq (count $PATH))
-    if test $PATH[$i] = "$HOME/.rbenv/shims"
-      set rbenv_i $i
-    end
+set -g --prepend PATH "$HOME/bin"
 
-    if test $PATH[$i] = "$HOME/.nodenv/shims"
-      set nodenv_i $i
-    end
+set -gx GIT_MERGE_AUTOEDIT no
 
-    if test $PATH[$i] = "$HOMEBREW_PREFIX/bin"
-      set homebrew_i $i
-    end
-
-    if test $PATH[$i] = "/usr/bin"
-      set bin_i $i
-    end
-  end
-
-  if test -z "$bin_i" && test "$bin_i" -lt "$rbenv_i" -o "$homebrew_i" -lt "$rbenv_i"
-    set -g --prepend PATH "$HOME/.rbenv/shims"
-  end
-
-  if test -z "$bin_i" && test "$bin_i" -lt $nodenv_i -o "$homebrew_i" -lt "$nodenv_i"
-    set -g --prepend PATH "$HOME/.nodenv/shims"
-  end
+# Added by LM Studio CLI (lms)
+set lm_studio_path "$HOME/.cache/lm-studio/bin"
+if test -d "$lm_studio"
+    set -gx PATH $PATH "$lm_studio_path"
 end

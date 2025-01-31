@@ -11,7 +11,7 @@ running_codespaces() {
 }
 
 command_available() {
-  which "$1" >/dev/null 2>&1
+  which "$1" > /dev/null 2>&1
 }
 
 fzf_available() {
@@ -50,13 +50,15 @@ vscode_command() {
 
 find_targets() {
   local directory="$1"
-  find "$directory" -maxdepth 1
+  # only get the top level files/directories
+  # also exclude the directory itself
+  find "$directory" -mindepth 1 -maxdepth 1
 }
 
 link_directory_contents() {
   local directory="$1"
   for linkable in $(find_targets "${directory}"); do
-    if [ "$linkable" = "config" -o "${linkable}" = "home" ]; then
+    if [[ "$linkable" = "config" ]] || [[ "${linkable}" = "home" ]]; then
       continue
     fi
 
@@ -78,12 +80,11 @@ link() {
   local target="$2"
   local display_target="${target/$HOME/~}"
 
-
   if [ ! -L "$target" ]; then
     echo "🔗 $display_target → linking from $linkable"
     ln -Ff -s "$DIR/$linkable" "$target"
   elif [ "$(readlink "$target")" != "${DIR}/${linkable}" ]; then
-    echo "🔗 $display_target → already linked to $(readlink ${target})"
+    echo "🔗 $display_target → already linked to $(readlink "${target}")"
     read -p "Overwrite it to link to ${DIR}/${linkable}? " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -97,7 +98,7 @@ link() {
 
 brew_bundle() {
   echo "🍻 running brew bundle"
-  cat Brewfile Brewfile.${DOTPICKLES_ROLE} 2>/dev/null | brew bundle --file=- | sed 's/^/  → /'
+  cat Brewfile "Brewfile.${DOTPICKLES_ROLE}" 2> /dev/null | brew bundle --file=- | sed 's/^/  → /'
   echo
 }
 
@@ -109,8 +110,11 @@ vim_plugins() {
 
 # make sure op is logged in
 op_ensure_signed_in() {
-  local op=$(which op)
-  if ! op whoami >/dev/null 2>&1; then
+  if ! which op > /dev/null 2> /dev/null; then
+    brew install 1password-cli
+  fi
+
+  if ! op whoami > /dev/null 2>&1; then
     op signin
   fi
 }
