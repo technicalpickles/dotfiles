@@ -514,9 +514,7 @@
           }
         },
         "options": {
-          "args": [
-            "with-pygtk"
-          ]
+          "args": ["with-pygtk"]
         }
       },
       "rdesktop": {

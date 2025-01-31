@@ -12,8 +12,6 @@ fzf comes with its own Fish extension: https://github.com/junegunn/fzf/blob/mast
 
 [fzf.fish](https://github.com/PatrickF1/fzf.fish) is a plugin to "Augment your Fish command line with mnemonic key bindings to efficiently find what you need using fzf."
 
-
-
 ## Decision
 
 Switch to fzf.fish

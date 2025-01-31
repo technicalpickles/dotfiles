@@ -10,6 +10,9 @@
   rs = restore
   empty = commit --allow-empty
 
+  fco = !git switch $(git fuzzy branch)
+  fsw = !git switch $(git fuzzy branch)
+
   main = !git switch main && git pull
   default-branch = !git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'
 
