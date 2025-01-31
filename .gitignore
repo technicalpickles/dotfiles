@@ -112,6 +112,10 @@ config/fish/functions/__abbr_tips_bind_space.fish
 config/fish/functions/__abbr_tips_init.fish
 config/fish/conf.d/abbr_tips.fish
 
+config/fish/conf.d/fish-ssh-agent.fish
+config/fish/functions/__ssh_agent_is_started.fish
+config/fish/functions/__ssh_agent_start.fish
+
 # global variables, I'm worried this may end up with sensitive info
 config/fish/fish_variables
 
