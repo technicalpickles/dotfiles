@@ -1,4 +1,10 @@
 function fish_greeting
+  # don't greet if we're in the cursor agent
+  # TODO: add logic to welcome2u to be able to disable the greeting via env var, and set that when CURSOR_AGENT is 1
+  if [ "$CURSOR_AGENT" = "1" ]
+    return
+  end
+
   if type welcome2u >/dev/null 2>&1
     welcome2u
   else if test -d ~/workspace/fancy-motd
