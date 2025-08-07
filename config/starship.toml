@@ -1,0 +1,137 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# General
+add_newline = true # Tide’s tide_prompt_add_newline_before=true
+
+##############################################################################
+# Layout – mirrors: os pwd git  ⏎  prompt char  |  status time etc. on right
+##############################################################################
+format = """
+$os\
+[](fg:os_bg bg:dir_bg)$directory\
+[](fg:dir_bg bg:git_bg)$git_branch$git_status\
+[](fg:git_bg bg:none)\
+$line_break$character\
+"""
+
+right_format = """
+$status $cmd_duration $context $jobs $direnv $bun $time
+"""
+
+palette = 'tide'
+
+##############################################################################
+# Module-by-module overrides translated from your Tide vars
+##############################################################################
+
+# Operating-system segment
+[os] # tide_os_*
+disabled = false
+style = "fg:os_fg bg:os_bg"
+format = "[ ](bg:os_bg)[$symbol ]($style)"
+
+[os.symbols]
+Macos = "" # tide_os_icon
+
+[time]
+disabled = false
+format = "[$time]($style)"
+style = "fg:cmd_fg"
+time_format = "%T"         # 24-hour HH:MM:SS
+
+# Current directory
+[directory]
+format = "[ $path ]($style)"
+style = "fg:dir_fg bg:dir_bg"
+truncation_length = 3         # Tide default
+truncation_symbol = "…/"
+home_symbol = ""             # tide_pwd_icon_home
+
+# Git
+[git_branch]
+symbol = " "                       # tide_git_icon
+style = "fg:git_fg bg:git_bg"
+format = "[$symbol$branch]($style)"
+
+[git_status]
+style = "fg:git_fg bg:git_bg"
+format = '([$all_status$ahead_behind]($style))'
+
+# Prompt symbol
+[character] # tide_character_*
+success_symbol = "[❯](fg:char_ok)"
+error_symbol = "[❯](fg:char_fail)"
+
+# Exit status
+# [status]                     # tide_status_*
+# disabled        = false
+# style           = "fg:status_fg bg:status_bg"
+# symbol          = "[✘](fg:status_fail_fg bg:status_fail_bg)"
+# success_symbol  = "[✔](fg:status_fg bg:status_bg)"
+# format          = '[$symbol]($style)'
+
+# Command duration (>3 s like Tide’s threshold)
+[cmd_duration]
+min_time = 3_000                 # tide_cmd_duration_threshold
+style = "fg:cmd_fg bg:cmd_bg"
+show_milliseconds = false
+format = '[ $duration]($style)'
+
+# Background tasks
+[jobs]
+style = "fg:jobs_fg bg:jobs_bg"
+symbol = ""
+number_threshold = 1000         # tide_jobs_number_threshold
+
+# direnv
+[direnv]
+style = "fg:direnv_fg bg:direnv_bg"
+symbol = "▼"
+
+# Bun runtime
+[bun]
+style = "fg:bun_fg bg:bun_bg"
+symbol = "󰳓"
+
+# SSH / root context (Tide 'context')
+[username]
+style_root = "fg:context_root fg"
+style_user = "fg:context_fg"
+disabled = false
+show_always = false               # tide_context_always_display=false
+[hostname]
+style = "fg:context_fg"
+ssh_only = true
+trim_at = "."
+##############################################################################
+# Tide colour palette – each name is reused above
+##############################################################################
+[palettes.tide]
+os_bg = "#333333" # tide_os_bg_color
+os_fg = "#D6D6D6" # tide_os_color
+
+dir_bg = "#3465A4" # tide_pwd_bg_color
+dir_fg = "#E4E4E4" # tide_pwd_color_dirs
+
+git_bg = "#4E9A06" # tide_git_bg_color
+git_fg = "#000000" # tide_git_color_branch
+
+cmd_bg = "#C4A000" # tide_cmd_duration_bg_color
+cmd_fg = "#000000" # tide_cmd_duration_color
+
+char_ok = "#5FD700"   # tide_character_color
+char_fail = "#FF0000" # tide_character_color_failure
+
+status_bg = "#2E3436"      # tide_status_bg_color
+status_fg = "#4E9A06"      # tide_status_color
+status_fail_bg = "#CC0000" # tide_status_bg_color_failure
+status_fail_fg = "#FFFF00" # tide_status_color_failure
+
+jobs_bg = "#444444" # tide_jobs_bg_color
+jobs_fg = "#4E9A06" # tide_jobs_color
+
+direnv_bg = "#D7AF00" # tide_direnv_bg_color
+direnv_fg = "#000000" # tide_direnv_color
+
+bun_bg = "#FBF0DF" # tide_bun_bg_color
+bun_fg = "#14151A" # tide_bun_color
