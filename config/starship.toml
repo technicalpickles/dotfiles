@@ -1,137 +1,227 @@
-"$schema" = 'https://starship.rs/config-schema.json'
+# add_newline = true
 
-# General
-add_newline = true # Tide’s tide_prompt_add_newline_before=true
+# format = """
+# $hostname\
+# $shlvl\
+# $directory\
+# $vcsh\
+# $fossil_branch\
+# $fossil_metrics\
+# $git_branch\
+# $git_commit\
+# $git_state\
+# $git_metrics\
+# $git_status\
+# $hg_branch\
+# $crystal\
+# $custom\
+# $sudo\
+# $line_break\
+# $jobs\
+# $time\
+# $status\
+# $os\
+# $container\
+# $netns\
+# $shell\
+# $character"""
 
-##############################################################################
-# Layout – mirrors: os pwd git  ⏎  prompt char  |  status time etc. on right
-##############################################################################
-format = """
-$os\
-[](fg:os_bg bg:dir_bg)$directory\
-[](fg:dir_bg bg:git_bg)$git_branch$git_status\
-[](fg:git_bg bg:none)\
-$line_break$character\
-"""
+# right_format = "$all"
 
-right_format = """
-$status $cmd_duration $context $jobs $direnv $bun $time
-"""
+[aws]
+format = '\[[$symbol($profile)(\($region\))(\[$duration\])]($style)\]'
 
-palette = 'tide'
+[bun]
+format = '\[[$symbol($version)]($style)\]'
 
-##############################################################################
-# Module-by-module overrides translated from your Tide vars
-##############################################################################
+[c]
+format = '\[[$symbol($version(-$name))]($style)\]'
 
-# Operating-system segment
-[os] # tide_os_*
-disabled = false
-style = "fg:os_fg bg:os_bg"
-format = "[ ](bg:os_bg)[$symbol ]($style)"
+[cpp]
+format = '\[[$symbol($version(-$name))]($style)\]'
 
-[os.symbols]
-Macos = "" # tide_os_icon
+[cmake]
+format = '\[[$symbol($version)]($style)\]'
 
-[time]
-disabled = false
-format = "[$time]($style)"
-style = "fg:cmd_fg"
-time_format = "%T"         # 24-hour HH:MM:SS
+[cmd_duration]
+format = '\[[⏱ $duration]($style)\]'
 
-# Current directory
-[directory]
-format = "[ $path ]($style)"
-style = "fg:dir_fg bg:dir_bg"
-truncation_length = 3         # Tide default
-truncation_symbol = "…/"
-home_symbol = ""             # tide_pwd_icon_home
+[cobol]
+format = '\[[$symbol($version)]($style)\]'
 
-# Git
+[conda]
+format = '\[[$symbol$environment]($style)\]'
+
+[crystal]
+format = '\[[$symbol($version)]($style)\]'
+
+[daml]
+format = '\[[$symbol($version)]($style)\]'
+
+[dart]
+format = '\[[$symbol($version)]($style)\]'
+
+[deno]
+format = '\[[$symbol($version)]($style)\]'
+
+[docker_context]
+format = '\[[$symbol$context]($style)\]'
+
+[dotnet]
+format = '\[[$symbol($version)(🎯 $tfm)]($style)\]'
+
+[elixir]
+format = '\[[$symbol($version \(OTP $otp_version\))]($style)\]'
+
+[elm]
+format = '\[[$symbol($version)]($style)\]'
+
+[erlang]
+format = '\[[$symbol($version)]($style)\]'
+
+[fennel]
+format = '\[[$symbol($version)]($style)\]'
+
+[fossil_branch]
+format = '\[[$symbol$branch]($style)\]'
+
+[gcloud]
+format = '\[[$symbol$account(@$domain)(\($region\))]($style)\]'
+
 [git_branch]
-symbol = " "                       # tide_git_icon
-style = "fg:git_fg bg:git_bg"
-format = "[$symbol$branch]($style)"
+format = '\[[$symbol$branch]($style)\]'
 
 [git_status]
-style = "fg:git_fg bg:git_bg"
-format = '([$all_status$ahead_behind]($style))'
+format = '([\[$all_status$ahead_behind\]]($style))'
 
-# Prompt symbol
-[character] # tide_character_*
-success_symbol = "[❯](fg:char_ok)"
-error_symbol = "[❯](fg:char_fail)"
+[golang]
+format = '\[[$symbol($version)]($style)\]'
 
-# Exit status
-# [status]                     # tide_status_*
-# disabled        = false
-# style           = "fg:status_fg bg:status_bg"
-# symbol          = "[✘](fg:status_fail_fg bg:status_fail_bg)"
-# success_symbol  = "[✔](fg:status_fg bg:status_bg)"
-# format          = '[$symbol]($style)'
+[gradle]
+format = '\[[$symbol($version)]($style)\]'
 
-# Command duration (>3 s like Tide’s threshold)
-[cmd_duration]
-min_time = 3_000                 # tide_cmd_duration_threshold
-style = "fg:cmd_fg bg:cmd_bg"
-show_milliseconds = false
-format = '[ $duration]($style)'
+[guix_shell]
+format = '\[[$symbol]($style)\]'
 
-# Background tasks
-[jobs]
-style = "fg:jobs_fg bg:jobs_bg"
-symbol = ""
-number_threshold = 1000         # tide_jobs_number_threshold
+[haskell]
+format = '\[[$symbol($version)]($style)\]'
 
-# direnv
-[direnv]
-style = "fg:direnv_fg bg:direnv_bg"
-symbol = "▼"
+[haxe]
+format = '\[[$symbol($version)]($style)\]'
 
-# Bun runtime
-[bun]
-style = "fg:bun_fg bg:bun_bg"
-symbol = "󰳓"
+[helm]
+format = '\[[$symbol($version)]($style)\]'
 
-# SSH / root context (Tide 'context')
+[hg_branch]
+format = '\[[$symbol$branch]($style)\]'
+
+[java]
+format = '\[[$symbol($version)]($style)\]'
+
+[julia]
+format = '\[[$symbol($version)]($style)\]'
+
+[kotlin]
+format = '\[[$symbol($version)]($style)\]'
+
+[kubernetes]
+format = '\[[$symbol$context( \($namespace\))]($style)\]'
+
+[lua]
+format = '\[[$symbol($version)]($style)\]'
+
+[memory_usage]
+format = '\[$symbol[$ram( | $swap)]($style)\]'
+
+[meson]
+format = '\[[$symbol$project]($style)\]'
+
+[nim]
+format = '\[[$symbol($version)]($style)\]'
+
+[nix_shell]
+format = '\[[$symbol$state( \($name\))]($style)\]'
+
+[nodejs]
+format = '\[[$symbol($version)]($style)\]'
+
+[ocaml]
+format = '\[[$symbol($version)(\($switch_indicator$switch_name\))]($style)\]'
+
+[opa]
+format = '\[[$symbol($version)]($style)\]'
+
+[openstack]
+format = '\[[$symbol$cloud(\($project\))]($style)\]'
+
+[os]
+format = '\[[$symbol]($style)\]'
+
+[package]
+format = '\[[$symbol$version]($style)\]'
+
+[perl]
+format = '\[[$symbol($version)]($style)\]'
+
+[php]
+format = '\[[$symbol($version)]($style)\]'
+
+[pijul_channel]
+format = '\[[$symbol$channel]($style)\]'
+
+[pixi]
+format = '\[[$symbol$version( $environment)]($style)\]'
+
+[pulumi]
+format = '\[[$symbol$stack]($style)\]'
+
+[purescript]
+format = '\[[$symbol($version)]($style)\]'
+
+[python]
+format = '\[[${symbol}${pyenv_prefix}(${version})(\($virtualenv\))]($style)\]'
+
+[raku]
+format = '\[[$symbol($version-$vm_version)]($style)\]'
+
+[red]
+format = '\[[$symbol($version)]($style)\]'
+
+[ruby]
+format = '\[[$symbol($version)]($style)\]'
+
+[rust]
+format = '\[[$symbol($version)]($style)\]'
+
+[scala]
+format = '\[[$symbol($version)]($style)\]'
+
+[spack]
+format = '\[[$symbol$environment]($style)\]'
+
+[sudo]
+format = '\[[as $symbol]($style)\]'
+
+[swift]
+format = '\[[$symbol($version)]($style)\]'
+
+[terraform]
+format = '\[[$symbol$workspace]($style)\]'
+
+[time]
+format = '\[[$time]($style)\]'
+
 [username]
-style_root = "fg:context_root fg"
-style_user = "fg:context_fg"
-disabled = false
-show_always = false               # tide_context_always_display=false
-[hostname]
-style = "fg:context_fg"
-ssh_only = true
-trim_at = "."
-##############################################################################
-# Tide colour palette – each name is reused above
-##############################################################################
-[palettes.tide]
-os_bg = "#333333" # tide_os_bg_color
-os_fg = "#D6D6D6" # tide_os_color
+format = '\[[$user]($style)\]'
 
-dir_bg = "#3465A4" # tide_pwd_bg_color
-dir_fg = "#E4E4E4" # tide_pwd_color_dirs
+[vagrant]
+format = '\[[$symbol($version)]($style)\]'
 
-git_bg = "#4E9A06" # tide_git_bg_color
-git_fg = "#000000" # tide_git_color_branch
+[vlang]
+format = '\[[$symbol($version)]($style)\]'
 
-cmd_bg = "#C4A000" # tide_cmd_duration_bg_color
-cmd_fg = "#000000" # tide_cmd_duration_color
+[zig]
+format = '\[[$symbol($version)]($style)\]'
 
-char_ok = "#5FD700"   # tide_character_color
-char_fail = "#FF0000" # tide_character_color_failure
-
-status_bg = "#2E3436"      # tide_status_bg_color
-status_fg = "#4E9A06"      # tide_status_color
-status_fail_bg = "#CC0000" # tide_status_bg_color_failure
-status_fail_fg = "#FFFF00" # tide_status_color_failure
-
-jobs_bg = "#444444" # tide_jobs_bg_color
-jobs_fg = "#4E9A06" # tide_jobs_color
-
-direnv_bg = "#D7AF00" # tide_direnv_bg_color
-direnv_fg = "#000000" # tide_direnv_color
-
-bun_bg = "#FBF0DF" # tide_bun_bg_color
-bun_fg = "#14151A" # tide_bun_color
+[solidity]
+format = '\[[$symbol($version)]($style)\]'
