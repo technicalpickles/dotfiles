@@ -68,7 +68,10 @@ if status is-interactive
     end
 end
 
-set -g --prepend PATH "$HOME/bin"
+if test -d "$HOME/.local/bin"
+  fish_add_path --global --prepend --move "$HOME/.local/bin"
+end
+fish_add_path --global --prepend --move PATH "$HOME/bin"
 
 set -gx GIT_MERGE_AUTOEDIT no
 
