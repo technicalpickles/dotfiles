@@ -27,6 +27,10 @@ else
   end
 end
 
+if which op > /dev/null && test -f ~/.config/op/plugins.sh
+    source ~/.config/op/plugins.sh
+end
+
 if [ -n "$HOMEBREW_PREFIX" ]
     if test -d "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
         fish_add_path --global --prepend --move "$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin"
