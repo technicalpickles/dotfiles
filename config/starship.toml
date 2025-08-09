@@ -10,14 +10,6 @@ $hostname\
 $directory\
 
 $localip\
-$shlvl\
-$singularity\
-$kubernetes\
-$vcsh\
-$hg_branch\
-$docker_context\
-$package\
-$custom\
 
 $sudo\
 
@@ -27,7 +19,6 @@ $git_status\
 $git_commit\
 $cmd_duration\
 $jobs\
-$battery\
 $time\
 $status\
 $os\
@@ -54,15 +45,6 @@ style = "fg:#E8E3E3 bg:#252525 bold"
 truncation_length = 3
 truncate_to_repo = false
 read_only = " "
-
-## SECOND LINE/ROW: Prompt
-# Prompt: param 2 └─
-[character]
-success_symbol = "[❯](bold green)"
-error_symbol = "[❯](bold green)"
-
-[line_break]
-disabled = false
 
 [fill]
 symbol = ' '
@@ -109,93 +91,70 @@ am_or_rebase = "AM/REBASE"
 style = "yellow"
 format = '\([$state( $progress_current/$progress_total)]($style)\) '
 
-# # SYMBOLS
+## SECOND LINE/ROW: Prompt
+# Prompt: param 2 └─
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold green)"
 
+[line_break]
+disabled = false
+
+# VERSIONS SYMBOLS AND FORMATS
 [aws]
-symbol = "  "
+symbol = " "
+format = "[$symbol($profile )(\\($region\\) )(\\[$duration\\] )]($style)"
+style = "bold yellow"
 
-[conda]
-symbol = " "
-
-[dart]
-symbol = " "
-
-# [directory]
+[battery]
+disabled = true
 
 [docker_context]
 symbol = " "
-format = "via [$symbol$context]($style) "
+format = "[$symbol$context]($style) "
 style = "blue bold"
 only_with_files = true
 detect_files = ["docker-compose.yml", "docker-compose.yaml", "Dockerfile"]
 detect_folders = []
-disabled = false
+disabled = true
 
-[elixir]
-symbol = " "
-
-[elm]
-symbol = " "
-
+# https://starship.rs/config/#golang
 [golang]
 symbol = " "
+version_format = "${raw}"
 
-[hg_branch]
-symbol = " "
-
-[java]
-symbol = " "
-
-[julia]
-symbol = " "
-
-[haskell]
-symbol = "λ "
-
-[memory_usage]
-symbol = " "
-
-[nim]
-symbol = " "
-
-[nix_shell]
-symbol = " "
-
-[package]
-symbol = " "
-
-[perl]
-symbol = " "
-
-[php]
-symbol = " "
-
+# https://starship.rs/config/#python
 [python]
 symbol = " "
 #pyenv_version_name = true
-format = 'via [${symbol}python (${version} )(\($virtualenv\) )]($style)'
+format = '[${symbol}python (${version} )(\($virtualenv\) )]($style)'
 style = "bold yellow"
 pyenv_prefix = "venv "
 python_binary = ["./venv/bin/python", "python", "python3", "python2"]
 detect_extensions = ["py"]
-version_format = "v${raw}"
+version_format = "${raw}"
 
+# https://starship.rs/config/#ruby
 [ruby]
 symbol = " "
+version_format = "${raw}"
+format = "[$symbol$version]($style) "
+style = "bold red"
 
 [rust]
 symbol = " "
-
-[scala]
-symbol = " "
-
-[shlvl]
-symbol = " "
+version_format = "${raw}"
+format = "[$symbol$version]($style) "
 
 [swift]
 symbol = "ﯣ "
+version_format = "${raw}"
+format = "[$symbol$version]($style) "
 
+# https://starship.rs/config/#node-js
 [nodejs]
-format = "via [ Node.js $version](bold green) "
-detect_files = ["package.json", ".node-version"]
+symbol = " "
+version_format = "${raw}"
+format = "[$symbol$version]($style) "
+style = "bold green"
 detect_folders = ["node_modules"]
