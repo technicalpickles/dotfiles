@@ -1,13 +1,6 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
-# Use the rainbow palette
-palette = "fish_rainbow"
-
-## ░█▀▀░▀█▀░█▀█░█▀▄░█▀▀░█░█░▀█▀░█▀█
-## ░▀▀█░░█░░█▀█░█▀▄░▀▀█░█▀█░░█░░█▀▀
-## ░▀▀▀░░▀░░▀░▀░▀░▀░▀▀▀░▀░▀░▀▀▀░▀░░
-## CROSS-SHELL PROMPT
-## The minimal, blazing-fast, and infinitely customizable prompt for any shell!
+palette = "tide_rainbow"
 
 format = """
 $hostname\
@@ -175,7 +168,7 @@ detect_folders = ["node_modules"]
 
 ## RAINBOW PALETTE (Inspired by Tide's Rainbow Theme)
 
-[palettes.fish_rainbow]
+[palettes.tide_rainbow]
 # https://github.com/IlanCosman/tide/blob/main/functions/tide/configure/configs/rainbow.fish
 # Core rainbow colors following ROYGBIV spectrum + additional vibrant colors
 red = "#ff5555"        # Red - for errors, critical info
