@@ -1,4 +1,8 @@
 "$schema" = 'https://starship.rs/config-schema.json'
+
+# Use the rainbow palette
+palette = "fish_rainbow"
+
 ## ░█▀▀░▀█▀░█▀█░█▀▄░█▀▀░█░█░▀█▀░█▀█
 ## ░▀▀█░░█░░█▀█░█▀▄░▀▀█░█▀█░░█░░█▀▀
 ## ░▀▀▀░░▀░░▀░▀░▀░▀░▀▀▀░▀░▀░▀▀▀░▀░░
@@ -14,8 +18,7 @@ $localip\
 $sudo\
 
 $fill\
-$git_branch\
-$git_status\
+$git_branch$git_status\
 $git_commit\
 $cmd_duration\
 $jobs\
@@ -29,56 +32,56 @@ $character"""
 
 right_format = "$all"
 
-# Disable the blank line at the start of the prompt
 add_newline = true
 
 # Second param
 [hostname]
 ssh_only = true
-format = "[](fg:#252525 bg:none)[█](fg:#E8E3E3 bg:#252525)[$ssh_symbol$hostname](bold bg:#E8E3E3)[](fg:#E8E3E3 bg:none) "
+format = "[](fg:blue bg:none)[█](fg:#E4E4E4 bg:blue)[$ssh_symbol$hostname](bold bg:blue)[](fg:#blue bg:none) "
 disabled = false
+style = "fg:fg_light bg:red"
 
-# Third param
+# https://starship.rs/config/#directory
 [directory]
-format = "[](fg:#252525 bg:none)[$path]($style)[█](fg:#232526 bg:#232526)[](fg:#6791C9 bg:#252525)[ ](fg:#252525 bg:#6791C9)[](fg:#6791C9 bg:none)"
-style = "fg:#E8E3E3 bg:#252525 bold"
+format = "[](fg:blue bg:none)[  $path ]($style)[](fg:blue bg:none)"
+style = "fg:#E4E4E4 bg:blue bold"
 truncation_length = 3
-truncate_to_repo = false
+truncate_to_repo = true
 read_only = " "
 
 [fill]
 symbol = ' '
 style = 'bold green'
 
+# https://starship.rs/config/#command-duration
 [cmd_duration]
-min_time = 1
-format = "[](fg:#252525 bg:none)[$duration]($style)[](fg:#252525 bg:#252525)[](fg:#C397D8 bg:#252525)[󱑂 ](fg:#252525 bg:#C397D8)[](fg:#C397D8 bg:none)"
+min_time = 1_000
+format = "[](fg:#C4A000 bg:none)[$duration   ]($style)[](fg:#C4A000 bg:none)"
 disabled = false
-style = "fg:#E8E3E3 bg:#252525 bold"
+style = "fg:fg_medium bg:#C4A000 bold"
 
+# https://starship.rs/config/#git-branch
 [git_branch]
-format = "[](fg:#252525 bg:none)[$branch]($style)[](fg:#252525 bg:#252525)[](fg:#81C19B bg:#252525)[](fg:#252525 bg:#81C19B)[](fg:#81C19B bg:none) "
-style = "fg:#E8E3E3 bg:#252525"
+format = "[](fg:#C4A000 bg:none)[ $branch]($style)"
+style = "fg:fg_medium bg:#C4A000"
 symbol = " "
 
+# https://starship.rs/config/#git-status
+# will assume it is part of the same "section" as the git_branch
 [git_status]
-format = "[](fg:#252525 bg:none)[$all_status$ahead_behind]($style)[](fg:#252525 bg:#252525)[](fg:#6791C9 bg:#252525)[ ](fg:#252525 bg:#6791C9)[](fg:#6791C9 bg:none) "
-style = "fg:#E8E3E3 bg:#252525"
+format = "[ $all_status$ahead_behind]($style)[](fg:#C4A000 bg:none)"
+style = "fg:fg_medium bg:#C4A000"
 conflicted = "="
 ahead = "⇡${count}"
 behind = "⇣${count}"
 diverged = "⇕⇡${ahead_count}⇣${behind_count}"
 up_to_date = " 󰄸 "
 untracked = "?${count}"
-stashed = ""
+stashed = "*${count}"
 modified = "!${count}"
 staged = "+${count}"
 renamed = "»${count}"
 deleted = " ${count}"
-
-[git_commit]
-format = "[\\($hash\\)]($style) [\\($tag\\)]($style)"
-style = "green"
 
 [git_state]
 rebase = "REBASING"
@@ -94,8 +97,9 @@ format = '\([$state( $progress_current/$progress_total)]($style)\) '
 ## SECOND LINE/ROW: Prompt
 # Prompt: param 2 └─
 [character]
-success_symbol = "[❯](bold green)"
-error_symbol = "[❯](bold green)"
+success_symbol = "[❯](green)"
+# FIXME: doesn't seem to be showing as red
+error_symbol = "[❯](red)"
 
 [line_break]
 disabled = false
@@ -104,31 +108,32 @@ disabled = false
 [aws]
 symbol = " "
 format = "[$symbol($profile )(\\($region\\) )(\\[$duration\\] )]($style)"
-style = "bold yellow"
+style = "bold fg:#FF9900"
 
 [battery]
 disabled = true
 
 [docker_context]
 symbol = " "
+disabled = true
 format = "[$symbol$context]($style) "
 style = "blue bold"
 only_with_files = true
 detect_files = ["docker-compose.yml", "docker-compose.yaml", "Dockerfile"]
 detect_folders = []
-disabled = true
 
 # https://starship.rs/config/#golang
 [golang]
 symbol = " "
 version_format = "${raw}"
+style = "bold cyan"
 
 # https://starship.rs/config/#python
 [python]
 symbol = " "
 #pyenv_version_name = true
 format = '[${symbol}python (${version} )(\($virtualenv\) )]($style)'
-style = "bold yellow"
+style = "bold blue"
 pyenv_prefix = "venv "
 python_binary = ["./venv/bin/python", "python", "python3", "python2"]
 detect_extensions = ["py"]
@@ -139,22 +144,51 @@ version_format = "${raw}"
 symbol = " "
 version_format = "${raw}"
 format = "[$symbol$version]($style) "
-style = "bold red"
+style = "bold fg:#B31209"
 
 [rust]
 symbol = " "
 version_format = "${raw}"
 format = "[$symbol$version]($style) "
+style = "bold orange"
 
 [swift]
 symbol = "ﯣ "
 version_format = "${raw}"
 format = "[$symbol$version]($style) "
+style = "bold pink"
 
 # https://starship.rs/config/#node-js
 [nodejs]
 symbol = " "
 version_format = "${raw}"
 format = "[$symbol$version]($style) "
-style = "bold green"
+style = "bold fg:#44883E"
 detect_folders = ["node_modules"]
+
+## RAINBOW PALETTE (Inspired by Tide's Rainbow Theme)
+
+[palettes.fish_rainbow]
+# Core rainbow colors following ROYGBIV spectrum + additional vibrant colors
+red = "#ff5555"        # Red - for errors, critical info
+orange = "#ffb86c"     # Orange - for warnings, secondary info
+yellow = "#f1fa8c"     # Yellow - for directories, paths
+gold = "#D7AF00"       # _tide_color_gold
+blue = "#3465A4"       # Blue - for development tools
+light_blue = "#00AFFF" # _tide_color_light_blue
+dark_blue = "#0087AF"  # _tide_color_dark_blue
+green = "#5FD700"      # Green - for success, git clean state
+dark_green = "#5FAF00" # _tide_color_dark_green
+cyan = "#8be9fd"       # Cyan - for info, metadata
+
+purple = "#bd93f9" # Purple - for special states, commands
+pink = "#ff79c6"   # Pink - for highlights, emphasis
+
+# Supporting colors for backgrounds and contrasts
+bg_dark = "#1e1f29"   # Dark background
+bg_medium = "#252525" # Medium background (your current bg)
+fg_light = "#f8f8f2"  # Light foreground
+fg_medium = "#E4E4E4" # Medium foreground (your current fg)
+comment = "#6272a4"   # Muted text
+
+## COLORS
