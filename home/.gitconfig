@@ -46,6 +46,7 @@
 
 [commit]
 	verbose = true
+	gpgsign = true
 
 [remote]
   pushdefault = origin
@@ -60,7 +61,7 @@
 	git-author-initials = me
 	git-author-name = Josh Nichols
 	git-author-email = josh.nichols@gusto.com
-	mtime = 1653423628
+	mtime = 1745434422
 	git-committer-initials =
 	git-committer-name =
 	git-committer-email =

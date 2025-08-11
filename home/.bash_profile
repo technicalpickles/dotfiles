@@ -91,3 +91,5 @@ fi
 if [[ $- == *i* ]]; then
   welcome2u
 fi
+
+. "$HOME/.local/bin/env"
