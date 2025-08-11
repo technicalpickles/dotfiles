@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+IMAGE="dotfiles"
+
+# ID of the image we already have (empty if it doesn’t exist yet)
+existing_id=$(docker images -q "$IMAGE" 2> /dev/null || true)
+
+# Do a silent build first – returns the image ID only
+new_id=$(docker build --quiet -t "$IMAGE" .)
+
+# If the quiet build produced a different ID, show full build logs
+if [[ "$existing_id" != "$new_id" ]]; then
+  docker build -t "$IMAGE" .
+fi
+
+exec docker run \
+  --rm -it \
+  -e TERM="$TERM" \
+  "$IMAGE"
