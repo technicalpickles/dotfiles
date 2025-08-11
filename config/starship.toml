@@ -12,14 +12,21 @@ palette = "fish_rainbow"
 format = """
 $hostname\
 $directory\
-
-$localip\
+$git_branch$git_status\
+$git_commit\
 
 $sudo\
 
 $fill\
-$git_branch$git_status\
-$git_commit\
+
+
+$python\
+$nodejs\
+$rust\
+$swift\
+$ruby\
+$golang\
+$docker_context\
 $cmd_duration\
 $jobs\
 $time\
@@ -27,10 +34,9 @@ $status\
 $os\
 $container\
 $shell\
+$aws\
 $line_break\
 $character"""
-
-right_format = "$all"
 
 add_newline = true
 
@@ -107,8 +113,8 @@ disabled = false
 # VERSIONS SYMBOLS AND FORMATS
 [aws]
 symbol = " "
-format = "[$symbol($profile )(\\($region\\) )(\\[$duration\\] )]($style)"
-style = "bold fg:#FF9900"
+format = "[](fg:#FF9900 bg:none)[$symbol($profile )(\\($region\\))]($style)[](fg:#FF9900 bg:none)"
+style = "bold fg:#232F3E bg:#FF9900"
 
 [battery]
 disabled = true
@@ -124,16 +130,17 @@ detect_folders = []
 
 # https://starship.rs/config/#golang
 [golang]
-symbol = " "
+symbol = " "
 version_format = "${raw}"
-style = "bold cyan"
+format = "[](fg:cyan bg:none)[$symbol$version]($style)[()](fg:cyan bg:none)"
+style = "bold fg:#E4E4E4 bg:cyan"
 
 # https://starship.rs/config/#python
 [python]
-symbol = " "
+symbol = " "
 #pyenv_version_name = true
-format = '[${symbol}python (${version} )(\($virtualenv\) )]($style)'
-style = "bold blue"
+format = '[](fg:blue bg:none)[${symbol}python (${version} )(\($virtualenv\) )]($style)[](fg:blue bg:none)'
+style = "bold fg:#E4E4E4 bg:blue"
 pyenv_prefix = "venv "
 python_binary = ["./venv/bin/python", "python", "python3", "python2"]
 detect_extensions = ["py"]
@@ -143,32 +150,33 @@ version_format = "${raw}"
 [ruby]
 symbol = " "
 version_format = "${raw}"
-format = "[$symbol$version]($style) "
-style = "bold fg:#B31209"
+format = "[](fg:#B31209 bg:none)[$symbol$version]($style)[](fg:#B31209 bg:none)"
+style = "bg:#B31209 fg:#000000"
 
 [rust]
-symbol = " "
+symbol = ""
 version_format = "${raw}"
-format = "[$symbol$version]($style) "
-style = "bold orange"
+format = "[](fg:#F74C00 bg:none)[$symbol$version]($style)[](fg:#F74C00 bg:none)"
+style = "bold fg:#E4E4E4 bg:#F74C00"
 
 [swift]
-symbol = "ﯣ "
+symbol = "ﯣ"
 version_format = "${raw}"
-format = "[$symbol$version]($style) "
-style = "bold pink"
+format = "[](fg:pink bg:none)[$symbol$version]($style)[](fg:pink bg:none)"
+style = "bold fg:#E4E4E4 bg:pink"
 
 # https://starship.rs/config/#node-js
 [nodejs]
 symbol = " "
 version_format = "${raw}"
-format = "[$symbol$version]($style) "
-style = "bold fg:#44883E"
+format = "[](fg:#44883E bg:none)[$symbol$version]($style)[](fg:#44883E bg:none)"
+style = "bold fg:#E4E4E4 bg:#44883E"
 detect_folders = ["node_modules"]
 
 ## RAINBOW PALETTE (Inspired by Tide's Rainbow Theme)
 
 [palettes.fish_rainbow]
+# https://github.com/IlanCosman/tide/blob/main/functions/tide/configure/configs/rainbow.fish
 # Core rainbow colors following ROYGBIV spectrum + additional vibrant colors
 red = "#ff5555"        # Red - for errors, critical info
 orange = "#ffb86c"     # Orange - for warnings, secondary info
@@ -180,6 +188,7 @@ dark_blue = "#0087AF"  # _tide_color_dark_blue
 green = "#5FD700"      # Green - for success, git clean state
 dark_green = "#5FAF00" # _tide_color_dark_green
 cyan = "#8be9fd"       # Cyan - for info, metadata
+black = "#000000"
 
 purple = "#bd93f9" # Purple - for special states, commands
 pink = "#ff79c6"   # Pink - for highlights, emphasis
