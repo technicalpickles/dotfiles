@@ -26,6 +26,14 @@ if command_available delta; then
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/delta
 fi
 
+if command_available gh; then
+  echo "  → enabling gh credential helper"
+  gh_path=$(which gh)
+  for remote in https://github.com https://gist.github.com; do
+    git config --file ~/.gitconfig.local "credential.$remote.helper" "!$gh_path auth git-credential"
+  done
+fi
+
 if running_macos; then
   echo "  → enabling running_macos specific settings"
 
