@@ -2,5 +2,6 @@
 
 exec npm exec prettier -- --ignore-path .config/prettier/ignore \
   --ignore-path .gitignore \
+  --ignore-unknown \
   --config .config/prettier/config.json \
   "$@"

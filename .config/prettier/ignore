@@ -16,3 +16,4 @@ config/fish/fish_plugins
 *.fish
 .editorconfig
 home/.gitconfig
+config/ghostty/config
