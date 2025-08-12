@@ -1,0 +1,16 @@
+# vim: ft=conf
+
+cursor-style-blink = false
+cursor-style = block
+# https://github.com/ghostty-org/ghostty/discussions/4471
+shell-integration-features = no-cursor
+
+
+font-family = "DankMono Nerd Font"
+font-size = 15
+
+theme = "tokyonight_night"
+
+macos-icon = custom-style
+macos-icon-frame = plastic
+macos-icon-screen-color = "#1a1b26"
