@@ -43,6 +43,7 @@
 
 [init]
 	defaultBranch = main
+	templatedir = ~/.git-template
 
 [commit]
 	verbose = true
@@ -54,23 +55,8 @@
 [remote "origin"]
 	prune = true
 
-[credential]
-	helper = osxkeychain
-
-[duet "env"]
-	git-author-initials = me
-	git-author-name = Josh Nichols
-	git-author-email = josh.nichols@gusto.com
-	mtime = 1745434422
-	git-committer-initials =
-	git-committer-name =
-	git-committer-email =
-
 [merge]
 	audoedit = no
-[credential "https://github.com"]
-	helper = 
-	helper = !/opt/homebrew/bin/gh auth git-credential
-[credential "https://gist.github.com"]
-	helper = 
-	helper = !/opt/homebrew/bin/gh auth git-credential
+
+[diff]
+	colorMoved = default
