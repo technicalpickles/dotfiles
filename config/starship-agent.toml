@@ -1,11 +1,23 @@
+# This is a simplified version of our global starship config, optimized for use by AI agents
+#
+# In general, we'll assume that the agent will be able to run commands to determine what it needs to know. For example,
+# it will be able to run `git` commands to check the state, `--version` commands to check the version of tools, etc.
+#
+# Only include a few extra things in case they are useful to a human watching the agent work, like how long it took or an exit code
+
 format = """
 $directory\
-$status\
-$cmd_duration\
 $character"""
+
+right_format = """$status$fill$cmd_duration"""
+
+add_newline = true
 
 [directory]
 style = "blue"
+
+[fill]
+symbol = " "
 
 [character]
 success_symbol = "[❯](green)"
@@ -13,4 +25,6 @@ error_symbol = "[❯](red)"
 vimcmd_symbol = "[❮](purple)"
 
 [status]
-disabled = false
+disabled = true
+symbol = ""
+style = "fg:black bg:red"
