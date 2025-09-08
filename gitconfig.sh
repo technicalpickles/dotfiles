@@ -11,8 +11,6 @@ rm -f ~/.gitconfig.d/1password
 
 mkdir -p ~/.gitconfig.d
 
-op_ensure_signed_in
-
 if [ -d ~/workspace ]; then
   echo "  → enabling maintenance for repositories"
   for git_dir in $HOME/workspace/*/.git; do
@@ -27,6 +25,10 @@ if command_available delta; then
 fi
 
 signing=false
+
+if running_macos; then
+  git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/macos
+fi
 
 case "$DOTPICKLES_ROLE" in
   home)
@@ -76,6 +78,12 @@ fi
 if command_available git-duet; then
   echo "  → enabling git-duet specific settings"
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/duet
+fi
+
+if command_available gh; then
+  echo "  → enabling gh specific settings"
+  git config --file ~/.gitconfig.local --add credential."https://github.com".helper "!$(which gh) auth git-credential"
+  git config --file ~/.gitconfig.local --add credential."https://gist.github.com".helper "!$(which gh) auth git-credential"
 fi
 
 code=$(vscode_command)
