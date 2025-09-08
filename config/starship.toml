@@ -59,19 +59,19 @@ style = 'bold #585858'
 min_time = 1_000
 format = "[](fg:#C4A000 bg:none)[$duration  ]($style)[](fg:#C4A000 bg:none)"
 disabled = false
-style = "fg:fg_medium bg:#C4A000 bold"
+style = "fg:bg_dark bg:#C4A000 bold"
 
 # https://starship.rs/config/#git-branch
 [git_branch]
 format = "[](fg:#C4A000 bg:none)[ $branch]($style)"
-style = "fg:fg_medium bg:#C4A000"
+style = "fg:bg_dark bg:#C4A000"
 symbol = " "
 
 # https://starship.rs/config/#git-status
 # will assume it is part of the same "section" as the git_branch
 [git_status]
 format = "[ $all_status$ahead_behind]($style)[](fg:#C4A000 bg:none)"
-style = "fg:fg_medium bg:#C4A000"
+style = "fg:bg_dark bg:#C4A000"
 conflicted = "="
 ahead = "⇡${count}"
 behind = "⇣${count}"
@@ -98,9 +98,8 @@ format = '\([$state( $progress_current/$progress_total)]($style)\) '
 ## SECOND LINE/ROW: Prompt
 # Prompt: param 2 └─
 [character]
-success_symbol = "[❯](green)"
-# FIXME: doesn't seem to be showing as red
-error_symbol = "[❯](red)"
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
 
 [line_break]
 disabled = false
