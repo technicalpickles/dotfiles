@@ -1,81 +1,61 @@
-complete --erase --command direnv
+# @halostatue/fish-direnv/completions/direnv.fish:v1.1.2
 
-set -l file_commands allow permit grant block deny revoke edit
-set -l commands $file_commands exec fetchurl help hook prune reload status stdlib version
+set --local allow_commands allow grant permit
+set --local deny_commands block deny revoke
+set --local file_commands $allow_commands $deny_commands edit
+set --local commands $file_commands exec fetchurl help hook prune reload status \
+    stdlib version
 
-complete --command direnv --description "unclutter your .profile" --no-files
+complete -ec direnv
+complete -c direnv -f -d "unclutter your .profile"
+complete -c direnv -n "not __fish_seen_subcommand_from $commands" -a "$commands"
 
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments allow \
-    --description "Grants direnv permission to load the given .envrc or .env file."
+for sub in $allow_commands
+    complete -c direnv -n __fish_use_subcommand -a $sub \
+        -d "Grants permission to load the given .envrc or .env file."
 
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments permit \
-    --description "Grants direnv permission to load the given .envrc or .env file."
+    complete -c direnv -n "__fish_seen_subcommand_from $sub" -F
+end
 
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments grant \
-    --description "Grants direnv permission to load the given .envrc or .env file."
+for sub in $deny_commands
+    complete -c direnv -n __fish_use_subcommand -a $sub \
+        -d "Removes permission to load the given .envrc or .env file"
 
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments block \
-    --description "Revokes the authorization of a given .envrc or .env file."
+    complete -c direnv -n "__fish_seen_subcommand_from $sub" -F
+end
 
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments deny \
-    --description "Revokes the authorization of a given .envrc or .env file."
+complete -c direnv -n __fish_use_subcommand -a edit \
+    -d "Opens a config file into \$EDITOR with approval on save"
 
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments revoke \
-    --description "Revokes the authorization of a given .envrc or .env file."
+complete -c direnv -n "__fish_seen_subcommand_from edit" -F
 
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments edit \
-    --description "Opens PATH_TO_RC or the current .envrc or .env into an $EDITOR and allow the file to be loaded afterwards."
+complete -c direnv -n __fish_use_subcommand -a exec \
+    -d "Executes a command after loading the first .envrc or .env found in DIR"
 
-complete --command direnv --condition "__fish_seen_subcommand_from $file_commands" \
-    --force-files
+complete -c direnv -n "__fish_seen_subcommand_from exec" \
+    -a "(__fish_complete_directories)" -d "The directory in which to execute COMMAND"
 
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments exec \
-    --description "Executes a command after loading the first .envrc or .env found in DIR"
+complete -c direnv -n __fish_use_subcommand -a fetchurl \
+    -d "Fetches a given URL into direnv's CAS"
 
-complete --command direnv --condition "__fish_seen_subcommand_from exec" \
-    --arguments "(__fish_complete_directories)" \
-    --description "The directory in which to execute COMMAND"
+complete -c direnv -n __fish_use_subcommand -a help -d "Shows help for direnv"
 
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments fetchurl \
-    --description "Fetches a given URL into direnv's CAS"
+complete -c direnv -n __fish_use_subcommand -a hook -d "Used to setup the shell hook"
 
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments help \
-    --description "Shows help for direnv"
+complete -c direnv -n "__fish_seen_subcommand_from hook" -a "bash zsh fish tcsh elvish"
 
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments hook \
-    --description "Used to setup the shell hook"
+complete -c direnv -n __fish_use_subcommand -a prune -d "removes old allowed files"
 
-complete --command direnv --condition "__fish_seen_subcommand_from hook" \
-    --arguments "bash zsh fish tcsh elvish"
+complete -c direnv -n __fish_use_subcommand -a reload -d "Triggers an env reload"
 
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments prune \
-    --description "removes old allowed files"
+complete -c direnv -n __fish_use_subcommand -a status \
+    -d "Prints debug status information"
 
+complete -c direnv -n "__fish_seen_subcommand_from status" -l json \
+    -d "Formats debug status information as JSON"
 
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments reload \
-    --description "triggers an env reload"
+complete -c direnv -n __fish_use_subcommand -a stdlib \
+    -d "Displays the stdlib available in the .envrc execution context"
 
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments status \
-    --description "prints some debug status information"
-
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments stdlib \
-    --description "Displays the stdlib available in the .envrc execution context"
-
-complete --command direnv --condition __fish_use_subcommand \
-    --arguments version \
-    --description "prints the version or checks that direnv is older than VERSION_AT_LEAST"
+complete -c direnv -n __fish_use_subcommand -a version \
+    -d "prints the version or checks that direnv is older than VERSION_AT_LEAST"
