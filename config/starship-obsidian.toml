@@ -1,0 +1,17 @@
+format = """
+$directory\
+$status\
+$cmd_duration\
+$character"""
+
+[directory]
+style = "blue"
+truncation_length = 1
+
+[character]
+success_symbol = "[❯](green)"
+error_symbol = "[❯](red)"
+vimcmd_symbol = "[❮](purple)"
+
+[status]
+disabled = false
