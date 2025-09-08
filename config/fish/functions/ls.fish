@@ -37,5 +37,5 @@ function ls --description "Enhanced ls using eza"
     # - All standard ls options. Any not supported are recognized by eza (e.g. -t requires the specifying which time to use)
     # - Non-interactive contexts (pipes, redirects, scripts)
     # - Environment variable overrides (EZA_OVERRIDE_GIT)
-    command eza --git $argv
+    command eza --git --icons=auto $argv
 end
