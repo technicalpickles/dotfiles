@@ -141,3 +141,7 @@ vendor/
 # prettier
 .config/prettier/cache.json
 node_modules
+
+# claude
+home/.claude/
+!home/.claude/CLAUDE.md
