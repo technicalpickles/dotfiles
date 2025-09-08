@@ -26,35 +26,56 @@ if command_available delta; then
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/delta
 fi
 
-if running_macos; then
-  echo "  → enabling running_macos specific settings"
+signing=false
 
-  git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/running_macos
+case "$DOTPICKLES_ROLE" in
+  home)
+    if running_macos && test -d '/Applications/1Password.app/'; then
+      echo "  → enabling 1password ssh key signing"
+      signing=true
 
-  if test -d '/Applications/1Password.app/'; then
-    echo "  → enabling 1password ssh key signing"
-    op_ensure_signed_in
+      op_ensure_signed_in
 
-    git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/1password
-
-    git config --file ~/.gitconfig.d/1password gpg.format ssh
-    git config --file ~/.gitconfig.d/1password gpg.ssh.program "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
-    git config --file ~/.gitconfig.d/1password commit.gpgsign true
-
-    signing_key=$(op item list --tags 'ssh signing','work' --format=json | op item get - --fields 'public key')
-    if [[ -n "$signing_key" ]]; then
-      git config --file ~/.gitconfig.d/1password user.signingkey "$signing_key"
-    else
-      echo "uh oh, couldn't find an SSH key in 1password to use" >&2
-      exit 1
+      git config --file ~/.gitconfig.d/signing gpg.ssh.program "/Application
+s/1Password.app/Contents/MacOS/op-ssh-sign"
+      signing_key=$(op item list --tags 'ssh signing','work' --format=json | op item get - --fields 'public key')
+      if [[ -n "$signing_key" ]]; then
+        git config --file ~/.gitconfig.d/signing user.signingkey "$signing_key"
+      else
+        echo "uh oh, couldn't find an SSH key in 1password to use" >&2
+        exit 1
+      fi
     fi
-  fi
+    ;;
+  work)
+    echo "  → enabling work ssh key signing"
+    signing=true
+
+    git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/signing
+    if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
+      git config --file ~/.gitconfig.d/signing user.signingkey "$HOME/.ssh/id_ed25519.pub"
+    fi
+    ;;
+  *) ;;
+
+esac
+
+if [ "$signing" = true ]; then
+  git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/signing
+
+  git config --file ~/.gitconfig.d/signing gpg.format ssh
+  git config --file ~/.gitconfig.d/signing commit.gpgsign true
 fi
 
 if fzf_available; then
   echo "  → enabling fzf specific settings"
 
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/fzf
+fi
+
+if command_available git-duet; then
+  echo "  → enabling git-duet specific settings"
+  git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/duet
 fi
 
 code=$(vscode_command)
