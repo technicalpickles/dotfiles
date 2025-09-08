@@ -143,5 +143,5 @@ vendor/
 node_modules
 
 # claude
-home/.claude/
+home/.claude/*
 !home/.claude/CLAUDE.md
