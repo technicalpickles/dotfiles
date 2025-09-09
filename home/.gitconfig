@@ -28,6 +28,8 @@
 
 [fetch]
   prune = true
+	pruneTags = true
+	all = true
 
 [pull]
   rebase = false
@@ -35,6 +37,7 @@
 [push]
  	default = current
 	autoSetupRemote = true
+	followTags = true
 
 [mergetool]
 	keepTemporaries = false
@@ -58,9 +61,19 @@
 	audoedit = no
 
 [diff]
-	colorMoved = default
+	colorMoved = plain
+	algorithm = histogram
+	renames = true
+	mnemonicPrefix = true
 
 [branch]
 	sort = -committerdate
 [tag]
 	sort = version:refname
+[rerere]
+	enabled = true
+	autoupdate = true
+[rebase]
+	autoSquash = true
+	autoStash = true
+	updateRefs = true
