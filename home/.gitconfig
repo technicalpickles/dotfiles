@@ -49,7 +49,6 @@
 
 [commit]
 	verbose = true
-	gpgsign = true
 
 [remote]
   pushdefault = origin
@@ -69,11 +68,14 @@
 
 [branch]
 	sort = -committerdate
+
 [tag]
 	sort = version:refname
+
 [rerere]
 	enabled = true
 	autoupdate = true
+
 [rebase]
 	autoSquash = true
 	autoStash = true
