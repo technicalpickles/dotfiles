@@ -1,6 +1,5 @@
 [user]
 	name = Josh Nichols
-	email = josh.nichols@gusto.com
 
 [github]
 	user = technicalpickles
@@ -60,3 +59,6 @@
 
 [diff]
 	colorMoved = default
+
+[branch]
+	sort = -committerdate
