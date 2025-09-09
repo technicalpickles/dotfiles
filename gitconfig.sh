@@ -64,9 +64,6 @@ esac
 
 if [ "$signing" = true ]; then
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/signing
-
-  git config --file ~/.gitconfig.d/signing gpg.format ssh
-  git config --file ~/.gitconfig.d/signing commit.gpgsign true
 fi
 
 if fzf_available; then
