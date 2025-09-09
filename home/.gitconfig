@@ -59,6 +59,7 @@
 
 [merge]
 	audoedit = no
+	conflictstyle = zdiff3
 
 [diff]
 	colorMoved = plain
