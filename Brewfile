@@ -35,6 +35,8 @@ brew 'the_silver_searcher'
 brew 'tree'
 brew 'watch'
 brew 'gh'
+brew 'fortune'
+brew 'yq'
 
 # networky
 brew 'mtr'
@@ -47,6 +49,8 @@ brew 'wget'
 brew 'rbspy'
 brew 'shellcheck'
 brew 'mise'
+brew 'specstoryai/tap/specstory'
+
 
 # benchmarking
 brew "hyperfine"
