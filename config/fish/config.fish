@@ -75,8 +75,5 @@ fish_add_path --global --prepend --move PATH "$HOME/bin"
 
 set -gx GIT_MERGE_AUTOEDIT no
 
-# Added by LM Studio CLI (lms)
-set lm_studio_path "$HOME/.cache/lm-studio/bin"
-if test -d "$lm_studio"
-    set -gx PATH $PATH "$lm_studio_path"
-end
+# force an explicit path, otherwise it defaults to ~/Library/Application Support/eza on macOS vs ~/.config/eza on linux
+set -gx EZA_CONFIG_DIR "$HOME/.config/eza"

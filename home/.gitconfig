@@ -1,6 +1,5 @@
 [user]
 	name = Josh Nichols
-	email = josh.nichols@gusto.com
 
 [github]
 	user = technicalpickles
@@ -29,6 +28,8 @@
 
 [fetch]
   prune = true
+	pruneTags = true
+	all = true
 
 [pull]
   rebase = false
@@ -36,6 +37,7 @@
 [push]
  	default = current
 	autoSetupRemote = true
+	followTags = true
 
 [mergetool]
 	keepTemporaries = false
@@ -43,10 +45,10 @@
 
 [init]
 	defaultBranch = main
+	templatedir = ~/.git-template
 
 [commit]
 	verbose = true
-	gpgsign = true
 
 [remote]
   pushdefault = origin
@@ -54,17 +56,27 @@
 [remote "origin"]
 	prune = true
 
-[credential]
-	helper = osxkeychain
-
-[duet "env"]
-	git-author-initials = me
-	git-author-name = Josh Nichols
-	git-author-email = josh.nichols@gusto.com
-	mtime = 1745434422
-	git-committer-initials =
-	git-committer-name =
-	git-committer-email =
-
 [merge]
-	audoedit = no
+	autoedit = no
+	conflictstyle = zdiff3
+
+[diff]
+	colorMoved = plain
+	algorithm = histogram
+	renames = true
+	mnemonicPrefix = true
+
+[branch]
+	sort = -committerdate
+
+[tag]
+	sort = version:refname
+
+[rerere]
+	enabled = true
+	autoupdate = true
+
+[rebase]
+	autoSquash = true
+	autoStash = true
+	updateRefs = true
