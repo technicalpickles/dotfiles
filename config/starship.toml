@@ -1,5 +1,6 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
+# https://starship.rs/config/#prompt
 palette = "tide_rainbow"
 
 format = """
@@ -31,9 +32,7 @@ $aws\
 $line_break\
 $character"""
 
-add_newline = true
-
-# Second param
+# https://starship.rs/config/#hostname
 [hostname]
 ssh_only = true
 format = "[](fg:blue bg:none)[█](fg:#E4E4E4 bg:blue)[$ssh_symbol$hostname](bold bg:blue)[](fg:#blue bg:none) "
@@ -48,28 +47,31 @@ truncation_length = 3
 truncate_to_repo = true
 read_only = " "
 
+# https://starship.rs/config/#fill
+# https://github.com/IlanCosman/tide/blob/main/functions/tide/configure/choices/all/prompt_connection.fish
 [fill]
-symbol = ' '
-style = 'bold green'
+symbol = '·'
+# https://github.com/IlanCosman/tide/blob/main/functions/tide/configure/choices/all/prompt_connection_andor_frame_color.fish
+style = 'bold #585858'
 
 # https://starship.rs/config/#command-duration
 [cmd_duration]
 min_time = 1_000
-format = "[](fg:#C4A000 bg:none)[$duration   ]($style)[](fg:#C4A000 bg:none)"
+format = "[](fg:#C4A000 bg:none)[$duration  ]($style)[](fg:#C4A000 bg:none)"
 disabled = false
-style = "fg:fg_medium bg:#C4A000 bold"
+style = "fg:bg_dark bg:#C4A000 bold"
 
 # https://starship.rs/config/#git-branch
 [git_branch]
 format = "[](fg:#C4A000 bg:none)[ $branch]($style)"
-style = "fg:fg_medium bg:#C4A000"
+style = "fg:bg_dark bg:#C4A000"
 symbol = " "
 
 # https://starship.rs/config/#git-status
 # will assume it is part of the same "section" as the git_branch
 [git_status]
 format = "[ $all_status$ahead_behind]($style)[](fg:#C4A000 bg:none)"
-style = "fg:fg_medium bg:#C4A000"
+style = "fg:bg_dark bg:#C4A000"
 conflicted = "="
 ahead = "⇡${count}"
 behind = "⇣${count}"
@@ -96,9 +98,8 @@ format = '\([$state( $progress_current/$progress_total)]($style)\) '
 ## SECOND LINE/ROW: Prompt
 # Prompt: param 2 └─
 [character]
-success_symbol = "[❯](green)"
-# FIXME: doesn't seem to be showing as red
-error_symbol = "[❯](red)"
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
 
 [line_break]
 disabled = false
@@ -171,26 +172,26 @@ detect_folders = ["node_modules"]
 [palettes.tide_rainbow]
 # https://github.com/IlanCosman/tide/blob/main/functions/tide/configure/configs/rainbow.fish
 # Core rainbow colors following ROYGBIV spectrum + additional vibrant colors
-red = "#ff5555"        # Red - for errors, critical info
-orange = "#ffb86c"     # Orange - for warnings, secondary info
+red = "#ff5555"
+orange = "#ffb86c"
 yellow = "#f1fa8c"     # Yellow - for directories, paths
 gold = "#D7AF00"       # _tide_color_gold
-blue = "#3465A4"       # Blue - for development tools
+blue = "#3465A4"
 light_blue = "#00AFFF" # _tide_color_light_blue
 dark_blue = "#0087AF"  # _tide_color_dark_blue
-green = "#5FD700"      # Green - for success, git clean state
+green = "#5FD700"
 dark_green = "#5FAF00" # _tide_color_dark_green
-cyan = "#8be9fd"       # Cyan - for info, metadata
+cyan = "#8be9fd"
 black = "#000000"
 
-purple = "#bd93f9" # Purple - for special states, commands
-pink = "#ff79c6"   # Pink - for highlights, emphasis
+purple = "#bd93f9"
+pink = "#ff79c6"
 
 # Supporting colors for backgrounds and contrasts
-bg_dark = "#1e1f29"   # Dark background
-bg_medium = "#252525" # Medium background (your current bg)
-fg_light = "#f8f8f2"  # Light foreground
-fg_medium = "#E4E4E4" # Medium foreground (your current fg)
-comment = "#6272a4"   # Muted text
+bg_dark = "#1e1f29"
+bg_medium = "#252525"
+fg_light = "#f8f8f2"
+fg_medium = "#E4E4E4"
+comment = "#6272a4"
 
 ## COLORS

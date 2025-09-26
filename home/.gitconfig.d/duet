@@ -1,0 +1,3 @@
+[duet "env"]
+	git-author-initials = me
+	git-author-name = Josh Nichols

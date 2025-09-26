@@ -4,3 +4,7 @@
 .yardoc
 
 .specstory
+.cursorindexingignore
+scratch-area
+scratch
+.scratch
