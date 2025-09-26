@@ -14,7 +14,6 @@ brew 'reattach-to-user-namespace'
 brew 'git-lfs'
 brew 'git'
 brew 'git-delta'
-brew 'gh'
 brew 'git-extras'
 
 # nvim
@@ -30,7 +29,6 @@ brew 'findutils'
 brew 'fzf'
 brew 'jq'
 brew 'less'
-brew 'mackup'
 brew 'moreutils'
 brew 'pstree'
 brew 'the_silver_searcher'
@@ -56,23 +54,15 @@ brew "hyperfine"
 # container stuff
 brew "container-diff"
 
-cask 'aerial'
 cask 'bartender'
 cask 'cleanshot'
 cask 'dash'
 cask 'hammerspoon'
-cask 'hookmark'
 cask 'hookshot'
 cask 'macbreakz'
 cask 'obsidian'
 cask "hazel"
 
 # fonts
-cask 'font-fira-code'
-cask 'font-hack'
-cask 'font-hammersmith-one'
-cask 'font-inconsolata'
-cask 'font-lobster'
-cask 'font-press-start-2p'
-cask 'font-quicksand'
+
 # trailing newline so make sure there's not a syntax error when joining with Brewfile.*

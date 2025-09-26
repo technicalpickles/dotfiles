@@ -38,7 +38,10 @@ fi
 
 signing=false
 case "$DOTPICKLES_ROLE" in
-  home)
+  personal)
+    echo "  → using personal identify for git"
+    git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/personal-identity
+
     if running_macos && test -d '/Applications/1Password.app/'; then
       echo "  → enabling 1password ssh key signing"
       signing=true
@@ -57,6 +60,9 @@ s/1Password.app/Contents/MacOS/op-ssh-sign"
     fi
     ;;
   work)
+    echo " → using work identify for git"
+    git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/work-identity
+
     echo "  → enabling work ssh key signing"
     signing=true
 
@@ -65,8 +71,10 @@ s/1Password.app/Contents/MacOS/op-ssh-sign"
       git config --file ~/.gitconfig.d/signing user.signingkey "$HOME/.ssh/id_ed25519.pub"
     fi
     ;;
-  *) ;;
-
+  *)
+    echo "Unexpected role: $DOTPICKLES_ROLE"
+    exit 1
+    ;;
 esac
 
 if [ "$signing" = true ]; then
