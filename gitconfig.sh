@@ -48,11 +48,10 @@ case "$DOTPICKLES_ROLE" in
 
       op_ensure_signed_in
 
-      git config --file ~/.gitconfig.d/signing gpg.ssh.program "/Application
-s/1Password.app/Contents/MacOS/op-ssh-sign"
-      signing_key=$(op item list --tags 'ssh signing','work' --format=json | op item get - --fields 'public key')
+      git config --file ~/.gitconfig.local gpg.ssh.program "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+      signing_key=$(op item list --tags 'ssh signing','home' --format=json | op item get - --fields 'public key')
       if [[ -n "$signing_key" ]]; then
-        git config --file ~/.gitconfig.d/signing user.signingkey "$signing_key"
+        git config --file ~/.gitconfig.local user.signingkey "$signing_key"
       else
         echo "uh oh, couldn't find an SSH key in 1password to use" >&2
         exit 1
@@ -66,9 +65,8 @@ s/1Password.app/Contents/MacOS/op-ssh-sign"
     echo "  → enabling work ssh key signing"
     signing=true
 
-    git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/signing
     if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
-      git config --file ~/.gitconfig.d/signing user.signingkey "$HOME/.ssh/id_ed25519.pub"
+      git config --file ~/.gitconfig.local user.signingkey "$HOME/.ssh/id_ed25519.pub"
     fi
     ;;
   *)
