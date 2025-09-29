@@ -1,6 +1,9 @@
 jorgebucaran/fisher
+jorgebucaran/nvm.fish
+halostatue/fish-direnv
 jethrokuan/z
 jorgebucaran/autopair.fish
-oh-my-fish/plugin-bang-bang
-edc/bass
+gazorby/fish-abbreviation-tips
+danhper/fish-ssh-agent
+patrickf1/fzf.fish
 wawa19933/starship.fish
