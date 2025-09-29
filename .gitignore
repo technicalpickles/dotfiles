@@ -145,3 +145,7 @@ node_modules
 # claude
 home/.claude/*
 !home/.claude/CLAUDE.md
+
+# vagrant
+.vagrant
+.vagrant/**/*
