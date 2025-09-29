@@ -1,15 +1,9 @@
-cask 'calibre'
 cask 'discord'
-cask 'fantastical'
 cask 'google-chrome'
 cask 'slack'
-cask 'sony-ps4-remote-play'
 cask 'zoom'
-cask 'evernote'
 
 
-cask 'iterm2'
 cask 'karabiner-elements'
 cask 'spotify'
-cask 'visual-studio-code'
 cask 'alfred' # there is an App store version, but you can't use powerpack with it

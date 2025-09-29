@@ -10,7 +10,12 @@ if [[ -f .env ]]; then
 fi
 
 if [[ -z "${DOTPICKLES_ROLE}" ]]; then
-  if [[ $(hostname) =~ ^josh-nichols- ]]; then
+  if which hostnamectl > /dev/null 2>&1; then
+    hostname=$(hostnamectl hostname)
+  else
+    hostname=$(hostname)
+  fi
+  if [[ "$hostname" =~ ^josh-nichols- ]]; then
     DOTPICKLES_ROLE="work"
   else
     DOTPICKLES_ROLE="personal"
@@ -60,7 +65,7 @@ if running_macos; then
 fi
 
 if ! running_codespaces; then
-  ./vim.sh
+  #  ./vim.sh
   ./tmux.sh
   ./fish.sh
   ./bash.sh

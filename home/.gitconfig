@@ -9,15 +9,6 @@
   path = ~/.gitconfig.d/alias
   path = ~/.gitconfig.d/color
 
-[includeIf "gitdir:~/src/"]
-	path = ~/.gitconfig.d/personal-identity
-
-[includeIf "gitdir:~/github/"]
-  path = ~/.gitconfig.d/personal-identity
-
-[includeIf "gitdir:~/workspace/"]
-	path = ~/.gitconfig.d/work-identity
-
 [includeIf "gitdir:/usr/local/Homebrew/"]
 	path = ~/.gitconfig.d/personal-identity
 
@@ -57,7 +48,7 @@
 	prune = true
 
 [merge]
-	audoedit = no
+	autoedit = no
 	conflictstyle = zdiff3
 
 [diff]

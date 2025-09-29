@@ -1,17 +1,17 @@
-# Configure starship for fish automatically
+# Init starship prompt
 #
-# see https://starship.rs/installing/ for installing starship itself
+# doc: https://starship.rs
+# Quick install: `curl -fsSL https://starship.rs/install.sh | bash`
+ 
+# if not type -q starship
+#     curl -fsSL https://starship.rs/install.sh -o /tmp/starship-install.sh
+#     mkdir -p ~/.local/bin
+#     bash /tmp/starship-install.sh -b $HOME/.local/bin -y
+#     rm /tmp/starship-install.sh
+# end
 
 if status --is-interactive
     if type -q starship
-       # https://starship.rs/config/
        starship init fish | source
-
-       # https://starship.rs/advanced-config/#transientprompt-and-transientrightprompt-in-fish
-       # you will need to define these yourself, since it will be particular to your setup
-       # we can detect if they are defined, and enable transience if they are at least
-       if type -q starship_transient_prompt_func || type -q starship_transient_rprompt_func
-            enable_transience
-       end
     end
 end

@@ -26,7 +26,6 @@ if ! fish -c "type fisher >/dev/null 2>/dev/null"; then
 fi
 
 plugins=(
-  IlanCosman/tide@v5
   jethrokuan/z
   jorgebucaran/autopair.fish
 )
