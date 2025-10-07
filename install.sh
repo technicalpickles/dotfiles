@@ -35,10 +35,7 @@ fi
 git submodule init
 git submodule update
 
-link_directory_contents home
-
-mkdir -p "$HOME/.config"
-link_directory_contents config
+./symlinks.sh
 
 echo
 
