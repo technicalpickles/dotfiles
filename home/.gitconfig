@@ -1,6 +1,3 @@
-[user]
-	name = Josh Nichols
-
 [github]
 	user = technicalpickles
 
@@ -36,7 +33,6 @@
 
 [init]
 	defaultBranch = main
-	templatedir = ~/.git-template
 
 [commit]
 	verbose = true
@@ -71,3 +67,5 @@
 	autoSquash = true
 	autoStash = true
 	updateRefs = true
+[git-mob-config]
+	use-local-template = true
