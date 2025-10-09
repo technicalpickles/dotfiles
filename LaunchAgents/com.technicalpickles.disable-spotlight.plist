@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Unique identifier for this agent (reverse-domain notation) -->
+    <key>Label</key>
+    <string>com.technicalpickles.disable-spotlight</string>
+
+    <!-- The program and arguments to execute -->
+    <key>ProgramArguments</key>
+    <array>
+        <!-- Path to the script that will disable spotlight -->
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <!-- Use single command string to handle sudo properly -->
+        <string>/usr/bin/sudo /usr/bin/mdutil -a -i off 2>&amp;1 | /usr/bin/logger -t disable-spotlight</string>
+    </array>
+
+    <!-- Run at system startup (after user login) -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Don't restart if it exits (it's a one-time command) -->
+    <key>KeepAlive</key>
+    <false/>
+
+    <!-- Standard output and error logging -->
+    <key>StandardOutPath</key>
+    <string>/tmp/com.technicalpickles.disable-spotlight.out</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/com.technicalpickles.disable-spotlight.err</string>
+
+    <!-- Optional: Run on a schedule (commented out by default) -->
+    <!--
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    -->
+
+    <!-- Optional: Throttle to prevent rapid re-execution -->
+    <key>ThrottleInterval</key>
+    <integer>300</integer>
+</dict>
+</plist>
+
