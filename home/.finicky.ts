@@ -9,8 +9,8 @@ export default {
   rewrite: [
     {
       // Remove common tracking parameters
-      match: ({ url }) => url.search.includes('utm_'),
-      url: ({ url }) => {
+      match: (url) => url.search.includes('utm_'),
+      url: (url) => {
         const params = [
           'utm_source',
           'utm_medium',
@@ -21,7 +21,7 @@ export default {
           'gclid',
           'ref',
         ];
-        params.forEach((param) => url.search.delete(param));
+        params.forEach((param) => url.searchParams.delete(param));
         return url;
       },
     },
@@ -52,7 +52,7 @@ export default {
     // Open Slack links in Slack app
     // @https://github.com/johnste/finicky/wiki/Configuration-ideas#open-slack-link-in-slack-app
     {
-      match: ({ url }) => url.protocol === 'slack:' || url.protocol === 'slack',
+      match: (url) => url.protocol === 'slack:' || url.protocol === 'slack',
       browser: 'Slack',
     },
     {
