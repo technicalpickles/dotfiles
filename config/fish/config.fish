@@ -6,6 +6,12 @@ end
 
 if test -f  ~/.gusto/init.fish
   source ~/.gusto/init.fish
+
+  # Gusto init sources mise via bass, which overwrites PATH
+  # Ensure homebrew is at the front again
+  if test -n "$HOMEBREW_PREFIX"
+    fish_add_path --move --global --prepend "$HOMEBREW_PREFIX/bin" "$HOMEBREW_PREFIX/sbin"
+  end
 else
   if test -z "$MISE_SHELL" && test -d "$HOME/.cargo/bin"
       fish_add_path --global --prepend "$HOME/.cargo/bin"
@@ -23,6 +29,9 @@ else
       set -gx MISE_NODE_COREPACK true
 
       mise activate --shims fish | source
+
+      # mise overwrites PATH, so ensure homebrew is at the front again
+      fish_add_path --move --global --prepend "$HOMEBREW_PREFIX/bin" "$HOMEBREW_PREFIX/sbin"
     end
   end
 end
