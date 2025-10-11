@@ -1,7 +1,10 @@
 // Finicky configuration
 // See: https://github.com/johnste/finicky/wiki/Configuration
 
-export default {
+/// <reference path="./finicky.d.ts" />
+import type { FinickyConfig } from 'finicky';
+
+const config: FinickyConfig = {
   // Horse Browser is the default for everything not explicitly routed
   defaultBrowser: 'Horse',
 
@@ -9,8 +12,8 @@ export default {
   rewrite: [
     {
       // Remove common tracking parameters
-      match: (url) => url.search.includes('utm_'),
-      url: (url) => {
+      match: (url: URL) => url.search.includes('utm_'),
+      url: (url: URL) => {
         const params = [
           'utm_source',
           'utm_medium',
@@ -28,9 +31,9 @@ export default {
     {
       // Rewrite Zoom URLs to open in Zoom app with password
       // @https://github.com/johnste/finicky/wiki/Configuration-ideas#open-zoom-links-in-zoom-app-with-or-without-password
-      match: (url) =>
+      match: (url: URL) =>
         url.host.includes('zoom.us') && url.pathname.includes('/j/'),
-      url: (url) => {
+      url: (url: URL) => {
         try {
           const match = url.search.match(/pwd=(\w*)/);
           var pass = match ? '&pwd=' + match[1] : '';
@@ -115,3 +118,5 @@ export default {
     // logRequests: true,
   },
 };
+
+export default config;

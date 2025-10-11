@@ -13,11 +13,14 @@
 #       run: bundle audit
 #
 pre-commit:
-  #   parallel: true
+  parallel: true
   commands:
     prettier:
       stage_fixed: true
       run: bin/prettier --write {staged_files}
+    typecheck:
+      glob: '*.ts'
+      run: npx tsc --noEmit
 #     rubocop:
 #       tags: backend style
 #       glob: "*.rb"

@@ -1,9 +1,17 @@
 {
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "npm run typecheck && npm run format:check",
+    "test": "npm run lint"
+  },
   "devDependencies": {
     "adr-tools": "^2.0.4",
     "prettier": "^3.4.1",
     "prettier-plugin-ignored": "^1.0.0",
     "prettier-plugin-sh": "^0.14.0",
-    "prettier-plugin-toml": "^2.0.1"
+    "prettier-plugin-toml": "^2.0.1",
+    "typescript": "^5.9.3"
   }
 }
