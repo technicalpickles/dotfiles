@@ -21,6 +21,12 @@
       }
     },
     {
+      "files": ["*.yml", "*.yaml"],
+      "options": {
+        "parser": "yaml"
+      }
+    },
+    {
       "files": [".gitignore", "**/ignore"],
       "options": {
         "parser": "ignored"
