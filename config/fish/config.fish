@@ -47,11 +47,26 @@ if [ -n "$HOMEBREW_PREFIX" ]
 end
 
 if status is-interactive
-    # use code-insiders by default
-    if command -q code-insiders
-        alias code=code-insiders
+    # Use envsense to set code alias based on IDE context
+    # See https://github.com/technicalpickles/envsense for detection logic
+    if which envsense >/dev/null
+        # Get the IDE id once and use it to set the appropriate alias
+        set -l ide_id (envsense info --json 2>/dev/null | jq -r '.traits.ide.id // empty')
+
+        if test "$ide_id" = cursor && which cursor >/dev/null
+            alias code=cursor
+        else if test "$ide_id" = vscode-insiders && which code-insiders >/dev/null
+            alias code=code-insiders
+        else if test "$ide_id" = vscode && which code >/dev/null
+            alias code=code
+        end
     else
-        alias code=code
+        # Fallback: prefer code-insiders if available
+        if command -q code-insiders
+            alias code=code-insiders
+        else if command -q code
+            alias code=code
+        end
     end
 
     if command -q fzf
