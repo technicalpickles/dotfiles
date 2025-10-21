@@ -148,6 +148,9 @@ node_modules
 # claude
 home/.claude/*
 !home/.claude/CLAUDE.md
+!home/.claude/skills/
+
+.claude/settings.local.json
 
 # vagrant
 .vagrant
