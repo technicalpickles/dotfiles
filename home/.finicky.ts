@@ -4,6 +4,18 @@
 /// <reference path="./finicky.d.ts" />
 import type { FinickyConfig } from 'finicky';
 
+// System-specific Chrome profiles
+// Edit these values for each system, or add hostname-based conditionals below
+let personalChromeProfile = 'Profile 1'; // default
+let workChromeProfile = 'Profile 1'; // default
+
+// Example: Customize per hostname
+// const hostname = finicky.getSystemInfo().name;
+// if (hostname === 'your-macbook-name') {
+//   personalChromeProfile = 'Profile 3';
+//   workChromeProfile = 'Profile 1';
+// }
+
 const config: FinickyConfig = {
   // Horse Browser is the default for everything not explicitly routed
   defaultBrowser: 'Horse',
@@ -72,7 +84,10 @@ const config: FinickyConfig = {
     // Google Meet works better in Chrome
     {
       match: ['meet.google.com/*', '*.meet.google.com/*'],
-      browser: 'Google Chrome',
+      browser: {
+        name: 'Google Chrome',
+        profile: workChromeProfile,
+      },
     },
 
     // Google Calendar - open in Chrome installed app
@@ -89,7 +104,19 @@ const config: FinickyConfig = {
         'slides.google.com/*',
         'drive.google.com/*',
       ],
-      browser: 'Google Chrome',
+      browser: {
+        name: 'Google Chrome',
+        profile: workChromeProfile,
+      },
+    },
+
+    // YouTube - open in Chrome
+    {
+      match: ['youtube.com/*', '*.youtube.com/*', 'youtu.be/*'],
+      browser: {
+        name: 'Google Chrome',
+        profile: personalChromeProfile,
+      },
     },
 
     // Sites that commonly have Chrome-specific optimizations
@@ -108,7 +135,10 @@ const config: FinickyConfig = {
         '*.test*',
         '*.dev*',
       ],
-      browser: 'Google Chrome',
+      browser: {
+        name: 'Google Chrome',
+        profile: workChromeProfile,
+      },
     },
   ],
 
