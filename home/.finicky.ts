@@ -110,6 +110,15 @@ const config: FinickyConfig = {
       },
     },
 
+    // Datadog - open in Chrome
+    {
+      match: ['*.datadoghq.com/*', 'datadoghq.com/*'],
+      browser: {
+        name: 'Google Chrome',
+        profile: workChromeProfile,
+      },
+    },
+
     // YouTube - open in Chrome
     {
       match: ['youtube.com/*', '*.youtube.com/*', 'youtu.be/*'],
