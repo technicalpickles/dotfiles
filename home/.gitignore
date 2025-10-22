@@ -9,3 +9,4 @@ scratch-area
 scratch
 .scratch
 .playwright-mcp
+.claude/settings.local.json
