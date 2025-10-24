@@ -1,0 +1,285 @@
+#!/usr/bin/osascript
+-- Add one or more directories to Spotlight exclusions via AppleScript UI automation
+--
+-- Usage: spotlight-add-exclusion /path/to/directory1 [/path/to/directory2 ...]
+--
+-- Features:
+--   - Accepts multiple directory paths as arguments
+--   - Checks current exclusions to avoid re-adding
+--   - Validates that directories exist before attempting to add them
+--   - Adds all new directories in a single UI session (efficient)
+--
+-- Requirements:
+--   - macOS System Settings must have accessibility permissions for Terminal/iTerm/etc
+--   - System Settings should not already be open when running this script
+--   - Python 3 (for reading current exclusions)
+--
+-- This script automates the UI flow:
+--   1. Checks current exclusions and filters out duplicates
+--   2. Opens System Settings > Spotlight
+--   3. Clicks the "Search Privacy" button
+--   4. For each new directory:
+--      - Clicks the "Add" button
+--      - Uses Cmd+Shift+G to navigate to the directory
+--      - Confirms the selection
+--   5. Closes the modal and quits System Settings
+--   6. Lists all current exclusions
+
+on run argv
+	-- Check for directory argument(s)
+	if (count of argv) < 1 then
+		display dialog "Usage: spotlight-add-exclusion /path/to/directory1 [/path/to/directory2 ...]" buttons {"OK"} default button "OK" with icon stop
+		error "No directory paths provided"
+	end if
+
+	log "=== Checking Current Exclusions ==="
+
+	-- Get current exclusions to avoid re-adding
+	set currentExclusions to my getCurrentExclusions()
+	log "Found " & (count of currentExclusions) & " existing exclusions"
+
+	-- Filter and validate paths
+	set pathsToAdd to {}
+	repeat with targetPath in argv
+		set targetPath to targetPath as text
+		set shouldSkip to false
+
+		-- Validate path exists
+		try
+			do shell script "test -d " & quoted form of targetPath
+		on error
+			log "⚠️  Skipping (does not exist): " & targetPath
+			set shouldSkip to true
+		end try
+
+		if shouldSkip is false then
+			-- Check if already excluded
+			if currentExclusions contains targetPath then
+				log "⏭️  Skipping (already excluded): " & targetPath
+			else
+				set end of pathsToAdd to targetPath
+				log "✓ Will add: " & targetPath
+			end if
+		end if
+	end repeat
+
+	-- Exit early if nothing to add
+	if (count of pathsToAdd) = 0 then
+		log ""
+		log "=== Nothing to Add ==="
+		display dialog "All specified directories are either already excluded or don't exist." buttons {"OK"} default button "OK"
+		return "No changes needed"
+	end if
+
+	-- Show confirmation dialog
+	set pathsList to ""
+	repeat with p in pathsToAdd
+		set pathsList to pathsList & "  • " & p & return
+	end repeat
+
+	display dialog "Add " & (count of pathsToAdd) & " director" & (my pluralize(count of pathsToAdd, "y", "ies")) & " to Spotlight exclusions:" & return & return & pathsList & return & "Make sure System Settings is not already open. Continue?" buttons {"Cancel", "Continue"} default button "Continue"
+
+	log ""
+	log "=== Adding " & (count of pathsToAdd) & " Exclusions ==="
+
+	-- STEP 1: Open Spotlight settings
+	log "Opening Spotlight settings..."
+	tell application "System Settings"
+		quit
+	end tell
+	delay 2
+
+	do shell script "open 'x-apple.systempreferences:com.apple.Spotlight-Settings.extension'"
+	delay 5
+
+	-- STEP 2: Click Search Privacy button
+	log "Clicking Search Privacy button..."
+	tell application "System Events"
+		tell process "System Settings"
+			tell window 1
+				set mainGroup to item 1 of (every group)
+				set splitGroup to item 1 of (every splitter group of mainGroup)
+				set contentGroup to item 2 of (every group of splitGroup)
+				set innerGroup to item 1 of (every UI element of contentGroup)
+
+				set allElements to entire contents of innerGroup
+
+				repeat with elem in allElements
+					try
+						if class of elem is button and description of elem is "button" then
+							click elem
+							log "Search Privacy button clicked"
+							exit repeat
+						end if
+					end try
+				end repeat
+			end tell
+		end tell
+	end tell
+
+	delay 3
+
+	-- STEP 3: Verify modal appeared
+	tell application "System Events"
+		tell process "System Settings"
+			tell window 1
+				set sheetCount to count of sheets
+				if sheetCount = 0 then
+					error "Search Privacy modal did not appear"
+				end if
+				log "Search Privacy modal opened"
+			end tell
+		end tell
+	end tell
+
+	-- STEP 4: Add each directory
+	set addedCount to 0
+	repeat with targetPath in pathsToAdd
+		set targetPath to targetPath as text
+		log ""
+		log "Adding: " & targetPath
+
+		-- Click Add button
+		tell application "System Events"
+			tell process "System Settings"
+				tell window 1
+					tell sheet 1
+						set mainGroup to item 1 of (every UI element)
+						set scrollArea to item 1 of (every scroll area of mainGroup)
+						set contentGroup to item 1 of (every group of scrollArea)
+						set buttonsGroup to item 2 of (every UI element of contentGroup)
+
+						tell buttonsGroup
+							set addButton to item 1 of (every button)
+							click addButton
+						end tell
+					end tell
+				end tell
+			end tell
+		end tell
+
+		delay 1
+
+		-- Use Cmd+Shift+G to navigate
+		tell application "System Events"
+			keystroke "g" using {command down, shift down}
+			delay 0.5
+			keystroke targetPath
+			delay 0.5
+			keystroke return
+			delay 1
+		end tell
+
+		-- Click Choose button (or press Return as fallback)
+		tell application "System Events"
+			tell process "System Settings"
+				tell window 1
+					tell sheet 1
+						tell sheet 1
+							try
+								set chooseButton to button "Choose"
+								click chooseButton
+							on error
+								keystroke return
+							end try
+						end tell
+					end tell
+				end tell
+			end tell
+		end tell
+
+		delay 1
+		set addedCount to addedCount + 1
+		log "✓ Added: " & targetPath
+	end repeat
+
+	-- STEP 5: Close the modal
+	log ""
+	log "Closing Search Privacy modal..."
+	tell application "System Events"
+		tell process "System Settings"
+			tell window 1
+				if (count of sheets) > 0 then
+					tell sheet 1
+						try
+							set doneButton to button 1
+							click doneButton
+						on error
+							keystroke (ASCII character 27)
+						end try
+					end tell
+				end if
+			end tell
+		end tell
+	end tell
+
+	delay 2
+
+	-- STEP 6: Quit System Settings
+	tell application "System Settings"
+		quit
+	end tell
+
+	delay 1
+
+	-- STEP 7: List current exclusions
+	log ""
+	log "=== Listing Current Exclusions ==="
+	try
+		do shell script "/Users/josh.nichols/workspace/dotfiles/bin/spotlight-list-exclusions"
+	end try
+
+	-- STEP 8: Success message
+	log ""
+	log "=== Complete ==="
+	log "Added " & addedCount & " exclusion" & (my pluralize(addedCount, "", "s"))
+
+	display dialog "Successfully added " & addedCount & " exclusion" & (my pluralize(addedCount, "", "s")) & "!" & return & return & "Check the output for the full list of current exclusions." buttons {"OK"} default button "OK"
+
+	return "Success: Added " & addedCount & " exclusion" & (my pluralize(addedCount, "", "s"))
+end run
+
+-- Helper function to get current exclusions
+on getCurrentExclusions()
+	set exclusions to {}
+
+	try
+		-- Use Python to parse the plist properly
+		set pythonScript to "
+import subprocess
+import plistlib
+import sys
+
+try:
+    result = subprocess.run(
+        ['sudo', 'mdutil', '-P', '/System/Volumes/Data'],
+        capture_output=True,
+        text=False
+    )
+    data = plistlib.loads(result.stdout)
+    exclusions = data.get('Exclusions', [])
+    for path in exclusions:
+        print(path)
+except Exception:
+    sys.exit(1)
+"
+
+		set exclusionList to do shell script "python3 -c " & quoted form of pythonScript
+		set AppleScript's text item delimiters to return
+		set exclusions to text items of exclusionList
+		set AppleScript's text item delimiters to ""
+	on error errMsg
+		log "Warning: Could not get current exclusions: " & errMsg
+	end try
+
+	return exclusions
+end getCurrentExclusions
+
+-- Helper function for pluralization
+on pluralize(n, singular, plural)
+	if n = 1 then
+		return singular
+	else
+		return plural
+	end if
+end pluralize

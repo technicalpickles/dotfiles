@@ -123,7 +123,23 @@ The `brew_bundle()` function in [functions.sh:99-103](functions.sh#L99-L103) con
 
 The [LaunchAgents/](LaunchAgents/) directory contains `.plist` files for macOS launch agents. These are symlinked and can be managed with [launchagents.sh](launchagents.sh).
 
-Notable use case: Disabling Spotlight indexing via a launch agent (see [ADR 0008](doc/adr/0008-disable-spotlight-with-launchagent.md)).
+The LaunchAgent infrastructure is available for automating tasks at login or on schedules. Currently, no launch agents are configured by default.
+
+### Spotlight Exclusion Management
+
+This repository provides tools for managing Spotlight exclusions on macOS. Spotlight is kept enabled system-wide (for Alfred and other tools), but specific directories can be excluded from indexing to reduce resource consumption.
+
+**Scripts:**
+
+- [bin/spotlight-add-exclusion](bin/spotlight-add-exclusion): Add directories to Spotlight exclusions via AppleScript UI automation
+- [bin/spotlight-list-exclusions](bin/spotlight-list-exclusions): List current exclusions from VolumeConfiguration.plist
+
+**Documentation:**
+
+- [doc/spotlight-exclusions.md](doc/spotlight-exclusions.md): Comprehensive usage guide
+- [ADR 0010](doc/adr/0010-manage-spotlight-exclusions-with-applescript.md): Architecture decision for AppleScript-based approach
+
+**Note:** Previously (ADR 0008), Spotlight was disabled entirely via LaunchAgent. This was superseded because Alfred requires Spotlight to function.
 
 ## Key Utilities & Helper Functions
 
