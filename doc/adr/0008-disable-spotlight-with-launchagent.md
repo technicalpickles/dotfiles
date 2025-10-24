@@ -4,7 +4,9 @@ Date: 2025-10-09
 
 ## Status
 
-Accepted
+Superseded by [ADR-0010](0010-manage-spotlight-exclusions-with-applescript.md)
+
+**Reason for superseding:** Alfred (macOS productivity app) requires Spotlight to be enabled to function. Disabling Spotlight system-wide makes Alfred unable to search or launch applications. The new approach (ADR-0010) uses AppleScript-based tools to manage granular per-directory exclusions while keeping Spotlight enabled.
 
 ## Context and Problem Statement
 
