@@ -14,7 +14,25 @@ This repository provides tools to manage Spotlight exclusions on a per-directory
 
 ## Quick Start
 
-### Add directories to exclusions
+### Pattern-Based Exclusions (Recommended)
+
+The easiest way to exclude common directories is using pattern-based exclusions:
+
+```bash
+# Preview what would be excluded
+bin/spotlight-apply-exclusions --dry-run ~/.config/spotlight-exclusions
+
+# Apply exclusions from pattern file
+bin/spotlight-apply-exclusions ~/.config/spotlight-exclusions
+```
+
+The pattern file uses gitignore-style syntax to specify directories. Edit `~/.config/spotlight-exclusions` to customize patterns for your setup.
+
+**See [Pattern-Based Exclusions](#pattern-based-exclusions-gitignore-style) below for details.**
+
+### Manual Directory Exclusions
+
+For one-off exclusions, use `spotlight-add-exclusion` directly:
 
 ```bash
 # Add a single directory
@@ -160,6 +178,251 @@ Exclusions:
 === Additional Mounted Volumes ===
 (none mounted)
 ```
+
+## Pattern-Based Exclusions (Gitignore-Style)
+
+The pattern-based exclusion system provides a declarative way to manage Spotlight exclusions using a familiar gitignore-style syntax.
+
+### Overview
+
+Instead of manually adding each directory, you can specify patterns in a configuration file (`~/.config/spotlight-exclusions`) and apply them all at once. This is especially useful for excluding common patterns across many projects (like `node_modules`, `.venv`, build artifacts, etc.).
+
+### Quick Example
+
+```bash
+# Preview what would be excluded
+bin/spotlight-apply-exclusions --dry-run ~/.config/spotlight-exclusions
+
+# Apply the exclusions
+bin/spotlight-apply-exclusions ~/.config/spotlight-exclusions
+```
+
+### Pattern Syntax
+
+The pattern file supports three types of patterns:
+
+#### 1. Literal Paths
+
+Exact directory paths with tilde expansion:
+
+```gitignore
+~/.cache
+~/.npm/_cacache
+~/Library/Caches
+```
+
+These are fast (< 1 second) and expand `~` to your home directory.
+
+#### 2. Single-Level Glob
+
+Match immediate children of a directory using `*/`:
+
+```gitignore
+# Matches ~/workspace/PROJECT/node_modules (one level deep)
+~/workspace/*/node_modules
+
+# Matches ~/workspace/PROJECT/dist
+~/workspace/*/dist
+```
+
+This is reasonably fast (~1-2 seconds for 100+ projects) and only searches one level deep.
+
+#### 3. Recursive Globstar (Use Sparingly)
+
+Match at any depth using `**/`:
+
+```gitignore
+# Matches node_modules anywhere under ~/workspace
+~/workspace/**/node_modules
+
+# Matches __pycache__ at any depth
+~/workspace/**/__pycache__
+```
+
+**⚠️ Warning:** Recursive patterns can be very slow with many projects (minutes). Use single-level globs when possible.
+
+### Default Pattern File
+
+The default pattern file is located at `config/spotlight-exclusions` in this repository and symlinked to `~/.config/spotlight-exclusions`.
+
+It includes:
+
+- **User-level caches** (literal paths): `~/.cache`, `~/.npm/_cacache`, etc.
+- **Development tool installations**: `~/.mise/installs`, `~/.rbenv/versions`, etc.
+- **macOS system caches**: `~/Library/Caches`, `~/Library/Logs`
+- **Container data**: `~/.docker`, `~/.vagrant.d`
+- **Workspace patterns** (single-level): `~/workspace/*/node_modules` (commented examples)
+
+**Default patterns are fast by default** - only literal paths and one workspace pattern are enabled. Deep recursive patterns are commented out.
+
+### Customizing Patterns
+
+Edit the pattern file to match your setup:
+
+```bash
+# Edit with your preferred editor
+code ~/.config/spotlight-exclusions
+
+# Or edit the source file
+code config/spotlight-exclusions
+```
+
+**Pattern File Format:**
+
+```gitignore
+# Comments start with #
+# Blank lines are ignored
+
+# User-level caches (fast)
+~/.cache
+~/.npm/_cacache
+
+# Workspace patterns (reasonably fast with single-level glob)
+~/workspace/*/node_modules
+~/workspace/*/.venv
+~/workspace/*/dist
+
+# Deep recursive patterns (slow - use only if needed)
+# ~/workspace/**/__pycache__
+# ~/workspace/**/coverage
+```
+
+### Tools
+
+#### `spotlight-expand-patterns`
+
+Expands patterns to concrete directory paths:
+
+```bash
+# Expand patterns and show results
+bin/spotlight-expand-patterns ~/.config/spotlight-exclusions
+
+# With verbose output
+bin/spotlight-expand-patterns --verbose ~/.config/spotlight-exclusions
+
+# Limit recursion depth for globstar patterns
+bin/spotlight-expand-patterns --max-depth 5 ~/.config/spotlight-exclusions
+```
+
+**Options:**
+
+- `--verbose, -v`: Show detailed expansion process
+- `--max-depth N`: Limit recursion depth for `**/` patterns (default: 10)
+- `--validate`: Validate patterns before searching
+- `--help, -h`: Show usage information
+
+**Requirements:**
+
+- **`fd` command**: Required for fast directory searching (installed via Homebrew)
+
+#### `spotlight-apply-exclusions`
+
+Applies exclusions from a pattern file:
+
+```bash
+# Dry-run (preview only)
+bin/spotlight-apply-exclusions --dry-run ~/.config/spotlight-exclusions
+
+# Apply exclusions
+bin/spotlight-apply-exclusions ~/.config/spotlight-exclusions
+
+# With verbose output
+bin/spotlight-apply-exclusions --verbose ~/.config/spotlight-exclusions
+```
+
+**Options:**
+
+- `--dry-run, -n`: Show what would be excluded without applying
+- `--verbose, -v`: Show detailed progress
+- `--max-depth N`: Limit recursion depth for globstar patterns (default: 10)
+- `--validate`: Validate patterns before applying
+- `--help, -h`: Show usage information
+
+**What It Does:**
+
+1. Expands patterns using `spotlight-expand-patterns`
+2. Shows summary of directories to exclude
+3. Calls `spotlight-add-exclusion` with all directories (unless `--dry-run`)
+4. Reports progress and final summary
+
+### Performance
+
+Pattern expansion performance varies by pattern type:
+
+| Pattern Type       | Example                       | Performance (117 projects) |
+| ------------------ | ----------------------------- | -------------------------- |
+| Literal paths      | `~/.cache`                    | < 1 second                 |
+| Single-level glob  | `~/workspace/*/node_modules`  | ~1-2 seconds               |
+| Recursive globstar | `~/workspace/**/node_modules` | Minutes (very slow)        |
+
+**Recommendation:** Use literal paths and single-level globs for best performance. Avoid recursive globstar patterns with many projects.
+
+### Examples
+
+#### Exclude Node.js Dependencies
+
+```gitignore
+# Single-level (fast - only immediate children)
+~/workspace/*/node_modules
+
+# Recursive (slow - searches deeply nested)
+# ~/workspace/**/node_modules
+```
+
+#### Exclude Python Virtual Environments
+
+```gitignore
+~/workspace/*/.venv
+~/workspace/*/venv
+```
+
+#### Exclude Build Artifacts
+
+```gitignore
+~/workspace/*/build
+~/workspace/*/dist
+~/workspace/*/.next
+~/workspace/*/.turbo
+```
+
+#### Exclude Everything Under a Specific Project
+
+```gitignore
+# Exclude entire project
+~/workspace/large-monorepo
+
+# Or specific subdirectories
+~/workspace/large-monorepo/node_modules
+~/workspace/large-monorepo/build
+```
+
+### Troubleshooting
+
+#### Pattern matches nothing
+
+**Cause:** Directory doesn't exist or pattern syntax is incorrect
+
+**Solutions:**
+
+- Verify directories exist: `ls -ld ~/workspace/*/node_modules`
+- Use `--verbose` to see expansion details
+- Check pattern syntax matches one of the three types
+
+#### Expansion is very slow
+
+**Cause:** Using recursive globstar (`**/`) with many directories
+
+**Solutions:**
+
+- Replace `~/workspace/**/node_modules` with `~/workspace/*/node_modules` (single-level)
+- Reduce `--max-depth` value
+- Use literal paths for specific projects instead
+
+#### "fd is required but not installed"
+
+**Cause:** `fd` command not found
+
+**Solution:** Install via Homebrew: `brew install fd`
 
 ## How It Works
 
@@ -359,10 +622,12 @@ Then use `spotlight-add-exclusion` to exclude only the specific directories you 
 
 ## See Also
 
-- [ADR 0010: Manage Spotlight Exclusions with AppleScript](adr/0010-manage-spotlight-exclusions-with-applescript.md) - Architecture decision documenting why we use this approach
+- [ADR 0011: Pattern-Based Spotlight Exclusions](adr/0011-pattern-based-spotlight-exclusions.md) - Architecture decision for gitignore-style pattern system
+- [ADR 0010: Manage Spotlight Exclusions with AppleScript](adr/0010-manage-spotlight-exclusions-with-applescript.md) - Architecture decision documenting why we use AppleScript for GUI automation
 - [ADR 0008: Disable Spotlight with LaunchAgent](adr/0008-disable-spotlight-with-launchagent.md) - Previous approach (superseded) that disabled Spotlight entirely
 - `scratch/applescript-spotlight-research.md` - Research documenting how the AppleScript approach was developed
 - `scratch/RESOLVED-spotlight-storage-mystery.md` - Research solving where exclusions are stored on APFS volume groups
+- `scratch/spotlight-exclusion-file/PLAN.md` - Implementation plan for pattern-based exclusion system
 
 ## Future Improvements
 

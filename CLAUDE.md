@@ -129,14 +129,37 @@ The LaunchAgent infrastructure is available for automating tasks at login or on 
 
 This repository provides tools for managing Spotlight exclusions on macOS. Spotlight is kept enabled system-wide (for Alfred and other tools), but specific directories can be excluded from indexing to reduce resource consumption.
 
-**Scripts:**
+**Pattern-Based Exclusions (Recommended):**
 
-- [bin/spotlight-add-exclusion](bin/spotlight-add-exclusion): Add directories to Spotlight exclusions via AppleScript UI automation
+- [config/spotlight-exclusions](config/spotlight-exclusions): Gitignore-style pattern file (symlinked to `~/.config/spotlight-exclusions`)
+- [bin/spotlight-expand-patterns](bin/spotlight-expand-patterns): Expands patterns to concrete directory paths
+- [bin/spotlight-apply-exclusions](bin/spotlight-apply-exclusions): Applies exclusions from pattern file
+
+**Quick Start:**
+
+```bash
+# Preview what would be excluded
+bin/spotlight-apply-exclusions --dry-run ~/.config/spotlight-exclusions
+
+# Apply exclusions from pattern file
+bin/spotlight-apply-exclusions ~/.config/spotlight-exclusions
+```
+
+The pattern file supports:
+
+- **Literal paths**: `~/.cache`, `~/.npm/_cacache`
+- **Single-level globs** (fast): `~/workspace/*/node_modules`
+- **Recursive globstar** (slow): `~/workspace/**/node_modules`
+
+**Manual Exclusions:**
+
+- [bin/spotlight-add-exclusion](bin/spotlight-add-exclusion): Add specific directories via AppleScript UI automation
 - [bin/spotlight-list-exclusions](bin/spotlight-list-exclusions): List current exclusions from VolumeConfiguration.plist
 
 **Documentation:**
 
 - [doc/spotlight-exclusions.md](doc/spotlight-exclusions.md): Comprehensive usage guide
+- [ADR 0011](doc/adr/0011-pattern-based-spotlight-exclusions.md): Architecture decision for pattern-based exclusions
 - [ADR 0010](doc/adr/0010-manage-spotlight-exclusions-with-applescript.md): Architecture decision for AppleScript-based approach
 
 **Note:** Previously (ADR 0008), Spotlight was disabled entirely via LaunchAgent. This was superseded because Alfred requires Spotlight to function.
@@ -191,10 +214,14 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs linting on push/P
 
 ## Custom Binaries
 
-[bin/](bin/) contains wrapper scripts:
+[bin/](bin/) contains wrapper scripts and utilities:
 
 - `bin/prettier`: Wraps npm prettier with custom ignore and config paths
 - `bin/adr`: Wrapper for adr-tools
 - `bin/shell`: Helper for shell-related operations
+- `bin/spotlight-expand-patterns`: Expands gitignore-style patterns to directory paths (uses `fd`)
+- `bin/spotlight-apply-exclusions`: Applies Spotlight exclusions from pattern file
+- `bin/spotlight-add-exclusion`: Add directories to Spotlight exclusions via AppleScript
+- `bin/spotlight-list-exclusions`: List current Spotlight exclusions
 
 These are used by other scripts and hooks.
