@@ -1,0 +1,82 @@
+# Spotlight Exclusion Patterns
+# See: doc/spotlight-exclusions.md
+#
+# This file uses gitignore-style syntax to specify directories to exclude from Spotlight indexing.
+# Lines starting with # are comments. Blank lines are ignored.
+#
+# Pattern types:
+#   ~/.cache              - Literal path (with tilde expansion)
+#   ~/workspace/*/dist    - Single-level glob (immediate children only)
+#   ~/workspace/**/build  - Recursive glob (any depth within workspace)
+#
+# IMPORTANT: Recursive patterns (**/pattern) can be slow with many directories.
+# This default file focuses on user-level caches only. Add project-specific patterns as needed.
+
+# ============================================================================
+# User-Level Caches (Fast - literal paths only)
+# ============================================================================
+
+~/.cache
+~/.npm/_cacache
+~/.yarn/berry/cache/
+
+# ============================================================================
+# Development Tool Installations (Fast - literal paths only)
+# ============================================================================
+~/.local/share/mise/
+
+# ============================================================================
+# macOS System Caches (Fast - literal paths only)
+# ============================================================================
+
+~/Library/Caches
+~/Library/Logs
+
+# ============================================================================
+# Container and VM Data (Fast - literal paths only)
+# ============================================================================
+
+~/Library/Containers
+~/.docker
+~/.vagrant.d
+
+# ============================================================================
+# Project-Specific Patterns (One level deep - reasonably fast)
+# ============================================================================
+#
+# These patterns search only the immediate children of ~/workspace,
+# not recursively. Much faster than ** patterns with many projects.
+#
+# Uncomment the patterns you need:
+
+# Dependencies (one level: ~/workspace/PROJECT/node_modules)
+~/workspace/*/node_modules
+#~/workspace/*/.venv
+#~/workspace/*/venv
+~/workspace/*/vendor
+~/workspace/*/target
+~/workspace/*/sorbet/rbi/
+
+# Build artifacts (one level)
+#~/workspace/*/build
+#~/workspace/*/dist
+#~/workspace/*/.next
+
+# Temporary files (one level)
+~/workspace/*/tmp
+
+# Editor directories (one level)
+#~/workspace/*/.idea
+#~/workspace/*/.vscode
+
+# ============================================================================
+# Deep Recursive Patterns (VERY SLOW - use sparingly)
+# ============================================================================
+#
+# Only use ** patterns if you really need to search deeply nested directories.
+# These can be extremely slow with many projects (minutes, not seconds).
+#
+# Example deep patterns (commented out by default):
+# ~/workspace/**/__pycache__
+# ~/workspace/**/coverage
+# ~/workspace/**/.cache
