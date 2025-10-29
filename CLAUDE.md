@@ -219,9 +219,14 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs linting on push/P
 - `bin/prettier`: Wraps npm prettier with custom ignore and config paths
 - `bin/adr`: Wrapper for adr-tools
 - `bin/shell`: Helper for shell-related operations
+
+**Spotlight Management:**
+
 - `bin/spotlight-expand-patterns`: Expands gitignore-style patterns to directory paths (uses `fd`)
 - `bin/spotlight-apply-exclusions`: Applies Spotlight exclusions from pattern file
 - `bin/spotlight-add-exclusion`: Add directories to Spotlight exclusions via AppleScript
 - `bin/spotlight-list-exclusions`: List current Spotlight exclusions
+- `bin/spotlight-analyze-activity`: Analyze what Spotlight is actively indexing (identifies high-activity directories)
+- `bin/spotlight-monitor-live`: Live monitoring of Spotlight process activity
 
 These are used by other scripts and hooks.
