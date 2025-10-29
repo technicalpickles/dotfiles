@@ -424,6 +424,102 @@ Pattern expansion performance varies by pattern type:
 
 **Solution:** Install via Homebrew: `brew install fd`
 
+## Monitoring Spotlight Activity
+
+Before excluding directories, it's helpful to identify which directories Spotlight is actively indexing and causing high resource usage.
+
+### Analyze Indexing Activity
+
+**`spotlight-analyze-activity`** - Analyzes what Spotlight is indexing over a period of time:
+
+```bash
+# Analyze for 60 seconds (default: 30)
+bin/spotlight-analyze-activity 60
+
+# Analyze specific process (e.g., only mds_stores)
+bin/spotlight-analyze-activity 30 mds_stores
+```
+
+**Output includes:**
+
+- Top 20 directories by access count
+- Top file types being indexed
+- Recent activity samples
+- High-volume directories (>50 accesses) - candidates for exclusion
+
+**Use case:** Run this when Spotlight is consuming high CPU to identify which directories are causing the load.
+
+### Live Monitoring
+
+**`spotlight-monitor-live`** - Real-time view of Spotlight activity:
+
+```bash
+# Monitor all Spotlight processes
+bin/spotlight-monitor-live
+
+# Monitor specific process
+bin/spotlight-monitor-live mdworker
+```
+
+Press **Ctrl+C** to stop and see summary statistics.
+
+**Use case:** Watch what Spotlight is doing in real-time to understand indexing patterns.
+
+### Workflow: Identify and Exclude Problem Directories
+
+1. **Monitor activity** when Spotlight is using high resources:
+
+   ```bash
+   bin/spotlight-analyze-activity 60
+   ```
+
+2. **Identify high-volume directories** from the output:
+
+   ```
+   💡 High-Volume Directories (Consider adding to Spotlight Privacy):
+      • ~/workspace/large-project/node_modules (234 accesses)
+      • ~/Library/Caches/com.apple.Safari (189 accesses)
+      • ~/.npm/_cacache (156 accesses)
+   ```
+
+3. **Add patterns to exclusion file**:
+
+   ```bash
+   # Edit pattern file
+   code ~/.config/spotlight-exclusions
+   
+   # Add discovered directories:
+   # ~/workspace/*/node_modules
+   # ~/.npm/_cacache
+   ```
+
+4. **Preview exclusions**:
+
+   ```bash
+   bin/spotlight-apply-exclusions --dry-run ~/.config/spotlight-exclusions
+   ```
+
+5. **Apply exclusions**:
+
+   ```bash
+   bin/spotlight-apply-exclusions ~/.config/spotlight-exclusions
+   ```
+
+6. **Verify improvement** with live monitoring:
+   ```bash
+   bin/spotlight-monitor-live
+   ```
+   You should see reduced activity after exclusions are applied.
+
+### Monitoring Requirements
+
+Both tools require:
+
+- **sudo access** (to use `fs_usage` for monitoring filesystem activity)
+- **Terminal app** must be running (not just the command)
+
+**Note:** These tools use `fs_usage` which has minimal performance impact but requires elevated privileges to monitor system processes.
+
 ## How It Works
 
 ### AppleScript UI Automation
@@ -622,12 +718,28 @@ Then use `spotlight-add-exclusion` to exclude only the specific directories you 
 
 ## See Also
 
-- [ADR 0011: Pattern-Based Spotlight Exclusions](adr/0011-pattern-based-spotlight-exclusions.md) - Architecture decision for gitignore-style pattern system
-- [ADR 0010: Manage Spotlight Exclusions with AppleScript](adr/0010-manage-spotlight-exclusions-with-applescript.md) - Architecture decision documenting why we use AppleScript for GUI automation
-- [ADR 0008: Disable Spotlight with LaunchAgent](adr/0008-disable-spotlight-with-launchagent.md) - Previous approach (superseded) that disabled Spotlight entirely
-- `scratch/applescript-spotlight-research.md` - Research documenting how the AppleScript approach was developed
-- `scratch/RESOLVED-spotlight-storage-mystery.md` - Research solving where exclusions are stored on APFS volume groups
-- `scratch/spotlight-exclusion-file/PLAN.md` - Implementation plan for pattern-based exclusion system
+### Architecture Decisions
+
+- [ADR 0011: Pattern-Based Spotlight Exclusions](adr/0011-pattern-based-spotlight-exclusions.md) - Gitignore-style pattern system design
+- [ADR 0010: Manage Spotlight Exclusions with AppleScript](adr/0010-manage-spotlight-exclusions-with-applescript.md) - AppleScript GUI automation approach
+- [ADR 0008: Disable Spotlight with LaunchAgent](adr/0008-disable-spotlight-with-launchagent.md) - Previous approach (superseded)
+
+### Research Documentation
+
+- [spotlight-research/](spotlight-research/) - Consolidated research documentation
+  - [applescript-approach.md](spotlight-research/applescript-approach.md) - AppleScript research process
+  - [apfs-volume-discovery.md](spotlight-research/apfs-volume-discovery.md) - APFS volume groups and where exclusions are stored
+  - [pattern-system-plan.md](spotlight-research/pattern-system-plan.md) - Pattern system implementation plan
+  - [historical/](spotlight-research/historical/) - Additional research documents
+
+### Tools
+
+- `bin/spotlight-add-exclusion` - AppleScript-based GUI automation
+- `bin/spotlight-list-exclusions` - List exclusions from all volumes
+- `bin/spotlight-expand-patterns` - Expand gitignore-style patterns
+- `bin/spotlight-apply-exclusions` - Batch apply exclusions
+- `bin/spotlight-analyze-activity` - Analyze indexing activity
+- `bin/spotlight-monitor-live` - Live monitoring of Spotlight processes
 
 ## Future Improvements
 
