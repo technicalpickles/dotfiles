@@ -14,6 +14,18 @@ This document captures the expected baseline failure patterns based on:
 
 These expected patterns should be validated through actual subagent testing when the testing infrastructure becomes available. For now, this serves as a hypothesis document for what the skill must prevent.
 
+## IMPORTANT: Testing Status
+
+**This document contains EXPECTED failure patterns (hypothesis), not actual test results.**
+
+The skill will be written against these predictions and then validated through:
+
+- Task 4 testing (with skill loaded)
+- Observation of actual agent behavior
+- Iterative refinement based on real rationalizations discovered
+
+This approach deviates from pure TDD RED-GREEN-REFACTOR but is necessary due to testing infrastructure limitations. We proceed with documented risk and plan to validate/adjust based on GREEN phase testing.
+
 ---
 
 ## Scenario 1: Simple Command After cd
