@@ -155,3 +155,6 @@ home/.claude/*
 # vagrant
 .vagrant
 .vagrant/**/*
+
+# git worktrees
+.worktrees/
