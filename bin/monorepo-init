@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# monorepo-init: Auto-detect subprojects and generate .monorepo.json
+#
+# Usage:
+#   bin/monorepo-init              # Output JSON to stdout
+#   bin/monorepo-init --dry-run    # Same as above
+#   bin/monorepo-init --write      # Write to .monorepo.json
+
+show_usage() {
+  cat << EOF
+Usage: monorepo-init [OPTIONS]
+
+Auto-detect subprojects and generate .monorepo.json
+
+OPTIONS:
+  --dry-run    Output JSON to stdout (default)
+  --write      Write to .monorepo.json
+  -h, --help   Show this help
+
+DETECTION:
+  Scans for package manager artifacts:
+  - package.json (Node)
+  - Gemfile (Ruby)
+  - go.mod (Go)
+  - pyproject.toml, setup.py, requirements.txt (Python)
+  - Cargo.toml (Rust)
+  - build.gradle, pom.xml (Java)
+
+EXAMPLES:
+  bin/monorepo-init --dry-run
+  bin/monorepo-init | jq .
+  bin/monorepo-init --write
+EOF
+}
+
+# Parse arguments
+MODE="dry-run"
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --write)
+      MODE="write"
+      shift
+      ;;
+    --dry-run)
+      MODE="dry-run"
+      shift
+      ;;
+    -h | --help)
+      show_usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      show_usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+# TODO: Implementation in next tasks
+echo "Not yet implemented" >&2
+exit 1
