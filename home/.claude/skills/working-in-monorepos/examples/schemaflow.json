@@ -1,0 +1,15 @@
+{
+  "root": "/Users/josh/workspace/schemaflow",
+  "subprojects": {
+    "ruby": {
+      "path": "ruby",
+      "type": "ruby",
+      "description": "Ruby library"
+    },
+    "cli": {
+      "path": "cli",
+      "type": "node",
+      "description": "CLI tool"
+    }
+  }
+}
