@@ -111,6 +111,93 @@ find_artifacts() {
   fi
 }
 
-# TODO: Implementation in next tasks
-echo "Not yet implemented" >&2
-exit 1
+# Generate JSON structure
+generate_json() {
+  local root="$1"
+  local subprojects="$2" # newline-separated list of "id:path:type"
+
+  # Start JSON
+  cat << EOF
+{
+  "root": "$root",
+  "subprojects": {
+EOF
+
+  # Add each subproject
+  local first=true
+  while IFS=: read -r id path type; do
+    if [[ "$first" == true ]]; then
+      first=false
+    else
+      echo ","
+    fi
+
+    cat << EOF
+    "$id": {
+      "path": "$path",
+      "type": "$type"
+    }
+EOF
+  done <<< "$subprojects"
+
+  # Close JSON
+  cat << EOF
+
+  }
+}
+EOF
+}
+
+# Main logic
+REPO_ROOT=$(find_repo_root)
+cd "$REPO_ROOT"
+
+# Find all artifacts and group by directory
+declare -A seen_dirs
+SUBPROJECTS=""
+
+while read -r artifact_path; do
+  dir=$(dirname "$artifact_path")
+
+  # Skip if we've seen this directory
+  [[ -n "${seen_dirs[$dir]:-}" ]] && continue
+  seen_dirs[$dir]=1
+
+  # Generate subproject ID (relative path with / → -)
+  rel_path="${dir#$REPO_ROOT/}"
+  if [[ "$rel_path" == "$REPO_ROOT" ]] || [[ "$rel_path" == "." ]]; then
+    id="root"
+    rel_path="."
+  else
+    id="${rel_path//\//-}"
+  fi
+
+  # Detect type
+  type=$(detect_type "$dir")
+
+  # Add to list
+  SUBPROJECTS+="$id:$rel_path:$type"$'\n'
+done < <(find_artifacts "$REPO_ROOT")
+
+# Generate JSON
+JSON=$(generate_json "$REPO_ROOT" "$SUBPROJECTS")
+
+# Output based on mode
+case "$MODE" in
+  dry-run)
+    echo "$JSON"
+    ;;
+  write)
+    if [[ -f ".monorepo.json" ]]; then
+      echo "Warning: .monorepo.json already exists" >&2
+      echo "Overwrite? (y/N) " >&2
+      read -r response
+      if [[ ! "$response" =~ ^[Yy]$ ]]; then
+        echo "Aborted" >&2
+        exit 1
+      fi
+    fi
+    echo "$JSON" > .monorepo.json
+    echo "Written to .monorepo.json" >&2
+    ;;
+esac
