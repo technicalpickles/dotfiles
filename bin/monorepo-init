@@ -59,6 +59,58 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Find repo root
+find_repo_root() {
+  git rev-parse --show-toplevel 2> /dev/null || {
+    echo "Error: Not in a git repository" >&2
+    exit 1
+  }
+}
+
+# Detect subproject type from artifacts
+detect_type() {
+  local dir="$1"
+
+  if [[ -f "$dir/package.json" ]]; then
+    echo "node"
+  elif [[ -f "$dir/Gemfile" ]]; then
+    echo "ruby"
+  elif [[ -f "$dir/go.mod" ]]; then
+    echo "go"
+  elif [[ -f "$dir/pyproject.toml" ]] || [[ -f "$dir/setup.py" ]] || [[ -f "$dir/requirements.txt" ]]; then
+    echo "python"
+  elif [[ -f "$dir/Cargo.toml" ]]; then
+    echo "rust"
+  elif [[ -f "$dir/build.gradle" ]] || [[ -f "$dir/pom.xml" ]]; then
+    echo "java"
+  else
+    echo "unknown"
+  fi
+}
+
+# Find all artifact files
+find_artifacts() {
+  local root="$1"
+
+  # Check if fd is available (faster)
+  if command -v fd &> /dev/null; then
+    fd -t f '(package\.json|Gemfile|go\.mod|pyproject\.toml|setup\.py|requirements\.txt|Cargo\.toml|build\.gradle|pom\.xml)$' "$root"
+  else
+    # Fallback to find
+    find "$root" -type f \( \
+      -name 'package.json' -o \
+      -name 'Gemfile' -o \
+      -name 'go.mod' -o \
+      -name 'pyproject.toml' -o \
+      -name 'setup.py' -o \
+      -name 'requirements.txt' -o \
+      -name 'Cargo.toml' -o \
+      -name 'build.gradle' -o \
+      -name 'pom.xml' \
+      \)
+  fi
+}
+
 # TODO: Implementation in next tasks
 echo "Not yet implemented" >&2
 exit 1
