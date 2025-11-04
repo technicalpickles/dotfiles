@@ -229,4 +229,11 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs linting on push/P
 - `bin/spotlight-analyze-activity`: Analyze what Spotlight is actively indexing (identifies high-activity directories)
 - `bin/spotlight-monitor-live`: Live monitoring of Spotlight process activity
 
+**Monorepo Management:**
+
+- `bin/monorepo-init`: Auto-detect subprojects and generate `.monorepo.json` config
+- Skill: `working-in-monorepos` - Helps Claude work in monorepos by ensuring commands use absolute paths
+
+When working in repositories with multiple subprojects, the working-in-monorepos skill prevents directory confusion by requiring absolute paths for all commands. The skill will detect monorepos and offer to run `bin/monorepo-init` to auto-generate configuration.
+
 These are used by other scripts and hooks.

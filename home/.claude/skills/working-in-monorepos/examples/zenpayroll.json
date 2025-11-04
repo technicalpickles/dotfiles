@@ -1,0 +1,31 @@
+{
+  "root": "/Users/josh/workspace/zenpayroll",
+  "subprojects": {
+    "root": {
+      "path": ".",
+      "type": "ruby",
+      "description": "Main Rails application"
+    },
+    "gusto-deprecation": {
+      "path": "components/gusto-deprecation",
+      "type": "ruby",
+      "description": "Gusto deprecation component gem"
+    }
+  },
+  "commands": {
+    "rubocop": {
+      "location": "root",
+      "description": "Always run from repo root"
+    },
+    "rspec": {
+      "location": "subproject",
+      "command": "bundle exec rspec",
+      "overrides": {
+        "root": {
+          "command": "bin/rspec",
+          "description": "Root project uses bin/rspec wrapper"
+        }
+      }
+    }
+  }
+}
