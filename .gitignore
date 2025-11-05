@@ -149,6 +149,7 @@ node_modules
 home/.claude/*
 !home/.claude/CLAUDE.md
 !home/.claude/skills/
+!home/.claude/commands/
 
 .claude/settings.local.json
 
