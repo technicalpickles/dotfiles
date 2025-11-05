@@ -91,6 +91,19 @@ When skill activates in a repo without `.monorepo.json`:
 4. **User declines:** "No problem. I'll use git to find the repo root for each command."
 5. **User wants custom:** "You can also create .monorepo.json manually. See example below."
 
+**Helper Script Philosophy:**
+
+The `monorepo-init` script is designed as a **black-box tool**:
+
+- **Always run with `--help` first** to see usage
+- **DO NOT read the script source** unless absolutely necessary - it pollutes your context window
+- The script exists to be called directly, not analyzed
+- All necessary usage information is in the help output
+
+```bash
+~/.claude/skills/working-in-monorepos/scripts/monorepo-init --help
+```
+
 ## Command Execution Rules (With Config)
 
 If `.monorepo.json` defines command rules:
