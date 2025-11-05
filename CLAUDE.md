@@ -233,7 +233,8 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs linting on push/P
 
 - Skill: `working-in-monorepos` - Helps Claude work in monorepos by ensuring commands use absolute paths
 - Script: `~/.claude/skills/working-in-monorepos/scripts/monorepo-init` - Auto-detect subprojects and generate `.monorepo.json` config
+- Command: `/monorepo-init` - Activates skill and runs init script interactively
 
-When working in repositories with multiple subprojects, the working-in-monorepos skill prevents directory confusion by requiring absolute paths for all commands. The skill will detect monorepos and offer to run `~/.claude/skills/working-in-monorepos/scripts/monorepo-init` to auto-generate configuration.
+When working in repositories with multiple subprojects, use `/monorepo-init` to activate the working-in-monorepos skill and set up configuration. The skill prevents directory confusion by requiring absolute paths for all commands.
 
 These are used by other scripts and hooks.
