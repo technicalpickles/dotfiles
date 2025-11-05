@@ -75,11 +75,37 @@ Example:
 
 ### Without Config
 
-Use git to find repo root dynamically:
+Use git to find repo root, then construct absolute path:
+
+1. First get the repo root: `git rev-parse --show-toplevel`
+2. Use that absolute path: `cd /absolute/path/to/repo/ruby && bundle exec rspec`
+
+**Example workflow:**
 
 ```bash
-cd $(git rev-parse --show-toplevel)/ruby && bundle exec rspec
+# Step 1: Get repo root
+git rev-parse --show-toplevel
+# Output: /Users/josh/workspace/schemaflow
+
+# Step 2: Use absolute path in commands
+cd /Users/josh/workspace/schemaflow/ruby && bundle exec rspec
 ```
+
+**Why not use command substitution:** `cd $(git rev-parse --show-toplevel)/ruby` requires user approval. Instead, run `git rev-parse` once, then use the absolute path directly in all subsequent commands.
+
+**⚠️ Git subtree caveat:** In repositories containing git subtrees (nested git repos), `git rev-parse --show-toplevel` returns the innermost repo root, not the monorepo root. This makes it unreliable for subtree scenarios. Creating a `.monorepo.json` config is the robust solution that works in all cases.
+
+## Workflow When Working Without Config
+
+When working in a repo without `.monorepo.json`:
+
+1. **Get repo root ONCE at start of session:** Run `git rev-parse --show-toplevel`
+2. **Store the result mentally:** e.g., `/Users/josh/workspace/schemaflow`
+3. **Use absolute paths for ALL commands:** `cd /Users/josh/workspace/schemaflow/subproject && command`
+
+**Do NOT use command substitution like `cd $(git rev-parse --show-toplevel)/subproject`** - this requires user approval every time. Get the path once, then use it directly.
+
+**Important limitation:** `git rev-parse --show-toplevel` may not work correctly in repositories with git subtrees (nested git repos), as it returns the innermost repository root. For subtree scenarios, a `.monorepo.json` config is strongly recommended to explicitly define the true monorepo root.
 
 ## Setup Workflow (No Config Present)
 
@@ -88,7 +114,7 @@ When skill activates in a repo without `.monorepo.json`:
 1. **Detect:** "I notice this appears to be a monorepo without a .monorepo.json config."
 2. **Offer:** "I can run ~/.claude/skills/working-in-monorepos/scripts/monorepo-init to auto-detect subprojects and generate config. Would you like me to?"
 3. **User accepts:** Run `~/.claude/skills/working-in-monorepos/scripts/monorepo-init --dry-run`, show output, ask for approval, then `~/.claude/skills/working-in-monorepos/scripts/monorepo-init --write`
-4. **User declines:** "No problem. I'll use git to find the repo root for each command."
+4. **User declines:** "No problem. I'll get the repo root once with git rev-parse and use absolute paths for all commands."
 5. **User wants custom:** "You can also create .monorepo.json manually. See example below."
 
 **Helper Script Philosophy:**
@@ -157,13 +183,14 @@ Reality: They break when assumptions are wrong. Always use absolute paths.
 
 ## Quick Reference
 
-| Task                    | Command Pattern                                                                                    |
-| ----------------------- | -------------------------------------------------------------------------------------------------- |
-| Run tests in subproject | `cd $(git rev-parse --show-toplevel)/subproject && test-command`                                   |
-| With config             | `cd {root}/{subproject.path} && command`                                                           |
-| Check for config        | `test -f .monorepo.json`                                                                           |
-| Generate config         | `~/.claude/skills/working-in-monorepos/scripts/monorepo-init --dry-run` (works from any directory) |
-| Always rule             | Use absolute path + cd prefix for EVERY command                                                    |
+| Task                    | Command Pattern                                                                                         |
+| ----------------------- | ------------------------------------------------------------------------------------------------------- |
+| Get repo root           | `git rev-parse --show-toplevel` (run once, use result in all commands)                                  |
+| Run tests in subproject | `cd /absolute/path/to/repo/subproject && test-command`                                                  |
+| With config             | `cd {root}/{subproject.path} && command`                                                                |
+| Check for config        | `test -f .monorepo.json`                                                                                |
+| Generate config         | `~/.claude/skills/working-in-monorepos/scripts/monorepo-init --dry-run` (works from any directory)      |
+| Always rule             | Use absolute path + cd prefix for EVERY command. Get repo root first, then use absolute paths directly. |
 
 ## Configuration Schema
 
