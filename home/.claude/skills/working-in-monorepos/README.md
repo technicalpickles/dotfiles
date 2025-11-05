@@ -35,16 +35,16 @@ See `tests/` directory for:
 - `SKILL.md`: Main skill document
 - `examples/`: Example .monorepo.json configs
 - `tests/`: TDD test scenarios and results
-- `../../bin/monorepo-init`: Init script for config generation
+- `scripts/monorepo-init`: Init script for config generation
 
 ## Usage
 
 The skill activates automatically when working in monorepos. It will:
 
 1. Check for `.monorepo.json`
-2. Offer to run `bin/monorepo-init` if missing
+2. Offer to run `~/.claude/skills/working-in-monorepos/scripts/monorepo-init` if missing
 3. Enforce absolute path usage for all commands
 
 ## Related Tools
 
-- `bin/monorepo-init`: Auto-detect subprojects and generate config
+- `scripts/monorepo-init`: Auto-detect subprojects and generate config

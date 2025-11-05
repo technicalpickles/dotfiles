@@ -86,8 +86,8 @@ cd $(git rev-parse --show-toplevel)/ruby && bundle exec rspec
 When skill activates in a repo without `.monorepo.json`:
 
 1. **Detect:** "I notice this appears to be a monorepo without a .monorepo.json config."
-2. **Offer:** "I can run bin/monorepo-init to auto-detect subprojects and generate config. Would you like me to?"
-3. **User accepts:** Run `bin/monorepo-init --dry-run`, show output, ask for approval, then `bin/monorepo-init --write`
+2. **Offer:** "I can run ~/.claude/skills/working-in-monorepos/scripts/monorepo-init to auto-detect subprojects and generate config. Would you like me to?"
+3. **User accepts:** Run `~/.claude/skills/working-in-monorepos/scripts/monorepo-init --dry-run`, show output, ask for approval, then `~/.claude/skills/working-in-monorepos/scripts/monorepo-init --write`
 4. **User declines:** "No problem. I'll use git to find the repo root for each command."
 5. **User wants custom:** "You can also create .monorepo.json manually. See example below."
 
@@ -137,13 +137,13 @@ Reality: They break when assumptions are wrong. Always use absolute paths.
 
 ## Quick Reference
 
-| Task                    | Command Pattern                                                  |
-| ----------------------- | ---------------------------------------------------------------- |
-| Run tests in subproject | `cd $(git rev-parse --show-toplevel)/subproject && test-command` |
-| With config             | `cd {root}/{subproject.path} && command`                         |
-| Check for config        | `test -f .monorepo.json`                                         |
-| Generate config         | `bin/monorepo-init --dry-run` then `bin/monorepo-init --write`   |
-| Always rule             | Use absolute path + cd prefix for EVERY command                  |
+| Task                    | Command Pattern                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------------- |
+| Run tests in subproject | `cd $(git rev-parse --show-toplevel)/subproject && test-command`                            |
+| With config             | `cd {root}/{subproject.path} && command`                                                    |
+| Check for config        | `test -f .monorepo.json`                                                                    |
+| Generate config         | `~/.claude/skills/working-in-monorepos/scripts/monorepo-init --dry-run` then with `--write` |
+| Always rule             | Use absolute path + cd prefix for EVERY command                                             |
 
 ## Configuration Schema
 
