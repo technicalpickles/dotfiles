@@ -100,8 +100,15 @@ The `monorepo-init` script is designed as a **black-box tool**:
 - The script exists to be called directly, not analyzed
 - All necessary usage information is in the help output
 
+**Script Location:**
+
+The script is located at `~/.claude/skills/working-in-monorepos/scripts/monorepo-init` (absolute path). Since skills are symlinked from the dotfiles repo via `home/.claude/skills/` → `~/.claude/skills/`, this path works universally regardless of which project directory you're currently in.
+
 ```bash
+# Run from any directory - use the absolute path
 ~/.claude/skills/working-in-monorepos/scripts/monorepo-init --help
+~/.claude/skills/working-in-monorepos/scripts/monorepo-init --dry-run
+~/.claude/skills/working-in-monorepos/scripts/monorepo-init --write
 ```
 
 ## Command Execution Rules (With Config)
@@ -150,13 +157,13 @@ Reality: They break when assumptions are wrong. Always use absolute paths.
 
 ## Quick Reference
 
-| Task                    | Command Pattern                                                                             |
-| ----------------------- | ------------------------------------------------------------------------------------------- |
-| Run tests in subproject | `cd $(git rev-parse --show-toplevel)/subproject && test-command`                            |
-| With config             | `cd {root}/{subproject.path} && command`                                                    |
-| Check for config        | `test -f .monorepo.json`                                                                    |
-| Generate config         | `~/.claude/skills/working-in-monorepos/scripts/monorepo-init --dry-run` then with `--write` |
-| Always rule             | Use absolute path + cd prefix for EVERY command                                             |
+| Task                    | Command Pattern                                                                                    |
+| ----------------------- | -------------------------------------------------------------------------------------------------- |
+| Run tests in subproject | `cd $(git rev-parse --show-toplevel)/subproject && test-command`                                   |
+| With config             | `cd {root}/{subproject.path} && command`                                                           |
+| Check for config        | `test -f .monorepo.json`                                                                           |
+| Generate config         | `~/.claude/skills/working-in-monorepos/scripts/monorepo-init --dry-run` (works from any directory) |
+| Always rule             | Use absolute path + cd prefix for EVERY command                                                    |
 
 ## Configuration Schema
 
