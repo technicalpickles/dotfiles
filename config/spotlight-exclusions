@@ -17,13 +17,20 @@
 # ============================================================================
 
 ~/.cache
-~/.npm/_cacache
 ~/.yarn/berry/cache/
 
 # ============================================================================
 # Development Tool Installations (Fast - literal paths only)
 # ============================================================================
 ~/.local/share/mise/
+~/.local/share/pnpm/
+~/.rustup
+~/.gemstash
+~/go
+~/.npm
+~/.cargo
+~/.cursor
+~/.vscode
 
 # ============================================================================
 # macOS System Caches (Fast - literal paths only)
@@ -39,6 +46,8 @@
 ~/Library/Containers
 ~/.docker
 ~/.vagrant.d
+~/.colima
+
 
 # ============================================================================
 # Project-Specific Patterns (One level deep - reasonably fast)
