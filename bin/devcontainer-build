@@ -26,10 +26,14 @@ ENVIRONMENT VARIABLES:
   DEVCONTAINER_IMAGE_NAME  Override default image name
   DEVCONTAINER_IMAGE_TAG   Override default image tag
   DEVCONTAINER_PUSH        Set to 'true' to push after build
+  GITHUB_TOKEN             GitHub token to pass as build secret (optional)
 
 EXAMPLES:
   # Build locally
   $(basename "$0")
+
+  # Build with GitHub token from environment
+  GITHUB_TOKEN=\$GITHUB_TOKEN $(basename "$0")
 
   # Build and push
   $(basename "$0") --push
@@ -81,6 +85,29 @@ BUILD_ARGS=(
 if [[ "$PUSH" == "true" ]]; then
   BUILD_ARGS+=("--push")
 fi
+
+# Ensure GitHub token is available as build secret
+# The secret is configured in devcontainer.json to read from GITHUB_TOKEN env var
+if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+  # Try to get token from gh CLI if available
+  if command -v gh > /dev/null 2>&1; then
+    echo "GITHUB_TOKEN not set, attempting to get token from gh CLI..."
+    if GITHUB_TOKEN=$(gh auth token 2> /dev/null); then
+      echo "Successfully retrieved token from gh CLI"
+      export GITHUB_TOKEN
+    else
+      echo "Error: Failed to get token from gh CLI." >&2
+      echo "Run 'gh auth login' to authenticate with GitHub." >&2
+      exit 1
+    fi
+  else
+    echo "Error: GITHUB_TOKEN not set and gh CLI not found." >&2
+    echo "Either set GITHUB_TOKEN environment variable or install and authenticate with gh CLI." >&2
+    exit 1
+  fi
+fi
+
+echo "Using GitHub token for build"
 
 # Use npx to run devcontainer CLI from node_modules or download it
 npx --yes @devcontainers/cli@latest "${BUILD_ARGS[@]}"

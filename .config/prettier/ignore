@@ -17,3 +17,5 @@ config/fish/fish_plugins
 .editorconfig
 home/.gitconfig
 config/ghostty/config
+Dockerfile
+.dockerignore
