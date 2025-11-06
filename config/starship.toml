@@ -4,6 +4,7 @@
 palette = "tide_rainbow"
 
 format = """
+$container\
 $hostname\
 $directory\
 $git_branch$git_status\
@@ -26,7 +27,6 @@ $jobs\
 $time\
 $status\
 $os\
-$container\
 $shell\
 $aws\
 $line_break\
@@ -38,6 +38,11 @@ ssh_only = true
 format = "[](fg:blue bg:none)[█](fg:#E4E4E4 bg:blue)[$ssh_symbol$hostname](bold bg:blue)[](fg:#blue bg:none) "
 disabled = false
 style = "fg:fg_light bg:red"
+
+# https://starship.rs/config/#container
+[container]
+format = "[](fg:purple bg:none)[⬢ $name ]($style)[](fg:purple bg:none)"
+style = "fg:#E4E4E4 bg:purple bold"
 
 # https://starship.rs/config/#directory
 [directory]
