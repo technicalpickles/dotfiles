@@ -7,6 +7,7 @@
 .cursorindexingignore
 scratch-area
 scratch
+.worktrees/
 .scratch
 .playwright-mcp
 .claude/settings.local.json
