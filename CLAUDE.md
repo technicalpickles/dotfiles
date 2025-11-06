@@ -43,6 +43,27 @@ Managed by `lefthook`. Install with `lefthook install`. On commit:
 - Prettier formats staged files
 - TypeScript type checks if `.ts` files are staged
 
+### Devcontainer Development
+
+The devcontainer provides a consistent Linux environment for developing dotfiles:
+
+**Live Editing:** Changes to files in the workspace are immediately visible at `~/.pickles` via symlink created during post-create. Most changes (shell configs, scripts) take effect when you restart the terminal or source configs.
+
+**When to re-run install.sh:** Structural changes that affect symlinks or generated configs may require running:
+
+```bash
+bash ~/.pickles/install.sh
+```
+
+**How it works:**
+
+1. Dockerfile builds image and installs dotfiles to `/home/vscode/.pickles`
+2. Container starts, workspace mounts to `/workspaces/dotfiles`
+3. `post-create.sh` swaps the directory: `~/.pickles` → symlink to `/workspaces/dotfiles`
+4. `install.sh` runs again to regenerate configs like `~/.gitconfig.local`
+
+See [doc/plans/2025-11-06-devcontainer-live-editing.md](doc/plans/2025-11-06-devcontainer-live-editing.md) for design details.
+
 ### Architecture Decision Records (ADRs)
 
 ```bash
