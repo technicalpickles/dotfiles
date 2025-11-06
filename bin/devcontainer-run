@@ -15,7 +15,7 @@ Usage: $(basename "$0") [COMMAND]
 Create and run the devcontainer, then execute a command inside it.
 
 ARGUMENTS:
-  COMMAND    Command to execute in container (default: bash)
+  COMMAND    Command to execute in container (default: fish)
 
 OPTIONS:
   -h, --help Show this help message
@@ -62,7 +62,7 @@ echo
 
 # Execute command in the container
 if [[ $# -eq 0 ]]; then
-  npx --yes @devcontainers/cli@latest exec --workspace-folder "$REPO_ROOT" bash
+  npx --yes @devcontainers/cli@latest exec --workspace-folder "$REPO_ROOT" fish
 else
   npx --yes @devcontainers/cli@latest exec --workspace-folder "$REPO_ROOT" "$@"
 fi
