@@ -67,6 +67,7 @@ echo
 # Install npm dependencies
 if [ -f "$WORKSPACE_DIR/package.json" ]; then
   echo "📦 Installing npm dependencies..."
+  cd "$WORKSPACE_DIR"
   npm install
   echo "✓ npm dependencies installed"
   echo
