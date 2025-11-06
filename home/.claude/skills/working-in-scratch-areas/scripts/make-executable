@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+# make-executable
+#
+# Purpose: Make scratch area scripts executable (verifies shebang first)
+# Usage: make-executable <file-path>
+#
+# This helper script exists to avoid needing approval for individual chmod commands.
+# It can be approved once and then used for all scratch scripts.
+#
+# Safety: Only makes files executable if they have a proper shebang line.
+
+set -euo pipefail
+
+if [[ $# -eq 0 ]]; then
+  echo "Usage: make-executable <file-path>" >&2
+  echo "Example: make-executable .scratch/debug/test.sh" >&2
+  exit 1
+fi
+
+FILE="$1"
+
+if [[ ! -f "$FILE" ]]; then
+  echo "Error: File not found: $FILE" >&2
+  exit 1
+fi
+
+# Check if file has a shebang line
+if ! head -n 1 "$FILE" | grep -q '^#!'; then
+  echo "Error: File does not have a shebang line: $FILE" >&2
+  echo "Only script files with shebangs (#!/usr/bin/env <command>) can be made executable." >&2
+  echo "First line of file: $(head -n 1 "$FILE")" >&2
+  exit 1
+fi
+
+chmod +x "$FILE"
+echo "Made executable: $FILE"
