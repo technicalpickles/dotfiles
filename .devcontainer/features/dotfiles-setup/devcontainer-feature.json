@@ -1,0 +1,23 @@
+{
+  "id": "dotfiles-setup",
+  "version": "1.0.0",
+  "name": "Dotfiles Setup",
+  "description": "Sets up the dotfiles environment with custom configurations",
+  "options": {
+    "installDotfiles": {
+      "type": "boolean",
+      "default": true,
+      "description": "Run the dotfiles installation script"
+    },
+    "role": {
+      "type": "string",
+      "default": "personal",
+      "enum": ["personal", "work"],
+      "description": "Role for dotfiles configuration (personal or work)"
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/common-utils",
+    "ghcr.io/devcontainers/features/git"
+  ]
+}
