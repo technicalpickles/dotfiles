@@ -96,7 +96,15 @@ spec:
 
 - **pattern**: Regex pattern using ripgrep syntax to match error text
 - **help**: Multi-line markdown explanation with resolution steps
-- **fix** (optional): Automated remediation with user prompt and commands
+- **fix** (optional): Automated remediation configuration
+  - **commands**: List of commands to run to fix the error (required)
+  - **helpText**: Descriptive text shown if the fix fails (optional)
+  - **helpUrl**: Documentation link for manual resolution (optional)
+  - **prompt**: User approval before running fix (optional)
+    - **text**: Question asking for user permission
+    - **extraContext**: Additional context about what the fix does and why approval is needed
+
+**Note:** When a fix is defined, it only runs when the error pattern is detected. The fix is optional - if not provided, only the help text is shown.
 
 ### File Organization
 
@@ -120,10 +128,21 @@ spec:
     A gem source file is missing. The solution is to reinstall the gems:
     1. Run `bundle pristine`
   fix:
-    prompt:
-      text: Run bundle pristine?
     commands:
       - bundle pristine
+    helpText: |
+      Bundle pristine failed. Try these steps:
+      1. Check your bundle config: bundle config list
+      2. Reinstall bundler: gem install bundler
+      3. Contact #help-ruby if issues persist
+    helpUrl: https://bundler.io/man/bundle-pristine.1.html
+    prompt:
+      text: |-
+        This will reinstall all gems from your Gemfile.
+        Do you wish to continue?
+      extraContext: >-
+        bundle pristine reinstalls gems without changing versions,
+        which resolves missing file errors but preserves your lock file
 ```
 
 ### Validation
@@ -140,6 +159,11 @@ Test pattern matching:
 ```bash
 scope analyze logs --extra-config config-dir/ test-error.txt
 ```
+
+### Additional Resources
+
+- [Complete example with fix and prompt](https://github.com/oscope-dev/scope/blob/main/examples/.scope/known-error-with-fix.yaml)
+- [ScopeKnownError model documentation](https://oscope-dev.github.io/scope/docs/models/ScopeKnownError)
 
 ### Pattern Writing Tips
 
