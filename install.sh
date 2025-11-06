@@ -32,8 +32,11 @@ if running_macos; then
   caffeinate -s -w $$ &
 fi
 
-git submodule init
-git submodule update
+# only setup submodules if running in a git repo. doesn't apply to devcontainer which copies files in
+if [ -d .git ]; then
+  git submodule init
+  git submodule update
+fi
 
 ./symlinks.sh
 
