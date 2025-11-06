@@ -4,9 +4,14 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "npm run typecheck && npm run format:check",
-    "test": "npm run lint"
+    "test": "npm run lint",
+    "devcontainer:build": "devcontainer build --workspace-folder . --image-name ghcr.io/technicalpickles/dotfiles-devcontainer:latest",
+    "devcontainer:build-and-push": "devcontainer build --workspace-folder . --image-name ghcr.io/technicalpickles/dotfiles-devcontainer:latest --push",
+    "devcontainer:up": "devcontainer up --workspace-folder .",
+    "devcontainer:exec": "devcontainer exec --workspace-folder . bash"
   },
   "devDependencies": {
+    "@devcontainers/cli": "^0.72.0",
     "adr-tools": "^2.0.4",
     "prettier": "^3.4.1",
     "prettier-plugin-ignored": "^1.0.0",
