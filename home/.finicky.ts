@@ -15,10 +15,11 @@ let workChromeProfile = 'Profile 1'; // default
 //   personalChromeProfile = 'Profile 3';
 //   workChromeProfile = 'Profile 1';
 // }
+//
 
 const config: FinickyConfig = {
-  // Horse Browser is the default for everything not explicitly routed
-  defaultBrowser: 'Horse',
+  // Chrome is the default for everything not explicitly routed
+  defaultBrowser: 'Google Chrome',
 
   // Rewrite URLs before opening them
   rewrite: [
@@ -73,6 +74,12 @@ const config: FinickyConfig = {
     {
       match: '*.slack.com/*',
       browser: 'Slack',
+    },
+
+    // Open Spotify links in Spotify app
+    {
+      match: ['open.spotify.com/*', '*.open.spotify.com/*'],
+      browser: 'Spotify',
     },
 
     // Open Zoom links in Zoom app
