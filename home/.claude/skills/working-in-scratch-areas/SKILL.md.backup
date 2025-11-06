@@ -1,0 +1,420 @@
+---
+name: working-in-scratch-areas
+description: Use when creating one-off scripts, debug tools, analysis reports, or temporary documentation - ensures work is saved to persistent .scratch areas with proper documentation, organization, and executable patterns
+---
+
+# Working in Scratch Areas
+
+## Overview
+
+Helps Claude save one-off scripts and documents to persistent scratch areas instead of littering repositories with temporary files or using `/tmp`.
+
+**Core principles:**
+- Temporary work deserves permanent storage
+- Scripts and documents should be documented, organized, and preserved
+- Never use `/tmp` or project `tmp/` directories for these files
+- Files belong in `.scratch/` subdirectories with context
+
+**Announce at start:** "I'm using the working-in-scratch-areas skill."
+
+## When to Use
+
+Use this skill when creating:
+
+- One-off debug scripts
+- Analysis or investigation tools
+- Temporary documentation or reports
+- Quick test scripts
+- Data extraction utilities
+- Monitoring or diagnostic tools
+
+Don't use for:
+
+- Production code that belongs in the main codebase
+- Configuration files that should be committed
+- Tests that belong in the test suite
+- Documentation that should be in docs/
+
+**NEVER use `/tmp` or project `tmp/` directories.** Always use `.scratch/` for temporary work.
+
+## Setup Workflow
+
+### Check for Existing Scratch Area
+
+First, check if a scratch area already exists:
+
+```bash
+test -L scratch && echo "Scratch area exists" || echo "No scratch area"
+```
+
+If the symlink exists, you're ready to use it. If not, offer to set one up.
+
+### Setting Up New Scratch Area
+
+When no scratch area exists:
+
+1. **Detect:** "I notice this repository doesn't have a scratch area set up."
+2. **Offer:** "I can set one up using the setup script. This will create a persistent scratch area that survives even if the repository is moved or deleted. Would you like me to?"
+3. **User accepts:** Run the setup script (see below)
+4. **User declines:** "No problem. I can create scripts in another location if you prefer."
+
+**Script Location:**
+
+The setup script is at `~/workspace/pickled-scratch-area/setup-scratch-area.sh` (absolute path). This path works from any directory.
+
+**Getting the absolute path:**
+
+If you need to verify the path exists, run:
+
+```bash
+test -f ~/workspace/pickled-scratch-area/setup-scratch-area.sh && echo "exists" || echo "missing"
+```
+
+**Running the setup:**
+
+```bash
+# Get repo root first
+git rev-parse --show-toplevel
+# Output: /Users/josh/workspace/some-repo
+
+# Then run setup from repo root
+cd /Users/josh/workspace/some-repo && ~/workspace/pickled-scratch-area/setup-scratch-area.sh
+```
+
+**What the script does:**
+
+- Creates `~/workspace/pickled-scratch-area/areas/{repo-name}/`
+- Creates symlink `{repo-root}/scratch` → scratch area
+- Copies README template with usage guidelines
+- Uses .scratch-root-exclusions for repo filtering
+
+## Script Creation Rules
+
+When creating scripts in scratch areas, follow these mandatory rules:
+
+### 1. Always Use Proper Shebang
+
+Every script MUST start with `#!/usr/bin/env <command>`:
+
+```bash
+#!/usr/bin/env bash
+```
+
+```python
+#!/usr/bin/env python3
+```
+
+```javascript
+#!/usr/bin/env node
+```
+
+**Why:** Enables proper allow list management and makes scripts directly executable.
+
+### 2. Make Scripts Executable
+
+After creating a script, ALWAYS make it executable:
+
+```bash
+chmod +x scratch/script-name.sh
+```
+
+**Why:** Allows calling scripts directly (`./script.sh`) instead of through interpreter.
+
+### 3. Call Scripts Directly
+
+When invoking scripts, use direct execution:
+
+✅ **CORRECT:**
+
+```bash
+./scratch/debug-connections.sh
+```
+
+❌ **WRONG:**
+
+```bash
+bash scratch/debug-connections.sh # Don't use interpreter explicitly
+```
+
+**Why:** Direct execution respects shebang and allow list configurations.
+
+### 4. Always Include Documentation Header
+
+Every file MUST have a documentation header explaining its purpose:
+
+**Script header example:**
+
+```bash
+#!/usr/bin/env bash
+
+# debug-database-connections.sh
+#
+# Purpose: Debug specific issue with database connections
+# Created: 2024-01-15
+# Used for: Investigating connection timeouts in production
+#
+# This script helped identify that the issue was related to
+# connection pooling configuration, not network problems.
+# Key finding: Connection pool was being exhausted due to
+# improper cleanup in the application layer.
+```
+
+**Document header example:**
+
+```markdown
+# Performance Analysis Report
+
+## Purpose
+
+Analysis of API response times after recent deployment
+
+## Created
+
+2024-01-15
+
+## Usage Context
+
+This analysis was conducted after users reported slow response times
+following the v2.1.0 deployment.
+
+## Key Findings
+
+- Response times increased by 15%
+- Root cause: New logging middleware
+- Resolution: Disabled verbose logging in production
+
+## Impact
+
+This analysis prevented a rollback and identified a simple configuration fix.
+```
+
+## File Management Philosophy
+
+### Never Delete - Document Instead
+
+When a file is no longer actively needed:
+
+❌ **DON'T:** Delete the file
+✅ **DO:** Add retrospective comments explaining:
+
+- How the file was used
+- What it helped understand or accomplish
+- Key findings or insights gained
+- When it was last relevant
+
+**Example retrospective header:**
+
+```bash
+#!/usr/bin/env bash
+
+# debug-memory-leak.sh
+#
+# [RESOLVED - 2024-01-20]
+# This script was used to investigate memory leaks in the worker process.
+#
+# Original purpose: Track memory usage over time
+# Key finding: Memory leak was in third-party library, not our code
+# Resolution: Updated library from v2.1 to v2.3 which fixed the issue
+#
+# Keeping this script for reference in case the issue recurs or similar
+# patterns need investigation in the future.
+```
+
+**Why:** Preserved scripts document your problem-solving process and findings for future reference.
+
+## Directory Structure
+
+Understanding the layout:
+
+```
+~/workspace/pickled-scratch-area/
+├── areas/                      # All scratch areas stored here
+│   ├── repo-name-1/
+│   │   ├── README.md
+│   │   ├── debug-script.sh
+│   │   └── analysis-report.md
+│   └── repo-name-2/
+│       └── ...
+├── templates/
+│   └── scratch-area-readme-template.md
+└── setup-scratch-area.sh       # Setup script
+```
+
+In each repository:
+
+```
+{repo-root}/
+├── scratch -> ~/workspace/pickled-scratch-area/areas/{repo-name}/
+└── .gitignore (should ignore scratch/)
+```
+
+## Workflow Examples
+
+### Creating a Debug Script
+
+1. Check if scratch area exists: `test -L scratch`
+2. If missing, offer to set up
+3. Create script with Write tool (include shebang + header)
+4. Make executable: `chmod +x scratch/debug-api.sh`
+5. Run directly: `./scratch/debug-api.sh`
+
+### Creating an Analysis Document
+
+1. Check if scratch area exists
+2. Create document with Write tool (include header)
+3. Document findings as you work
+
+### Archiving a Script
+
+When a script's purpose is complete:
+
+1. DON'T delete it
+2. Edit to add retrospective header with [RESOLVED] section
+
+## Best Practices Checklist
+
+When creating any file in scratch area, verify:
+
+- [ ] Proper shebang line (`#!/usr/bin/env <command>`)
+- [ ] Documentation header with purpose and context
+- [ ] Scripts are executable (`chmod +x`)
+- [ ] Scripts are called directly (not through interpreter)
+- [ ] Descriptive filename that indicates purpose
+- [ ] Created date in header
+- [ ] Usage context documented
+
+When completing work with a file:
+
+- [ ] Add retrospective comments if no longer needed
+- [ ] Document key findings
+- [ ] Explain what was learned
+- [ ] Note resolution if applicable
+- [ ] Keep file for future reference
+
+## Common Patterns
+
+### Investigation Script Pattern
+
+```bash
+#!/usr/bin/env bash
+
+# investigate-{issue}.sh
+#
+# Purpose: Debug {specific issue}
+# Created: {date}
+# Used for: {context}
+
+set -euo pipefail
+
+# Investigation logic here
+echo "Starting investigation..."
+
+# Document findings in comments as you discover them
+```
+
+### Data Extraction Pattern
+
+```bash
+#!/usr/bin/env bash
+
+# extract-{data-type}.sh
+#
+# Purpose: Extract {specific data} for {reason}
+# Created: {date}
+# Used for: {context}
+
+set -euo pipefail
+
+# Extraction logic
+# Output to scratch/extracted-data.txt or similar
+```
+
+### Monitoring Pattern
+
+```bash
+#!/usr/bin/env bash
+
+# monitor-{resource}.sh
+#
+# Purpose: Monitor {resource} for {reason}
+# Created: {date}
+# Used for: {context}
+
+set -euo pipefail
+
+while true; do
+  # Monitoring logic
+  sleep 5
+done
+```
+
+### Analysis Report Pattern
+
+```markdown
+# {Topic} Analysis Report
+
+## Purpose
+
+{What you're analyzing and why}
+
+## Created
+
+{Date}
+
+## Usage Context
+
+{Why this analysis was needed}
+
+## Methodology
+
+{How you approached the analysis}
+
+## Findings
+
+{What you discovered}
+
+## Conclusions
+
+{What this means}
+
+## Next Steps / Impact
+
+{What actions were taken based on this}
+```
+
+## Benefits
+
+- **Centralized storage:** All temporary work in one location
+- **Repository isolation:** Each repo has its own subdirectory
+- **Easy access:** Symlink makes scratch area accessible from repo root
+- **Persistent history:** Files remain even if repository is moved/deleted
+- **Knowledge preservation:** Comments document learnings and process
+- **Better security:** Proper shebangs enable better allow list management
+- **Future reference:** Preserved scripts serve as examples and documentation
+
+## Terminology
+
+For consistency:
+
+- **`scratch`** - The symlink in repository root (e.g., `./scratch/`)
+- **`scratch area`** - The concept of a dedicated space for temporary work
+- **`scratch areas`** - The overall system of centralized scratch directories
+- **`pickled-scratch-area`** - The central repository managing all scratch areas
+
+## Quick Reference
+
+| Task                    | Command                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------ |
+| Check if scratch exists | `test -L scratch && echo "exists" \|\| echo "missing"`                                           |
+| Setup scratch area      | Get repo root, then `cd /path/to/repo && ~/workspace/pickled-scratch-area/setup-scratch-area.sh` |
+| Create script           | Write with shebang + header, then `chmod +x`                                                     |
+| Run script              | `./scratch/script-name.sh` (not `bash scratch/...`)                                              |
+| Archive script          | Add `[RESOLVED]` retrospective header, don't delete                                              |
+
+## Remember
+
+- Temporary work deserves permanent storage
+- Every script needs a shebang
+- Every file needs documentation
+- Never delete - add retrospective comments instead
+- Call scripts directly with proper executable permissions
