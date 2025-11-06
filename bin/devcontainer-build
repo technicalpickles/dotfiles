@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# Build and optionally push the devcontainer image
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+IMAGE_NAME="${DEVCONTAINER_IMAGE_NAME:-ghcr.io/technicalpickles/dotfiles-devcontainer}"
+IMAGE_TAG="${DEVCONTAINER_IMAGE_TAG:-latest}"
+PUSH="${DEVCONTAINER_PUSH:-false}"
+
+usage() {
+  cat << EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Build the devcontainer image for this repository.
+
+OPTIONS:
+  -t, --tag TAG       Image tag (default: latest)
+  -n, --name NAME     Image name (default: ghcr.io/technicalpickles/dotfiles-devcontainer)
+  -p, --push          Push image to registry after build
+  -h, --help          Show this help message
+
+ENVIRONMENT VARIABLES:
+  DEVCONTAINER_IMAGE_NAME  Override default image name
+  DEVCONTAINER_IMAGE_TAG   Override default image tag
+  DEVCONTAINER_PUSH        Set to 'true' to push after build
+
+EXAMPLES:
+  # Build locally
+  $(basename "$0")
+
+  # Build and push
+  $(basename "$0") --push
+
+  # Build with custom tag
+  $(basename "$0") --tag v1.0.0 --push
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -t | --tag)
+      IMAGE_TAG="$2"
+      shift 2
+      ;;
+    -n | --name)
+      IMAGE_NAME="$2"
+      shift 2
+      ;;
+    -p | --push)
+      PUSH=true
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Error: Unknown option $1" >&2
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+FULL_IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
+
+echo "Building devcontainer image: $FULL_IMAGE"
+echo "Workspace: $REPO_ROOT"
+echo "Push after build: $PUSH"
+echo
+
+BUILD_ARGS=(
+  "build"
+  "--workspace-folder" "$REPO_ROOT"
+  "--image-name" "$FULL_IMAGE"
+)
+
+if [[ "$PUSH" == "true" ]]; then
+  BUILD_ARGS+=("--push")
+fi
+
+# Use npx to run devcontainer CLI from node_modules or download it
+npx --yes @devcontainers/cli@latest "${BUILD_ARGS[@]}"
+
+echo
+echo "✓ Build complete: $FULL_IMAGE"
+if [[ "$PUSH" == "true" ]]; then
+  echo "✓ Image pushed to registry"
+fi

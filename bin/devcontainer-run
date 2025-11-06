@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# Create and run the devcontainer
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+COMMAND="${1:-bash}"
+
+usage() {
+  cat << EOF
+Usage: $(basename "$0") [COMMAND]
+
+Create and run the devcontainer, then execute a command inside it.
+
+ARGUMENTS:
+  COMMAND    Command to execute in container (default: bash)
+
+OPTIONS:
+  -h, --help Show this help message
+
+EXAMPLES:
+  # Start container and open bash shell
+  $(basename "$0")
+
+  # Start container and run a command
+  $(basename "$0") npm test
+
+  # Start container and open fish shell
+  $(basename "$0") fish
+
+  # Run multiple commands
+  $(basename "$0") "npm install && npm test"
+
+WORKFLOW:
+  1. Creates/starts the devcontainer (devcontainer up)
+  2. Executes the specified command inside it (devcontainer exec)
+
+The container will continue running after the command exits.
+Use 'docker ps' to see running containers.
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+echo "Starting devcontainer..."
+echo "Workspace: $REPO_ROOT"
+echo
+
+# Create and start the container
+npx --yes @devcontainers/cli@latest up --workspace-folder "$REPO_ROOT"
+
+echo
+echo "✓ Container started"
+echo
+echo "Executing command: $*"
+echo
+
+# Execute command in the container
+if [[ $# -eq 0 ]]; then
+  npx --yes @devcontainers/cli@latest exec --workspace-folder "$REPO_ROOT" bash
+else
+  npx --yes @devcontainers/cli@latest exec --workspace-folder "$REPO_ROOT" "$@"
+fi
