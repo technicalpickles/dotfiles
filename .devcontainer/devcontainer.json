@@ -1,15 +1,25 @@
 {
   "name": "Dotfiles Dev Container",
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-  "features": {
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "lts"
-    }
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {
+      "DOTPICKLES_ROLE": "personal"
+    },
+    "options": ["--secret", "id=github_token,env=GITHUB_TOKEN"]
   },
   "customizations": {
     "vscode": {
-      "extensions": ["esbenp.prettier-vscode"]
+      "extensions": ["esbenp.prettier-vscode"],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "fish",
+        "terminal.integrated.profiles.linux": {
+          "fish": {
+            "path": "/usr/bin/fish"
+          }
+        }
+      }
     }
   },
-  "postCreateCommand": "npm install"
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
 }
