@@ -8,7 +8,9 @@
     "devcontainer:build": "devcontainer build --workspace-folder . --image-name ghcr.io/technicalpickles/dotfiles-devcontainer:latest",
     "devcontainer:build-and-push": "devcontainer build --workspace-folder . --image-name ghcr.io/technicalpickles/dotfiles-devcontainer:latest --push",
     "devcontainer:up": "devcontainer up --workspace-folder .",
-    "devcontainer:exec": "devcontainer exec --workspace-folder . bash"
+    "devcontainer:exec": "devcontainer exec --workspace-folder . bash",
+    "devcontainer:stop": "bin/devcontainer-stop",
+    "devcontainer:clean": "bin/devcontainer-stop --remove --volumes"
   },
   "devDependencies": {
     "@devcontainers/cli": "^0.72.0",
