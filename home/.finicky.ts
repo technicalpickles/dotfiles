@@ -19,7 +19,7 @@ let workChromeProfile = 'Profile 1'; // default
 
 const config: FinickyConfig = {
   // Chrome is the default for everything not explicitly routed
-  defaultBrowser: 'Google Chrome',
+  defaultBrowser: 'com.google.Chrome',
 
   // Rewrite URLs before opening them
   rewrite: [
