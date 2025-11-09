@@ -69,6 +69,9 @@ case "$DOTPICKLES_ROLE" in
       git config --file ~/.gitconfig.local user.signingkey "$HOME/.ssh/id_ed25519.pub"
     fi
     ;;
+  devcontainer)
+    true
+    ;;
   *)
     echo "Unexpected role: $DOTPICKLES_ROLE"
     exit 1

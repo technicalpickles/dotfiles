@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
+set -x
 echo "Installing dotfiles-setup feature..."
 
 # Feature options are passed as environment variables
@@ -9,10 +9,9 @@ ROLE="${ROLE:-personal}"
 
 echo "Configuration:"
 echo "  Install dotfiles: $INSTALL_DOTFILES"
-echo "  Role: $ROLE"
 
 # Set the role environment variable for the installation
-export DOTPICKLES_ROLE="$ROLE"
+export DOTPICKLES_ROLE="devcontainer"
 
 curl -sS https://starship.rs/install.sh > /tmp/starship-install.sh
 sh /tmp/starship-install.sh --force

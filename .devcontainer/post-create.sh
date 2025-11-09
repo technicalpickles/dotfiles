@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
+set -x
 echo "Running post-create setup..."
 
 # Determine workspace directory
@@ -15,9 +15,16 @@ ln -sf "$WORKSPACE_DIR" /home/vscode/.pickles
 echo "✓ ~/.pickles now points to $WORKSPACE_DIR"
 echo
 
+# Remove fish_variables to prevent macOS paths from being used
+echo "🧹 Removing fish_variables with host-specific paths..."
+rm -f /home/vscode/.pickles/config/fish/fish_variables
+echo "✓ Removed fish_variables"
+echo
+
 # Re-run installation to regenerate configs
 echo "📦 Re-running dotfiles installation..."
 cd /home/vscode/.pickles
+export DOTPICKLES_ROLE=devcontainer
 bash install.sh
 echo "✓ Dotfiles installation complete"
 echo

@@ -4,9 +4,13 @@
     "dockerfile": "Dockerfile",
     "context": "..",
     "args": {
-      "DOTPICKLES_ROLE": "personal"
+      "DOTPICKLES_ROLE": "devcontainer"
     },
     "options": ["--secret", "id=github_token,env=GITHUB_TOKEN"]
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/flexwie/devcontainer-features/op:1": {}
   },
   "customizations": {
     "vscode": {

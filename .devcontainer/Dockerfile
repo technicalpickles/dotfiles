@@ -10,6 +10,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     ca-certificates \
     gnupg \
     lsb-release \
+    tmux \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -53,7 +54,7 @@ RUN --mount=type=secret,id=github_token \
     && curl -sS https://starship.rs/install.sh | sh -s -- --force
 
 # Set role for dotfiles installation
-ARG DOTPICKLES_ROLE=personal
+ARG DOTPICKLES_ROLE=devcontainer
 ENV DOTPICKLES_ROLE=${DOTPICKLES_ROLE}
 
 # Switch to vscode user before installing dotfiles
