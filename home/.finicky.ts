@@ -6,8 +6,8 @@ import type { FinickyConfig } from 'finicky';
 
 // System-specific Chrome profiles
 // Edit these values for each system, or add hostname-based conditionals below
-let personalChromeProfile = 'Profile 1'; // default
-let workChromeProfile = 'Profile 1'; // default
+let personalChromeProfile = 'Profile 3';
+let workChromeProfile = 'Profile 1';
 
 // Example: Customize per hostname
 // const hostname = finicky.getSystemInfo().name;
