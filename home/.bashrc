@@ -119,3 +119,7 @@ plugins=(
 if [[ -d "$OSH" ]]; then
   source "$OSH"/oh-my-bash.sh
 fi
+
+if [[ -f "$HOME/.config/broot/launcher/bash/br" ]]; then
+  source "$HOME/.config/broot/launcher/bash/br"
+fi

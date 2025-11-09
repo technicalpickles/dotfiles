@@ -47,6 +47,7 @@ config/fish/conf.d/z.fish
 config/fish/functions/__abbr_tips_bind_newline.fish
 config/fish/functions/__abbr_tips_bind_space.fish
 config/fish/functions/bass.fish
+config/fish/functions/br.fish
 config/fish/functions/__abbr_tips_init.fish
 config/fish/functions/__bass.py
 config/fish/functions/__history_previous_command.fish
