@@ -35,7 +35,10 @@ fi
 # only setup submodules if running in a git repo. doesn't apply to devcontainer which copies files in
 if [ -d .git ]; then
   git submodule init
-  git submodule update
+  git submodule update || {
+    echo "Warning: Some submodules failed to initialize (this is non-fatal)"
+    true # Ensure we don't exit with error code
+  }
 fi
 
 ./symlinks.sh

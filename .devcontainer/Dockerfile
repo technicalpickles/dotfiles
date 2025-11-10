@@ -77,6 +77,11 @@ RUN --mount=type=secret,id=github_token \
        fi \
     && bash install.sh
 
+# Create workspace directory for cloned copy
+USER root
+RUN mkdir -p /workspace/dotfiles && chown -R vscode:vscode /workspace
+USER vscode
+
 # Set fish as default shell for vscode user
 USER root
 RUN chsh -s /usr/bin/fish vscode

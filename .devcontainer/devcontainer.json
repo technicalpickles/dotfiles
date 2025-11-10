@@ -8,6 +8,8 @@
     },
     "options": ["--secret", "id=github_token,env=GITHUB_TOKEN"]
   },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/dotfiles-source,type=bind,consistency=cached",
+  "workspaceFolder": "/workspace/dotfiles",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/flexwie/devcontainer-features/op:1": {}
@@ -25,5 +27,5 @@
       }
     }
   },
-  "postCreateCommand": "bash .devcontainer/post-create.sh"
+  "postCreateCommand": "bash /workspaces/dotfiles-source/.devcontainer/post-create.sh"
 }
