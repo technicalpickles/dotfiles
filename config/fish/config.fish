@@ -13,10 +13,6 @@ if test -f  ~/.gusto/init.fish
     fish_add_path --move --global --prepend "$HOMEBREW_PREFIX/bin" "$HOMEBREW_PREFIX/sbin"
   end
 else
-  if test -z "$MISE_SHELL" && test -d "$HOME/.cargo/bin"
-      fish_add_path --global --prepend "$HOME/.cargo/bin"
-  end
-
   if [ (uname) = Darwin ]
     # setup version manager
     if [ -x "$HOMEBREW_PREFIX/bin/mise" ]
@@ -29,9 +25,6 @@ else
       set -gx MISE_NODE_COREPACK true
 
       mise activate --shims fish | source
-
-      # mise overwrites PATH, so ensure homebrew is at the front again
-      fish_add_path --move --global --prepend "$HOMEBREW_PREFIX/bin" "$HOMEBREW_PREFIX/sbin"
     end
   end
 end
@@ -92,10 +85,21 @@ if status is-interactive
     end
 end
 
+# Establish final PATH priority order
+# Prepend in REVERSE order (last prepend = first in PATH):
+if test -n "$HOMEBREW_PREFIX"
+  fish_add_path --move --global --prepend "$HOMEBREW_PREFIX/bin" "$HOMEBREW_PREFIX/sbin"
+end
+if test -d "$HOME/.local/share/mise/shims"
+  fish_add_path --move --global --prepend "$HOME/.local/share/mise/shims"
+end
+if test -d "$HOME/.cargo/bin"
+  fish_add_path --move --global --prepend "$HOME/.cargo/bin"
+end
 if test -d "$HOME/.local/bin"
   fish_add_path --global --prepend --move "$HOME/.local/bin"
 end
-fish_add_path --global --prepend --move PATH "$HOME/bin"
+fish_add_path --global --prepend --move "$HOME/bin"
 
 set -gx GIT_MERGE_AUTOEDIT no
 

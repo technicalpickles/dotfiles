@@ -93,3 +93,29 @@ if [[ $- == *i* ]]; then
 fi
 
 . "$HOME/.local/bin/env"
+
+# Establish final PATH priority order
+# Prepend in REVERSE order (last prepend = first in PATH):
+if [[ -n "$HOMEBREW_PREFIX" ]]; then
+  export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
+fi
+if [[ -d "$HOME/.local/share/mise/shims" ]]; then
+  # Remove from PATH first to avoid duplicates
+  export PATH="${PATH//:$HOME\/.local\/share\/mise\/shims/}"
+  export PATH="$HOME/.local/share/mise/shims:$PATH"
+fi
+if [[ -d "$HOME/.cargo/bin" ]]; then
+  # Remove from PATH first to avoid duplicates
+  export PATH="${PATH//:$HOME\/.cargo\/bin/}"
+  export PATH="$HOME/.cargo/bin:$PATH"
+fi
+if [[ -d "$HOME/.local/bin" ]]; then
+  # Remove from PATH first to avoid duplicates
+  export PATH="${PATH//:$HOME\/.local\/bin/}"
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+if [[ -d "$HOME/bin" ]]; then
+  # Remove from PATH first to avoid duplicates
+  export PATH="${PATH//:$HOME\/bin/}"
+  export PATH="$HOME/bin:$PATH"
+fi
