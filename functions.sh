@@ -10,6 +10,49 @@ running_codespaces() {
   return $?
 }
 
+running_container() {
+  [ -f /.dockerenv ] || grep -q 'docker\|lxc\|containerd' /proc/1/cgroup 2> /dev/null
+  return $?
+}
+
+detect_hostname() {
+  local hostname_value
+  local commands=(
+    "hostnamectl hostname"
+    "hostname -f"
+    "hostname"
+    "uname -n"
+  )
+
+  for cmd in "${commands[@]}"; do
+    hostname_value=$($cmd 2> /dev/null)
+    if [ $? -eq 0 ] && [ -n "$hostname_value" ]; then
+      echo "$hostname_value"
+      return 0
+    fi
+  done
+
+  # If all commands fail, return empty string
+  echo ""
+  return 1
+}
+
+detect_role() {
+  local hostname
+
+  if running_container; then
+    echo "container"
+    return 0
+  fi
+
+  hostname=$(detect_hostname)
+  if [[ "$hostname" =~ ^josh-nichols- ]]; then
+    echo "work"
+  else
+    echo "personal"
+  fi
+}
+
 command_available() {
   which "$1" > /dev/null 2>&1
 }

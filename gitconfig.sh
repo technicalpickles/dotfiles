@@ -69,7 +69,7 @@ case "$DOTPICKLES_ROLE" in
       git config --file ~/.gitconfig.local user.signingkey "$HOME/.ssh/id_ed25519.pub"
     fi
     ;;
-  devcontainer)
+  container)
     true
     ;;
   *)

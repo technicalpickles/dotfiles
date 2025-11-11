@@ -9,23 +9,14 @@ if [[ -f .env ]]; then
   source .env
 fi
 
+# shellcheck source=./functions.sh
+source ./functions.sh
+
 if [[ -z "${DOTPICKLES_ROLE}" ]]; then
-  if which hostnamectl > /dev/null 2>&1; then
-    hostname=$(hostnamectl hostname)
-  else
-    hostname=$(hostname)
-  fi
-  if [[ "$hostname" =~ ^josh-nichols- ]]; then
-    DOTPICKLES_ROLE="work"
-  else
-    DOTPICKLES_ROLE="personal"
-  fi
+  DOTPICKLES_ROLE=$(detect_role)
 fi
 
 echo "role: $DOTPICKLES_ROLE"
-
-# shellcheck source=./functions.sh
-source ./functions.sh
 
 if running_macos; then
   # Prevent sleeping during script execution, as long as the machine is on AC power
