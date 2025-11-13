@@ -10,7 +10,7 @@
 	path = ~/.gitconfig.d/personal-identity
 
 [core]
-	excludesfile = ~/.gitignore
+	excludesFile = ~/.gitignore
 	untrackedcache = true
 	fsmonitor = true
 

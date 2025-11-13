@@ -236,28 +236,42 @@ A Claude Code skill for creating, updating, and commenting on GitHub pull reques
 
 ### Content Principles
 
-**Focus on material impact:**
+**✅ DO:**
 
-- ✅ "Enables pattern-based Spotlight exclusions for easier maintenance"
-- ❌ "Adds 3 new scripts and updates 2 config files"
+- Focus on material impact: "Enables pattern-based Spotlight exclusions for easier maintenance"
+- Be concise yet warm: "This makes it easier to manage exclusions at scale."
+- Explain why it matters, what problem it solves
+- Include non-obvious testing steps
 
-**Concise yet warm:**
+**❌ DON'T - Common Anti-Patterns:**
 
-- ✅ "This makes it easier to manage exclusions at scale."
-- ❌ "This change significantly improves the developer experience by implementing a novel approach to..."
+**Metrics (unless PR is specifically about them):**
+- ❌ "Added 15 tests" → ✅ "Added test coverage for edge cases"
+- ❌ "Modified 8 files across 3 modules" → ✅ Say nothing (diff shows this)
+- ❌ "Reduced runtime from 2.5s to 1.2s" → ✅ Only if PR is about performance
+- ❌ "Added 250 lines of code" → ✅ Never mention line counts
+- ❌ "Test coverage increased to 85%" → ✅ Only if PR is about coverage
 
-**Assume busy human reader:**
+**Implementation details visible in diff:**
+- ❌ "Created new `PatternExpander` class" → ✅ Say nothing (diff shows this)
+- ❌ "Refactored into smaller functions" → ✅ Say nothing unless it's the PR's focus
+- ❌ "Used async/await pattern" → ✅ Say nothing (implementation detail)
+- ❌ "Added error handling" → ✅ Only if error handling is the PR's focus
 
-- Avoid: File counts, line counts, test counts
-- Avoid: Implementation details visible in diff
-- Include: Why this matters, what problem it solves
-- Include: Non-obvious testing steps
+**Over-explaining/verbose:**
+- ❌ "This change significantly improves the developer experience by implementing a novel approach..."
+- ✅ "Makes it easier to maintain exclusions at scale"
+- ❌ "After careful consideration of multiple approaches, we decided to..."
+- ✅ Just describe what it does and why it matters
 
-**Handling H1 headings:**
+**Other common mistakes:**
+- ❌ Use H1 heading (GitHub shows title separately, causes duplication)
+- ❌ List technologies used unless it's a new dependency worth noting
+- ❌ Describe file structure changes unless it's an architectural shift
+- ❌ Mention "following best practices" (assumed)
+- ❌ Say "easy to" or "simple to" (condescending)
 
-- Never include H1 (`# Title`) in body
-- GitHub shows title separately, would duplicate
-- Start body with H2 (`## Summary`) or text
+**The rule:** If a reviewer can see it in the diff or CI output, don't put it in the PR body unless it's the central focus of the PR.
 
 ### Following Repository Guidelines
 
