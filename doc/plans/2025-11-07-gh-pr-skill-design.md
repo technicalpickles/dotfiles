@@ -246,6 +246,7 @@ A Claude Code skill for creating, updating, and commenting on GitHub pull reques
 **❌ DON'T - Common Anti-Patterns:**
 
 **Metrics (unless PR is specifically about them):**
+
 - ❌ "Added 15 tests" → ✅ "Added test coverage for edge cases"
 - ❌ "Modified 8 files across 3 modules" → ✅ Say nothing (diff shows this)
 - ❌ "Reduced runtime from 2.5s to 1.2s" → ✅ Only if PR is about performance
@@ -253,18 +254,21 @@ A Claude Code skill for creating, updating, and commenting on GitHub pull reques
 - ❌ "Test coverage increased to 85%" → ✅ Only if PR is about coverage
 
 **Implementation details visible in diff:**
+
 - ❌ "Created new `PatternExpander` class" → ✅ Say nothing (diff shows this)
 - ❌ "Refactored into smaller functions" → ✅ Say nothing unless it's the PR's focus
 - ❌ "Used async/await pattern" → ✅ Say nothing (implementation detail)
 - ❌ "Added error handling" → ✅ Only if error handling is the PR's focus
 
 **Over-explaining/verbose:**
+
 - ❌ "This change significantly improves the developer experience by implementing a novel approach..."
 - ✅ "Makes it easier to maintain exclusions at scale"
 - ❌ "After careful consideration of multiple approaches, we decided to..."
 - ✅ Just describe what it does and why it matters
 
 **Other common mistakes:**
+
 - ❌ Use H1 heading (GitHub shows title separately, causes duplication)
 - ❌ List technologies used unless it's a new dependency worth noting
 - ❌ Describe file structure changes unless it's an architectural shift
