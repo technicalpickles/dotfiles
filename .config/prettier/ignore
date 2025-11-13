@@ -1,10 +1,10 @@
 # Git submodules
-home/.hammerspoon/Spoons/ControlEscape.spoon
-vendor/vim-pathogen
-vendor/vim-plug
-vendor/sbp
-config/cheat/cheatsheets/community
-config/cheat/cheatsheets/personal
+**/ControlEscape.spoon/**
+**/vendor/vim-pathogen/**
+**/vendor/vim-plug/**
+**/vendor/sbp/**
+**/cheatsheets/community/**
+**/cheatsheets/personal/**
 
 # automatically pulled
 home/.vim/plugged
