@@ -1,0 +1,9 @@
+## MCP and Tools
+
+Invoke builtin Claude tools directly, do not use mcp**MCPProxy**call_tool. Examples:
+
+- AskUserQuestion:ask
+
+## Git Worktrees
+
+When using the `superpowers:using-git-worktrees` skill, prefer creating worktrees in `.worktrees` directory relative to the main repository root.
