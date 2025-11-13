@@ -259,3 +259,21 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs linting on push/P
 When working in repositories with multiple subprojects, use `/monorepo-init` to activate the working-in-monorepos skill and set up configuration. The skill prevents directory confusion by requiring absolute paths for all commands.
 
 These are used by other scripts and hooks.
+
+## Claude Code Skills Plugin
+
+Personal Claude Code skills are maintained in a separate plugin repository: [technicalpickles/claude-skills](https://github.com/technicalpickles/claude-skills).
+
+**Installation:** Automatic via `install.sh` - the plugin is cloned to `~/workspace/claude-skills/` and symlinked to `~/.claude/plugins/technicalpickles`.
+
+**Skills included:**
+
+- `technicalpickles:buildkite-status` - Buildkite CI/CD workflow helpers
+- `technicalpickles:scope` - Scope environment management helpers
+- `technicalpickles:working-in-monorepos` - Monorepo navigation helpers
+- `technicalpickles:working-in-scratch-areas` - Scratch area management
+- `technicalpickles:gh-pr` - GitHub pull request workflows
+- `technicalpickles:git-preferences-and-practices` - Git workflow preferences
+- `technicalpickles:mcpproxy-debug` - MCPProxy debugging helpers
+
+**Development:** Skills are edited in `~/workspace/claude-skills/skills/` and changes are immediately available via the symlink.
