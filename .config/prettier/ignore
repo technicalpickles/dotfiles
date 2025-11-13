@@ -12,6 +12,9 @@ home/.vim/plugged
 # stuff that doesn't need formatting
 config/fish/fish_plugins
 
+# session history files (untracked)
+.specstory
+
 # stuff without prettier support
 *.fish
 .editorconfig
