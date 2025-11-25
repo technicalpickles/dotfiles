@@ -45,24 +45,28 @@ Managed by `lefthook`. Install with `lefthook install`. On commit:
 
 ### Devcontainer Development
 
-The devcontainer provides a consistent Linux environment for developing dotfiles:
+This repository uses the [pickled-devcontainer](https://github.com/technicalpickles/pickled-devcontainer) template to provide a consistent Linux development environment with dotfiles pre-configured.
 
-**Live Editing:** Changes to files in the workspace are immediately visible at `~/.pickles` via symlink created during post-create. Most changes (shell configs, scripts) take effect when you restart the terminal or source configs.
+**Using the devcontainer:**
 
-**When to re-run install.sh:** Structural changes that affect symlinks or generated configs may require running:
+Via VS Code:
+
+1. Install Docker Desktop and the Dev Containers extension
+2. Open this repository in VS Code
+3. Command Palette → "Dev Containers: Reopen in Container"
+
+Via CLI:
 
 ```bash
-bash ~/.pickles/install.sh
+cd ~/workspace/pickled-devcontainer
+./bin/apply ~/workspace/dotfiles
 ```
 
-**How it works:**
+**Live editing:** Changes to files in the workspace are immediately visible at `~/.pickles` via symlink. Most changes take effect when you restart the terminal or source configs.
 
-1. Dockerfile builds image and installs dotfiles to `/home/vscode/.pickles`
-2. Container starts, workspace mounts to `/workspaces/dotfiles`
-3. `post-create.sh` swaps the directory: `~/.pickles` → symlink to `/workspaces/dotfiles`
-4. `install.sh` runs again to regenerate configs like `~/.gitconfig.local`
+**When to re-run install.sh:** Structural changes that affect symlinks or generated configs may require running `bash ~/.pickles/install.sh`.
 
-See [doc/plans/2025-11-06-devcontainer-live-editing.md](doc/plans/2025-11-06-devcontainer-live-editing.md) for design details.
+See [ADR 0012](doc/adr/0012-extract-devcontainer-as-reusable-template.md) for why we extracted the devcontainer as a reusable template.
 
 ### Architecture Decision Records (ADRs)
 
