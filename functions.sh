@@ -11,7 +11,7 @@ running_codespaces() {
 }
 
 running_container() {
-  [ -f /.dockerenv ] || grep -q 'docker\|lxc\|containerd' /proc/1/cgroup 2> /dev/null
+  [ -f /.dockerenv ] || grep -q 'docker\|lxc\|containerd' /proc/1/cgroup 2> /dev/null || [ -n "$DOCKER_BUILD" ]
   return $?
 }
 
