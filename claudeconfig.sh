@@ -45,3 +45,36 @@ install_marketplaces() {
 }
 
 install_marketplaces
+
+# Install plugins (idempotent)
+install_plugins() {
+  echo "Installing plugins..."
+
+  local plugins=(
+    "superpowers@superpowers-marketplace"
+    "elements-of-style@superpowers-marketplace"
+    "superpowers-developing-for-claude-code@superpowers-marketplace"
+    "git-workflows@technicalpickles-marketplace"
+    "working-in-monorepos@technicalpickles-marketplace"
+    "ci-cd-tools@technicalpickles-marketplace"
+    "debugging-tools@technicalpickles-marketplace"
+    "dev-tools@technicalpickles-marketplace"
+    "document-skills@anthropic-agent-skills"
+    "claude-notifications-go@claude-notifications-go"
+  )
+
+  for plugin in "${plugins[@]}"; do
+    if claude plugin list 2> /dev/null | grep -q "$plugin"; then
+      echo "  ✓ $plugin (already installed)"
+    else
+      echo "  + Installing $plugin..."
+      if claude plugin install "$plugin"; then
+        echo "    ✓ Installed successfully"
+      else
+        echo "    ✗ Failed to install (continuing anyway)"
+      fi
+    fi
+  done
+}
+
+install_plugins
