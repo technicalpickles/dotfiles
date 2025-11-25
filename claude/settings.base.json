@@ -1,0 +1,20 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "npx -y @owloops/claude-powerline@latest --style=capsule"
+  },
+  "includeCoAuthoredBy": false,
+  "alwaysThinkingEnabled": false,
+  "enabledPlugins": {
+    "superpowers@superpowers-marketplace": true,
+    "elements-of-style@superpowers-marketplace": true,
+    "superpowers-developing-for-claude-code@superpowers-marketplace": true,
+    "git-workflows@technicalpickles-marketplace": true,
+    "working-in-monorepos@technicalpickles-marketplace": true,
+    "ci-cd-tools@technicalpickles-marketplace": true,
+    "debugging-tools@technicalpickles-marketplace": true,
+    "dev-tools@technicalpickles-marketplace": true,
+    "document-skills@anthropic-agent-skills": true,
+    "claude-notifications-go@claude-notifications-go": true
+  }
+}
