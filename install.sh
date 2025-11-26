@@ -15,7 +15,7 @@ source ./functions.sh
 if [[ -z "${DOTPICKLES_ROLE}" ]]; then
   DOTPICKLES_ROLE=$(detect_role)
 fi
-
+export DOTPICKLES_ROLE
 echo "role: $DOTPICKLES_ROLE"
 
 setup_claude_plugin() {
