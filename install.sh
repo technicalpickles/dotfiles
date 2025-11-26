@@ -87,6 +87,14 @@ echo
 
 ./gitconfig.sh
 
+# Setup Claude Code configuration
+if command_available claude; then
+  echo "Configuring Claude Code..."
+  bash "$DIR/claudeconfig.sh"
+else
+  echo "Claude Code not installed, skipping configuration"
+fi
+
 setup_claude_plugin
 
 if running_macos; then
