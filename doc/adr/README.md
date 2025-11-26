@@ -11,3 +11,5 @@
 - [9. use-envsense-for-environment-detection](0009-use-envsense-for-environment-detection.md)
 - [10. manage-spotlight-exclusions-with-applescript](0010-manage-spotlight-exclusions-with-applescript.md)
 - [11. pattern-based-spotlight-exclusions](0011-pattern-based-spotlight-exclusions.md)
+- [12. extract-devcontainer-as-reusable-template](0012-extract-devcontainer-as-reusable-template.md)
+- [13. claude-code-configuration-management](0013-claude-code-configuration-management.md)
