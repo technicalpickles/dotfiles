@@ -157,3 +157,8 @@ generate_settings() {
 }
 
 generate_settings
+
+echo ""
+echo "✓ Claude Code configuration complete"
+echo "  Settings: $HOME/.claude/settings.json"
+echo "  Role: $ROLE"
