@@ -31,7 +31,7 @@ install_marketplaces() {
   )
 
   for marketplace in "${marketplaces[@]}"; do
-    if claude marketplace list 2> /dev/null | grep -q "$marketplace"; then
+    if claude plugin marketplace list 2> /dev/null | grep -q "$marketplace"; then
       echo "  ✓ $marketplace (already added)"
     else
       echo "  + Adding $marketplace..."
@@ -62,7 +62,6 @@ install_plugins() {
     "document-skills@anthropic-agent-skills"
     "claude-notifications-go@claude-notifications-go"
   )
-
   for plugin in "${plugins[@]}"; do
     if claude plugin list 2> /dev/null | grep -q "$plugin"; then
       echo "  ✓ $plugin (already installed)"

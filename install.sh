@@ -18,55 +18,6 @@ fi
 export DOTPICKLES_ROLE
 echo "role: $DOTPICKLES_ROLE"
 
-setup_claude_plugin() {
-  local plugin_name="claude-skills"
-  local plugin_repo="https://github.com/technicalpickles/claude-skills"
-  local workspace_dir="${HOME}/workspace"
-  local plugin_path="${workspace_dir}/${plugin_name}"
-  local claude_plugins_dir="${HOME}/.claude/plugins"
-
-  echo "Setting up Claude Code plugin..."
-
-  # Ensure workspace directory exists
-  if [ ! -d "${workspace_dir}" ]; then
-    echo "Creating workspace directory: ${workspace_dir}"
-    mkdir -p "${workspace_dir}"
-  fi
-
-  # Clone if not present
-  if [ ! -d "${plugin_path}" ]; then
-    echo "Cloning ${plugin_name} plugin..."
-    if git clone "${plugin_repo}" "${plugin_path}"; then
-      echo "✓ Plugin cloned successfully"
-    else
-      echo "✗ Failed to clone plugin repository"
-      return 1
-    fi
-  else
-    echo "Plugin already exists at ${plugin_path}"
-    # Optionally pull latest changes
-    echo "Pulling latest changes..."
-    cd "${plugin_path}"
-    git pull
-    cd - > /dev/null
-  fi
-
-  # Create symlink
-  mkdir -p "${claude_plugins_dir}"
-  if [ -L "${claude_plugins_dir}/technicalpickles" ]; then
-    echo "Symlink already exists"
-  elif [ -e "${claude_plugins_dir}/technicalpickles" ]; then
-    echo "Warning: ${claude_plugins_dir}/technicalpickles exists but is not a symlink"
-    echo "Please remove it manually and run install.sh again"
-    return 1
-  else
-    ln -sf "${plugin_path}" "${claude_plugins_dir}/technicalpickles"
-    echo "✓ Created symlink to plugin"
-  fi
-
-  echo "✓ Claude plugin installed: technicalpickles"
-}
-
 if running_macos; then
   # Prevent sleeping during script execution, as long as the machine is on AC power
   caffeinate -s -w $$ &
