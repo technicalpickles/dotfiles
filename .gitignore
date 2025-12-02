@@ -160,3 +160,6 @@ home/.claude/*
 
 # git worktrees
 .worktrees/
+
+# bedrock pricing - saved HTML page for manual pricing updates
+Pricing.html

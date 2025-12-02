@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+# bedrock-parse-pricing - Extract Claude pricing from saved Pricing.html
+#
+# Usage: bin/bedrock-parse-pricing [--save] [path/to/Pricing.html]
+#
+# Options:
+#   --save    Save pricing data to .config/bedrock-claude-pricing.json
+#
+# Without --save, outputs human-readable table to stdout.
+# With --save, outputs JSON to .config/bedrock-claude-pricing.json and shows table.
+
+set -euo pipefail
+
+SAVE_TO_CONFIG=false
+HTML_FILE=""
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --save)
+      SAVE_TO_CONFIG=true
+      shift
+      ;;
+    *)
+      HTML_FILE="$1"
+      shift
+      ;;
+  esac
+done
+
+# Default to Pricing.html in dotfiles directory if not specified
+if [[ -z "$HTML_FILE" ]]; then
+  HTML_FILE="$(dirname "$0")/../Pricing.html"
+fi
+
+if [[ ! -f "$HTML_FILE" ]]; then
+  echo "Error: File not found: $HTML_FILE" >&2
+  echo "Usage: $0 [--save] [path/to/Pricing.html]" >&2
+  exit 1
+fi
+
+# Extract pricing data
+# Note: AWS pricing page has two sections - "Global Cross-region Inference" (lower prices)
+# and "Geo and In-region Cross-region Inference" (higher prices, ~10% more).
+# We keep only the first occurrence of each model (Global pricing) using awk to deduplicate.
+PRICING_DATA=$(grep -o "Claude [^<]*</td><td>\$[0-9.]*</td><td>\$[0-9.]*</td>" "$HTML_FILE" \
+  | sed 's/<\/td><td>/|/g' \
+  | sed 's/<\/td>//g' \
+  | sed 's/\$//g' \
+  | awk -F'|' '!seen[$1]++' \
+  | sort)
+
+if [[ -z "$PRICING_DATA" ]]; then
+  echo "Error: No pricing data found in $HTML_FILE" >&2
+  exit 1
+fi
+
+# Get current date
+CURRENT_DATE=$(date -u +%Y-%m-%d)
+
+if [[ "$SAVE_TO_CONFIG" == true ]]; then
+  # Generate JSON and save to config file
+  CONFIG_DIR="$(dirname "$0")/../config"
+  CONFIG_FILE="$CONFIG_DIR/bedrock-claude-pricing.json"
+
+  # Build JSON
+  echo "{" > "$CONFIG_FILE"
+  echo "  \"lastUpdated\": \"$CURRENT_DATE\"," >> "$CONFIG_FILE"
+  echo "  \"source\": \"https://aws.amazon.com/bedrock/pricing/\"," >> "$CONFIG_FILE"
+  echo "  \"models\": {" >> "$CONFIG_FILE"
+
+  # Process each pricing entry
+  FIRST=true
+  while IFS='|' read -r model input_1k output_1k; do
+    if [[ -n "$model" ]]; then
+      # Convert to per-MTok
+      input_m=$(awk "BEGIN {printf \"%.2f\", $input_1k * 1000}")
+      output_m=$(awk "BEGIN {printf \"%.2f\", $output_1k * 1000}")
+
+      # Add comma for all but first entry
+      if [[ "$FIRST" == false ]]; then
+        echo "," >> "$CONFIG_FILE"
+      fi
+      FIRST=false
+
+      # Write JSON entry
+      echo -n "    \"$model\": {" >> "$CONFIG_FILE"
+      echo -n "\"inputPerMTok\": $input_m, " >> "$CONFIG_FILE"
+      echo -n "\"outputPerMTok\": $output_m" >> "$CONFIG_FILE"
+      echo -n "}" >> "$CONFIG_FILE"
+    fi
+  done <<< "$PRICING_DATA"
+
+  echo "" >> "$CONFIG_FILE"
+  echo "  }" >> "$CONFIG_FILE"
+  echo "}" >> "$CONFIG_FILE"
+
+  echo "Saved pricing data to: $CONFIG_FILE" >&2
+  echo "" >&2
+fi
+
+# Always output human-readable table
+echo "# Claude Model Pricing from AWS Bedrock"
+echo "# Extracted on: $CURRENT_DATE"
+echo "# Source: https://aws.amazon.com/bedrock/pricing/"
+echo ""
+echo "| Model | Input (per 1K tokens) | Output (per 1K tokens) | Input (per MTok) | Output (per MTok) |"
+echo "|-------|----------------------|------------------------|------------------|-------------------|"
+
+while IFS='|' read -r model input_1k output_1k; do
+  if [[ -n "$model" ]]; then
+    input_m=$(awk "BEGIN {printf \"%.2f\", $input_1k * 1000}")
+    output_m=$(awk "BEGIN {printf \"%.2f\", $output_1k * 1000}")
+    printf "| %-40s | \$%-19s | \$%-21s | \$%-15s/MTok | \$%-16s/MTok |\n" \
+      "$model" "$input_1k" "$output_1k" "$input_m" "$output_m"
+  fi
+done <<< "$PRICING_DATA"
+
+echo ""
+echo "Note: Prices shown are for on-demand usage in us-east-1/us-west-2 regions."
+echo "Different regions and cross-region inference may have different prices."

@@ -2,13 +2,20 @@
 # bedrock-claude-models - Query AWS Bedrock for available Claude models and generate environment variables
 #
 # Usage:
-#   ./bin/bedrock-claude-models [--eval] [--pricing] [--region REGION]
+#   ./bin/bedrock-claude-models [--eval] [--pricing] [--json] [--region REGION] [--default MODEL]
 #
 # Options:
 #   --eval         Output only eval-able environment variable exports (Fish shell format)
-#   --pricing      Show side-by-side comparison of models with pricing
+#   --pricing      Show side-by-side comparison of models with pricing (NOTE: pricing is hardcoded)
+#   --json         Output JSON for ~/.claude/settings.json env section
 #   --region       AWS region to query (defaults to current AWS region)
+#   --default      Which model to use as default: sonnet (default), opus, or haiku
 #   --help         Show this help message
+#
+# Note on Pricing:
+#   AWS Bedrock does not expose pricing via API. Pricing data is stored in config/bedrock-claude-pricing.json.
+#   To update pricing, save AWS pricing page as Pricing.html and run: bin/bedrock-parse-pricing --save
+#   Always verify current pricing at https://aws.amazon.com/bedrock/pricing/
 #
 # Examples:
 #   # Show all info (default)
@@ -20,8 +27,14 @@
 #   # Set environment variables in Fish shell
 #   eval (./bin/bedrock-claude-models --eval)
 #
+#   # Use Opus as the default model
+#   ./bin/bedrock-claude-models --default opus
+#
 #   # Show pricing comparison table
 #   ./bin/bedrock-claude-models --pricing
+#
+#   # Generate JSON for Claude settings with Haiku as default
+#   ./bin/bedrock-claude-models --json --default haiku
 
 set -euo pipefail
 
@@ -34,7 +47,9 @@ show_help() {
 # Parse command line arguments
 SHOW_EVAL_ONLY=false
 SHOW_PRICING=false
+SHOW_JSON=false
 AWS_REGION="${AWS_REGION:-}"
+DEFAULT_MODEL="sonnet"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -49,8 +64,20 @@ while [[ $# -gt 0 ]]; do
       SHOW_PRICING=true
       shift
       ;;
+    --json)
+      SHOW_JSON=true
+      shift
+      ;;
     --region)
       AWS_REGION="$2"
+      shift 2
+      ;;
+    --default)
+      DEFAULT_MODEL="$2"
+      if [[ "$DEFAULT_MODEL" != "sonnet" ]] && [[ "$DEFAULT_MODEL" != "opus" ]] && [[ "$DEFAULT_MODEL" != "haiku" ]]; then
+        echo "Error: --default must be one of: sonnet, opus, haiku" >&2
+        exit 1
+      fi
       shift 2
       ;;
     *)
@@ -79,13 +106,13 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # Function to get available Claude models from Bedrock
+# Uses inference profiles to get both global and regional model IDs
 get_claude_models() {
   local region=$1
-  aws bedrock list-foundation-models \
+  aws bedrock list-inference-profiles \
     --region "$region" \
-    --by-provider anthropic \
     --output json 2> /dev/null \
-    | jq -r '.modelSummaries[] | select(.modelId | contains("claude")) | .modelId' \
+    | jq -r '.inferenceProfileSummaries[] | select(.inferenceProfileId | contains("claude")) | .inferenceProfileId' \
     | sort -V
 }
 
@@ -98,77 +125,104 @@ parse_model_id() {
   echo "$scope|$family|$version|$model_id"
 }
 
-# Function to get pricing for a model (placeholder - AWS doesn't provide this via API)
+# Function to get pricing for a model
+# Reads from config/bedrock-claude-pricing.json
 get_pricing() {
   local model_id=$1
-  # Note: Bedrock pricing isn't available via API, these are approximate values
-  # as of December 2024. Check https://aws.amazon.com/bedrock/pricing/ for current rates.
-  # Prices shown are for on-demand usage in us-east-1/us-west-2 regions.
+  local pricing_file="$(dirname "$0")/../config/bedrock-claude-pricing.json"
+
+  # If pricing file doesn't exist, return unavailable
+  if [[ ! -f "$pricing_file" ]]; then
+    echo "Pricing unavailable (run: bin/bedrock-parse-pricing --save)"
+    return
+  fi
+
+  # Try to match model ID to pricing data
+  # Match by key patterns in the model ID
+  local input_price=""
+  local output_price=""
 
   case "$model_id" in
     # Claude 4.5 models
     *opus-4-5*)
-      echo "Input: \$15.00/MTok | Output: \$75.00/MTok"
+      input_price=$(jq -r '.models["Claude Opus 4.5"].inputPerMTok // "N/A"' "$pricing_file")
+      output_price=$(jq -r '.models["Claude Opus 4.5"].outputPerMTok // "N/A"' "$pricing_file")
       ;;
     *sonnet-4-5*)
-      echo "Input: \$3.00/MTok | Output: \$15.00/MTok"
+      # Check for long context variant
+      if [[ "$model_id" == *"long"* ]]; then
+        input_price=$(jq -r '.models["Claude Sonnet 4.5 - Long Context"].inputPerMTok // "N/A"' "$pricing_file")
+        output_price=$(jq -r '.models["Claude Sonnet 4.5 - Long Context"].outputPerMTok // "N/A"' "$pricing_file")
+      else
+        input_price=$(jq -r '.models["Claude Sonnet 4.5"].inputPerMTok // "N/A"' "$pricing_file")
+        output_price=$(jq -r '.models["Claude Sonnet 4.5"].outputPerMTok // "N/A"' "$pricing_file")
+      fi
       ;;
     *haiku-4-5*)
-      echo "Input: \$0.80/MTok | Output: \$4.00/MTok"
+      input_price=$(jq -r '.models["Claude Haiku 4.5"].inputPerMTok // "N/A"' "$pricing_file")
+      output_price=$(jq -r '.models["Claude Haiku 4.5"].outputPerMTok // "N/A"' "$pricing_file")
       ;;
     # Claude 4.1 models
     *opus-4-1*)
-      echo "Input: \$15.00/MTok | Output: \$75.00/MTok"
+      input_price=$(jq -r '.models["Claude Opus 4.1"].inputPerMTok // "N/A"' "$pricing_file")
+      output_price=$(jq -r '.models["Claude Opus 4.1"].outputPerMTok // "N/A"' "$pricing_file")
       ;;
     # Claude 4 models
-    *opus-4-20250514*)
-      echo "Input: \$15.00/MTok | Output: \$75.00/MTok"
+    *opus-4*)
+      input_price=$(jq -r '.models["Claude Opus 4"].inputPerMTok // "N/A"' "$pricing_file")
+      output_price=$(jq -r '.models["Claude Opus 4"].outputPerMTok // "N/A"' "$pricing_file")
       ;;
-    *sonnet-4-20250514*)
-      echo "Input: \$3.00/MTok | Output: \$15.00/MTok"
+    *sonnet-4*)
+      if [[ "$model_id" == *"long"* ]]; then
+        input_price=$(jq -r '.models["Claude Sonnet 4 - Long Context"].inputPerMTok // "N/A"' "$pricing_file")
+        output_price=$(jq -r '.models["Claude Sonnet 4 - Long Context"].outputPerMTok // "N/A"' "$pricing_file")
+      else
+        input_price=$(jq -r '.models["Claude Sonnet 4"].inputPerMTok // "N/A"' "$pricing_file")
+        output_price=$(jq -r '.models["Claude Sonnet 4"].outputPerMTok // "N/A"' "$pricing_file")
+      fi
+      ;;
+    # Claude 3.7 models
+    *3-7-sonnet* | *sonnet-3-7*)
+      input_price=$(jq -r '.models["Claude 3.7 Sonnet"].inputPerMTok // "N/A"' "$pricing_file")
+      output_price=$(jq -r '.models["Claude 3.7 Sonnet"].outputPerMTok // "N/A"' "$pricing_file")
       ;;
     # Claude 3.5 models
-    *3-5-sonnet*)
-      echo "Input: \$3.00/MTok | Output: \$15.00/MTok"
+    *3-5-sonnet* | *sonnet-3-5*)
+      input_price=$(jq -r '.models["Claude 3.5 Sonnet"].inputPerMTok // "N/A"' "$pricing_file")
+      output_price=$(jq -r '.models["Claude 3.5 Sonnet"].outputPerMTok // "N/A"' "$pricing_file")
       ;;
-    *3-5-haiku*)
-      echo "Input: \$0.80/MTok | Output: \$4.00/MTok"
-      ;;
-    *sonnet-3-5*)
-      echo "Input: \$3.00/MTok | Output: \$15.00/MTok"
-      ;;
-    *haiku-3-5*)
-      echo "Input: \$0.80/MTok | Output: \$4.00/MTok"
-      ;;
-    # Claude 3.7 models (experimental)
-    *3-7-sonnet*)
-      echo "Input: \$3.00/MTok | Output: \$15.00/MTok"
+    *3-5-haiku* | *haiku-3-5*)
+      input_price=$(jq -r '.models["Claude 3.5 Haiku"].inputPerMTok // "N/A"' "$pricing_file")
+      output_price=$(jq -r '.models["Claude 3.5 Haiku"].outputPerMTok // "N/A"' "$pricing_file")
       ;;
     # Claude 3 models
     *claude-3-opus*)
-      echo "Input: \$15.00/MTok | Output: \$75.00/MTok"
+      input_price=$(jq -r '.models["Claude 3 Opus"].inputPerMTok // "N/A"' "$pricing_file")
+      output_price=$(jq -r '.models["Claude 3 Opus"].outputPerMTok // "N/A"' "$pricing_file")
       ;;
     *claude-3-sonnet*)
-      echo "Input: \$3.00/MTok | Output: \$15.00/MTok"
+      input_price=$(jq -r '.models["Claude 3 Sonnet"].inputPerMTok // "N/A"' "$pricing_file")
+      output_price=$(jq -r '.models["Claude 3 Sonnet"].outputPerMTok // "N/A"' "$pricing_file")
       ;;
     *claude-3-haiku*)
-      echo "Input: \$0.25/MTok | Output: \$1.25/MTok"
-      ;;
-    # Claude 2 models
-    *claude-v2*)
-      echo "Input: \$8.00/MTok | Output: \$24.00/MTok"
-      ;;
-    *claude-instant*)
-      echo "Input: \$0.80/MTok | Output: \$2.40/MTok"
+      input_price=$(jq -r '.models["Claude 3 Haiku"].inputPerMTok // "N/A"' "$pricing_file")
+      output_price=$(jq -r '.models["Claude 3 Haiku"].outputPerMTok // "N/A"' "$pricing_file")
       ;;
     *)
       echo "Pricing unavailable"
+      return
       ;;
   esac
+
+  if [[ "$input_price" == "N/A" ]] || [[ "$output_price" == "N/A" ]]; then
+    echo "Pricing unavailable"
+  else
+    printf "Input: \$%.2f/MTok | Output: \$%.2f/MTok" "$input_price" "$output_price"
+  fi
 }
 
 # Get all Claude models
-if [[ "$SHOW_EVAL_ONLY" == false ]]; then
+if [[ "$SHOW_EVAL_ONLY" == false ]] && [[ "$SHOW_JSON" == false ]]; then
   echo "# Querying AWS Bedrock in region: $AWS_REGION" >&2
   echo "" >&2
 fi
@@ -252,7 +306,7 @@ $scope|$family|$version|$full_id"
 done <<< "$MODELS"
 
 # Determine best models for each category
-# Prefer global scope for opus (highest capability), us scope for others
+# Prefer global scope for all models to match Global Cross-region Inference pricing
 OPUS_MODEL=""
 SONNET_MODEL=""
 HAIKU_MODEL=""
@@ -266,27 +320,35 @@ elif [[ -n "$LATEST_OPUS_OTHER" ]]; then
   IFS='|' read -r _ _ _ OPUS_MODEL <<< "$LATEST_OPUS_OTHER"
 fi
 
-# Find best sonnet (prefer us scope for cost)
-if [[ -n "$LATEST_SONNET_US" ]]; then
-  IFS='|' read -r _ _ _ SONNET_MODEL <<< "$LATEST_SONNET_US"
-elif [[ -n "$LATEST_SONNET_GLOBAL" ]]; then
+# Find best sonnet (prefer global scope to match pricing tier)
+if [[ -n "$LATEST_SONNET_GLOBAL" ]]; then
   IFS='|' read -r _ _ _ SONNET_MODEL <<< "$LATEST_SONNET_GLOBAL"
+elif [[ -n "$LATEST_SONNET_US" ]]; then
+  IFS='|' read -r _ _ _ SONNET_MODEL <<< "$LATEST_SONNET_US"
 elif [[ -n "$LATEST_SONNET_OTHER" ]]; then
   IFS='|' read -r _ _ _ SONNET_MODEL <<< "$LATEST_SONNET_OTHER"
 fi
 
-# Find best haiku (prefer us scope for cost)
-if [[ -n "$LATEST_HAIKU_US" ]]; then
-  IFS='|' read -r _ _ _ HAIKU_MODEL <<< "$LATEST_HAIKU_US"
-elif [[ -n "$LATEST_HAIKU_GLOBAL" ]]; then
+# Find best haiku (prefer global scope to match pricing tier)
+if [[ -n "$LATEST_HAIKU_GLOBAL" ]]; then
   IFS='|' read -r _ _ _ HAIKU_MODEL <<< "$LATEST_HAIKU_GLOBAL"
+elif [[ -n "$LATEST_HAIKU_US" ]]; then
+  IFS='|' read -r _ _ _ HAIKU_MODEL <<< "$LATEST_HAIKU_US"
 elif [[ -n "$LATEST_HAIKU_OTHER" ]]; then
   IFS='|' read -r _ _ _ HAIKU_MODEL <<< "$LATEST_HAIKU_OTHER"
 fi
 
 # Show pricing table if requested
 if [[ "$SHOW_PRICING" == true ]] && [[ "$SHOW_EVAL_ONLY" == false ]]; then
-  echo "# Available Claude Models in $AWS_REGION" >&2
+  PRICING_FILE="$(dirname "$0")/../config/bedrock-claude-pricing.json"
+  if [[ -f "$PRICING_FILE" ]]; then
+    LAST_UPDATED=$(jq -r '.lastUpdated // "unknown"' "$PRICING_FILE")
+    echo "# Available Claude Models in $AWS_REGION" >&2
+    echo "# NOTE: Pricing data was last updated $LAST_UPDATED. Verify at https://aws.amazon.com/bedrock/pricing/" >&2
+  else
+    echo "# Available Claude Models in $AWS_REGION" >&2
+    echo "# NOTE: Pricing data not available. Run: bin/bedrock-parse-pricing --save" >&2
+  fi
   echo "" >&2
   printf "%-60s %-15s %-40s\n" "Model ID" "Family" "Pricing (Approx.)" >&2
   printf "%-60s %-15s %-40s\n" "$(printf '%0.s-' {1..60})" "$(printf '%0.s-' {1..15})" "$(printf '%0.s-' {1..40})" >&2
@@ -315,20 +377,50 @@ if [[ "$SHOW_PRICING" == true ]] && [[ "$SHOW_EVAL_ONLY" == false ]]; then
   echo "" >&2
 fi
 
-# Output environment variables
-if [[ "$SHOW_EVAL_ONLY" == false ]]; then
-  echo "# Selected Models:" >&2
-  echo "#   Opus (highest capability):   $OPUS_MODEL" >&2
-  echo "#   Sonnet (balanced):           $SONNET_MODEL" >&2
-  echo "#   Haiku (fast/cost-effective): $HAIKU_MODEL" >&2
-  echo "" >&2
-  echo "# Fish shell - run: eval (./bin/bedrock-claude-models --eval)" >&2
-  echo "" >&2
-fi
+# Determine which model to use as default based on --default flag
+case "$DEFAULT_MODEL" in
+  opus)
+    DEFAULT_MODEL_ID="$OPUS_MODEL"
+    ;;
+  haiku)
+    DEFAULT_MODEL_ID="$HAIKU_MODEL"
+    ;;
+  sonnet | *)
+    DEFAULT_MODEL_ID="$SONNET_MODEL"
+    ;;
+esac
 
-# Generate Fish shell export statements
-echo "set -gx ANTHROPIC_MODEL '${OPUS_MODEL:-$SONNET_MODEL}'"
-echo "set -gx ANTHROPIC_SMALL_FAST_MODEL '${HAIKU_MODEL}'"
-echo "set -gx ANTHROPIC_DEFAULT_SONNET_MODEL '${SONNET_MODEL}'"
-echo "set -gx ANTHROPIC_DEFAULT_HAIKU_MODEL '${HAIKU_MODEL}'"
-echo "set -gx ANTHROPIC_DEFAULT_OPUS_MODEL '${OPUS_MODEL}'"
+# Output in requested format
+if [[ "$SHOW_JSON" == true ]]; then
+  # Generate JSON for Claude Code settings.json env section
+  cat << EOF
+{
+  "env": {
+    "ANTHROPIC_MODEL": "${DEFAULT_MODEL_ID}",
+    "ANTHROPIC_SMALL_FAST_MODEL": "${HAIKU_MODEL}",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "${SONNET_MODEL}",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "${HAIKU_MODEL}",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "${OPUS_MODEL}"
+  }
+}
+EOF
+else
+  # Output environment variables
+  if [[ "$SHOW_EVAL_ONLY" == false ]]; then
+    echo "# Selected Models:" >&2
+    echo "#   Opus (highest capability):   $OPUS_MODEL" >&2
+    echo "#   Sonnet (balanced):           $SONNET_MODEL" >&2
+    echo "#   Haiku (fast/cost-effective): $HAIKU_MODEL" >&2
+    echo "#   Default (--default $DEFAULT_MODEL): $DEFAULT_MODEL_ID" >&2
+    echo "" >&2
+    echo "# Fish shell - run: eval (./bin/bedrock-claude-models --eval)" >&2
+    echo "" >&2
+  fi
+
+  # Generate Fish shell export statements
+  echo "set -gx ANTHROPIC_MODEL '${DEFAULT_MODEL_ID}'"
+  echo "set -gx ANTHROPIC_SMALL_FAST_MODEL '${HAIKU_MODEL}'"
+  echo "set -gx ANTHROPIC_DEFAULT_SONNET_MODEL '${SONNET_MODEL}'"
+  echo "set -gx ANTHROPIC_DEFAULT_HAIKU_MODEL '${HAIKU_MODEL}'"
+  echo "set -gx ANTHROPIC_DEFAULT_OPUS_MODEL '${OPUS_MODEL}'"
+fi
