@@ -46,8 +46,6 @@ else
   echo "Claude Code not installed, skipping configuration"
 fi
 
-setup_claude_plugin
-
 if running_macos; then
   load_brew_shellenv
 
