@@ -2,18 +2,6 @@
 	path = home/.hammerspoon/Spoons/ControlEscape.spoon
 	url = https://github.com/jasonrudolph/ControlEscape.spoon.git
 
-[submodule "vendor/vim-pathogen"]
-	path = vendor/vim-pathogen
-	url = git://github.com/tpope/vim-pathogen.git
-[submodule "vendor/vim-plug"]
-	path = vendor/vim-plug
-	url = https://github.com/junegunn/vim-plug.git
 [submodule "vendor/sbp"]
 	path = vendor/sbp
 	url = https://github.com/brujoand/sbp.git
-[submodule "config/cheat/cheatsheets/community"]
-	path = config/cheat/cheatsheets/community
-	url = https://github.com/cheat/cheatsheets
-[submodule "config/cheat/cheatsheets/personal"]
-	path = config/cheat/cheatsheets/personal
-	url = https://github.com/technicalpickles/cheatsheets.git
