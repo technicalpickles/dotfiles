@@ -18,6 +18,10 @@ fi
 export DOTPICKLES_ROLE
 echo "role: $DOTPICKLES_ROLE"
 
+if [[ "$DOTPICKLES_ROLE" = "noop" ]]; then
+  exit 0
+fi
+
 if running_macos; then
   # Prevent sleeping during script execution, as long as the machine is on AC power
   caffeinate -s -w $$ &
