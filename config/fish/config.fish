@@ -1,5 +1,5 @@
 if [ -f /.dockerenv ] || grep -q 'docker\|lxc\|containerd' /proc/1/cgroup 2> /dev/null || [ -n "$DOCKER_BUILD" ]
-    set -gx DOTPICKLES_ROLE devcontainer
+    set -gx DOTPICKLES_ROLE container
 else if  string match --quiet --regex '^josh-nichols-' (hostname)
     set -gx DOTPICKLES_ROLE work
 else
