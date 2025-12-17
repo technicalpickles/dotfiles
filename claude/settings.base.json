@@ -1,7 +1,7 @@
 {
   "statusLine": {
     "type": "command",
-    "command": "~/.pickles/bin/claude-status-line"
+    "command": "~/workspace/dotfiles/bin/claude-status-line"
   },
   "includeCoAuthoredBy": false,
   "alwaysThinkingEnabled": false,
