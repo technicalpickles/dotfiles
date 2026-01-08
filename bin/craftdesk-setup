@@ -122,6 +122,32 @@ select_profile() {
   success "Selected profile: $SELECTED_PROFILE"
 }
 
+# Prompt for commit strategy
+select_commit_strategy() {
+  echo ""
+  info "How should craftdesk files be managed?"
+  echo "  1) Commit to repo (for repos you own)"
+  echo "  2) Keep local only (for repos you don't control)"
+  echo ""
+
+  read -rp "Choice [2]: " choice
+  choice=${choice:-2}
+
+  case "$choice" in
+    1)
+      COMMIT_STRATEGY="commit"
+      success "Strategy: commit to repo"
+      ;;
+    2)
+      COMMIT_STRATEGY="local"
+      success "Strategy: keep local only"
+      ;;
+    *)
+      die "Invalid selection: $choice"
+      ;;
+  esac
+}
+
 main() {
   check_prerequisites
   detect_repo_state
@@ -138,6 +164,7 @@ main() {
   fi
 
   select_profile
+  select_commit_strategy
 }
 
 main "$@"
