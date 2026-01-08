@@ -50,9 +50,41 @@ check_prerequisites() {
   fi
 }
 
+# Detect current repo state
+detect_repo_state() {
+  REPO_ROOT=$(git rev-parse --show-toplevel)
+  PROJECT_NAME=$(basename "$REPO_ROOT")
+
+  # Check if craftdesk.json exists
+  if [[ -f "$REPO_ROOT/craftdesk.json" ]]; then
+    CRAFTDESK_EXISTS=true
+  else
+    CRAFTDESK_EXISTS=false
+  fi
+
+  # Check if .claude/ exists and is tracked
+  if [[ -d "$REPO_ROOT/.claude" ]]; then
+    CLAUDE_DIR_EXISTS=true
+    if git ls-files --error-unmatch "$REPO_ROOT/.claude" &> /dev/null 2>&1; then
+      CLAUDE_DIR_TRACKED=true
+    else
+      CLAUDE_DIR_TRACKED=false
+    fi
+  else
+    CLAUDE_DIR_EXISTS=false
+    CLAUDE_DIR_TRACKED=false
+  fi
+}
+
 main() {
   check_prerequisites
-  info "All prerequisites met"
+  detect_repo_state
+
+  info "Repository: $PROJECT_NAME"
+  info "Root: $REPO_ROOT"
+  info "craftdesk.json exists: $CRAFTDESK_EXISTS"
+  info ".claude/ exists: $CLAUDE_DIR_EXISTS"
+  info ".claude/ tracked: $CLAUDE_DIR_TRACKED"
 }
 
 main "$@"
