@@ -1,0 +1,12 @@
+{
+  "name": "local-project",
+  "version": "1.0.0",
+  "description": "Document creation - PDF, PPTX, DOCX, XLSX",
+  "dependencies": {
+    "document-skills": {
+      "git": "https://github.com/anthropics/skills.git",
+      "branch": "main",
+      "path": "skills"
+    }
+  }
+}

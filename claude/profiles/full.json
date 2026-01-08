@@ -1,0 +1,16 @@
+{
+  "name": "local-project",
+  "version": "1.0.0",
+  "description": "Full setup - superpowers + document skills",
+  "dependencies": {
+    "superpowers": {
+      "git": "https://github.com/obra/superpowers.git",
+      "branch": "main"
+    },
+    "document-skills": {
+      "git": "https://github.com/anthropics/skills.git",
+      "branch": "main",
+      "path": "skills"
+    }
+  }
+}
