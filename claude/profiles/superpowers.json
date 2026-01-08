@@ -1,0 +1,15 @@
+{
+  "name": "local-project",
+  "version": "1.0.0",
+  "description": "Brainstorming, planning, debugging workflows",
+  "dependencies": {
+    "superpowers": {
+      "git": "https://github.com/anthropics/superpowers-skill.git",
+      "branch": "main"
+    },
+    "elements-of-style": {
+      "git": "https://github.com/anthropics/elements-of-style-skill.git",
+      "branch": "main"
+    }
+  }
+}
