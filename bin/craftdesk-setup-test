@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Test script for craftdesk-setup profiles
+# Tests each profile in local-only mode to verify installation works
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
+PROFILES_DIR="$DOTFILES_DIR/claude/profiles"
+TEST_DIR="/tmp/craftdesk-profile-test"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+info() { echo -e "${BLUE}$*${NC}"; }
+success() { echo -e "${GREEN}✓ $*${NC}"; }
+error() { echo -e "${RED}✗ $*${NC}" >&2; }
+
+# Get list of profiles
+profiles=()
+for f in "$PROFILES_DIR"/*.json; do
+  [[ -f "$f" ]] || continue
+  profiles+=("$(basename "$f" .json)")
+done
+
+info "Found ${#profiles[@]} profiles to test"
+echo ""
+
+passed=0
+failed=0
+
+for i in "${!profiles[@]}"; do
+  profile="${profiles[$i]}"
+  profile_num=$((i + 1))
+
+  info "Testing profile $profile_num/${#profiles[@]}: $profile"
+
+  # Clean up and create fresh test directory
+  rm -rf "$TEST_DIR"
+  mkdir -p "$TEST_DIR"
+  cd "$TEST_DIR"
+  git init --quiet
+
+  # Run craftdesk-setup with this profile (local-only mode)
+  # Profile selection is 1-indexed, profiles are alphabetical
+  if echo -e "${profile_num}\n2" | "$DOTFILES_DIR/bin/craftdesk-setup" > /tmp/craftdesk-test-output.log 2>&1; then
+    # Verify craftdesk.json was created
+    if [[ -f "$TEST_DIR/craftdesk.json" ]]; then
+      # Verify .claude directory was created (unless minimal profile with no deps)
+      if [[ -d "$TEST_DIR/.claude" ]] || [[ "$profile" == "minimal" ]]; then
+        success "$profile - installed successfully"
+        ((passed++))
+      else
+        error "$profile - .claude directory not created"
+        ((failed++))
+      fi
+    else
+      error "$profile - craftdesk.json not created"
+      ((failed++))
+    fi
+  else
+    error "$profile - craftdesk-setup failed"
+    echo "  Output:"
+    sed 's/^/    /' /tmp/craftdesk-test-output.log | head -20
+    ((failed++))
+  fi
+done
+
+# Clean up
+rm -rf "$TEST_DIR"
+rm -f /tmp/craftdesk-test-output.log
+
+echo ""
+info "Results: $passed passed, $failed failed"
+
+if [[ $failed -gt 0 ]]; then
+  exit 1
+fi
+
+success "All profiles tested successfully"
