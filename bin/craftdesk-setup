@@ -21,3 +21,38 @@ die() {
   error "$*"
   exit 1
 }
+
+# Prerequisite checks
+check_prerequisites() {
+  # Check for git
+  if ! command -v git &> /dev/null; then
+    die "git is required but not installed"
+  fi
+
+  # Check for craftdesk
+  if ! command -v craftdesk &> /dev/null; then
+    die "craftdesk is required but not installed. Install with: npm install -g craftdesk"
+  fi
+
+  # Check for jq
+  if ! command -v jq &> /dev/null; then
+    die "jq is required but not installed. Install with: brew install jq"
+  fi
+
+  # Check we're in a git repo
+  if ! git rev-parse --is-inside-work-tree &> /dev/null; then
+    die "Not inside a git repository"
+  fi
+
+  # Check profiles directory exists
+  if [[ ! -d "$PROFILES_DIR" ]]; then
+    die "Profiles directory not found: $PROFILES_DIR"
+  fi
+}
+
+main() {
+  check_prerequisites
+  info "All prerequisites met"
+}
+
+main "$@"
