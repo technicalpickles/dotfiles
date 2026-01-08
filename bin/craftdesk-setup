@@ -76,15 +76,68 @@ detect_repo_state() {
   fi
 }
 
+# List available profiles
+list_profiles() {
+  local profiles=()
+  for f in "$PROFILES_DIR"/*.json; do
+    [[ -f "$f" ]] || continue
+    local name=$(basename "$f" .json)
+    local desc=$(jq -r '.description // "No description"' "$f")
+    profiles+=("$name|$desc")
+  done
+  printf '%s\n' "${profiles[@]}"
+}
+
+# Prompt for profile selection
+select_profile() {
+  local profiles_list
+  profiles_list=$(list_profiles)
+
+  if [[ -z "$profiles_list" ]]; then
+    die "No profiles found in $PROFILES_DIR"
+  fi
+
+  echo ""
+  info "Available profiles:"
+  local i=1
+  while IFS='|' read -r name desc; do
+    echo "  $i) $name - $desc"
+    ((i++))
+  done <<< "$profiles_list"
+  echo ""
+
+  local profile_count
+  profile_count=$(echo "$profiles_list" | wc -l | tr -d ' ')
+
+  read -rp "Which profile? [1]: " choice
+  choice=${choice:-1}
+
+  if ! [[ "$choice" =~ ^[0-9]+$ ]] || ((choice < 1 || choice > profile_count)); then
+    die "Invalid selection: $choice"
+  fi
+
+  SELECTED_PROFILE=$(echo "$profiles_list" | sed -n "${choice}p" | cut -d'|' -f1)
+  SELECTED_PROFILE_PATH="$PROFILES_DIR/$SELECTED_PROFILE.json"
+
+  success "Selected profile: $SELECTED_PROFILE"
+}
+
 main() {
   check_prerequisites
   detect_repo_state
 
   info "Repository: $PROJECT_NAME"
-  info "Root: $REPO_ROOT"
-  info "craftdesk.json exists: $CRAFTDESK_EXISTS"
-  info ".claude/ exists: $CLAUDE_DIR_EXISTS"
-  info ".claude/ tracked: $CLAUDE_DIR_TRACKED"
+
+  # Check for existing craftdesk.json
+  if [[ "$CRAFTDESK_EXISTS" == "true" ]]; then
+    warn "craftdesk.json already exists"
+    read -rp "Overwrite? [y/N]: " overwrite
+    if [[ ! "$overwrite" =~ ^[Yy]$ ]]; then
+      die "Aborted"
+    fi
+  fi
+
+  select_profile
 }
 
 main "$@"
