@@ -6,6 +6,11 @@ else
     set -gx DOTPICKLES_ROLE personal
 end
 
+if which fnox > /dev/null
+    fnox activate fish | source
+end
+
+
 if test -f  ~/.gusto/init.fish
   source ~/.gusto/init.fish
 
@@ -14,6 +19,10 @@ if test -f  ~/.gusto/init.fish
   if test -n "$HOMEBREW_PREFIX"
     fish_add_path --move --global --prepend "$HOMEBREW_PREFIX/bin" "$HOMEBREW_PREFIX/sbin"
   end
+
+  # init.fish activates, but only does shims
+  # use this to get environment variable management among other things
+  mise activate fish | source
 else
   if [ (uname) = Darwin ]
     # setup version manager
@@ -26,10 +35,12 @@ else
 
       set -gx MISE_NODE_COREPACK true
 
-      mise activate --shims fish | source
+      mise activate fish | source
     end
   end
 end
+
+
 
 if which op > /dev/null && test -f ~/.config/op/plugins.sh
     source ~/.config/op/plugins.sh
