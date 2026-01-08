@@ -9,7 +9,7 @@ shell-integration-features = no-cursor
 font-family = "DankMono Nerd Font"
 font-size = 15
 
-theme = catppuccin-macchiato.conf
+theme = "catppuccin-mocha.conf"
 
 macos-icon = custom-style
 macos-icon-frame = plastic
