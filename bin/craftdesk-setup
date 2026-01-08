@@ -208,6 +208,23 @@ run_craftdesk_install() {
   success "Dependencies installed"
 }
 
+# Show final summary
+show_summary() {
+  echo ""
+  success "Craftdesk configured with '$SELECTED_PROFILE' profile"
+  echo "  - craftdesk.json created"
+  echo "  - Dependencies installed to .claude/"
+
+  if [[ "$COMMIT_STRATEGY" == "local" ]]; then
+    echo "  - Files excluded from git (local only mode)"
+  else
+    echo "  - Ready to commit (run: git add craftdesk.json craftdesk.lock .claude/)"
+  fi
+
+  echo ""
+  info "Run 'craftdesk list' to see installed crafts."
+}
+
 main() {
   check_prerequisites
   detect_repo_state
@@ -225,6 +242,12 @@ main() {
 
   select_profile
   select_commit_strategy
+
+  copy_profile
+  configure_git_exclusions
+  run_craftdesk_install
+
+  show_summary
 }
 
 main "$@"
