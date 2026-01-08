@@ -148,6 +148,66 @@ select_commit_strategy() {
   esac
 }
 
+# Copy profile to craftdesk.json with project name substitution
+copy_profile() {
+  info "Creating craftdesk.json from $SELECTED_PROFILE profile..."
+
+  jq --arg name "$PROJECT_NAME" '.name = $name' "$SELECTED_PROFILE_PATH" > "$REPO_ROOT/craftdesk.json"
+
+  success "Created craftdesk.json"
+}
+
+# Configure git exclusions based on strategy
+configure_git_exclusions() {
+  if [[ "$COMMIT_STRATEGY" == "local" ]]; then
+    info "Adding craftdesk files to .git/info/exclude..."
+
+    local exclude_file="$REPO_ROOT/.git/info/exclude"
+
+    # Check if already configured
+    if grep -q "craftdesk (local)" "$exclude_file" 2> /dev/null; then
+      warn "Exclusions already configured in .git/info/exclude"
+      return
+    fi
+
+    cat >> "$exclude_file" << 'EOF'
+
+# craftdesk (local)
+craftdesk.json
+craftdesk.lock
+.claude/
+EOF
+
+    success "Added exclusions to .git/info/exclude"
+  else
+    info "Adding .claude/settings.local.json to .gitignore..."
+
+    local gitignore="$REPO_ROOT/.gitignore"
+
+    # Check if already in gitignore
+    if grep -q ".claude/settings.local.json" "$gitignore" 2> /dev/null; then
+      warn ".claude/settings.local.json already in .gitignore"
+      return
+    fi
+
+    echo "" >> "$gitignore"
+    echo "# Claude Code local settings" >> "$gitignore"
+    echo ".claude/settings.local.json" >> "$gitignore"
+
+    success "Added .claude/settings.local.json to .gitignore"
+  fi
+}
+
+# Run craftdesk install
+run_craftdesk_install() {
+  info "Running craftdesk install..."
+
+  cd "$REPO_ROOT"
+  craftdesk install
+
+  success "Dependencies installed"
+}
+
 main() {
   check_prerequisites
   detect_repo_state
