@@ -123,6 +123,12 @@ link() {
   local target="$2"
   local display_target="${target/$HOME/~}"
 
+  # Handle existing directory that's not a symlink
+  if [ -d "$target" ] && [ ! -L "$target" ]; then
+    echo "🔗 $display_target → backing up existing directory"
+    mv "$target" "${target}.backup.$(date +%Y%m%d%H%M%S)"
+  fi
+
   if [ ! -L "$target" ]; then
     echo "🔗 $display_target → linking from $linkable"
     ln -Ff -s "$DIR/$linkable" "$target"
