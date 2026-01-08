@@ -10,4 +10,7 @@ scratch
 .worktrees/
 .scratch
 .playwright-mcp
-.claude/settings.local.json
+**/.claude/settings.local.json
+.demongrep.db/ 
+.tmp/
+**/__pycache__
