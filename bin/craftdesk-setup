@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Constants
+DOTFILES_DIR="${DOTFILES_DIR:-$HOME/workspace/dotfiles}"
+PROFILES_DIR="$DOTFILES_DIR/claude/profiles"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Helper functions
+info() { echo -e "${BLUE}$*${NC}"; }
+success() { echo -e "${GREEN}✓ $*${NC}"; }
+warn() { echo -e "${YELLOW}⚠ $*${NC}"; }
+error() { echo -e "${RED}✗ $*${NC}" >&2; }
+die() {
+  error "$*"
+  exit 1
+}
