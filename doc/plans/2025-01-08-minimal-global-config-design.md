@@ -2,31 +2,24 @@
 
 ## Problem
 
-The current Claude Code configuration installs all skill plugins globally via `claudeconfig.sh`. This creates:
+`claudeconfig.sh` installs all skill plugins globally. This bloats `settings.json` with plugins many projects never use, clutters permissions with skill-specific entries, and prevents per-project customization.
 
-- A bloated global `settings.json` with many enabled plugins
-- Long permission lists for skills that may not be needed in every project
-- No per-project customization of which skills are available
-
-Now that `craftdesk-setup` exists, skills can be installed per-project. The global config should provide only infrastructure.
+Now that `craftdesk-setup` exists, projects can install their own skills. The global config should provide infrastructure only.
 
 ## Decision
 
-Adopt a **hybrid model**:
-
-- **Global config** provides infrastructure plugins only
-- **Per-project craftdesk** provides skills tailored to the project
+Adopt a hybrid model: global config provides infrastructure, craftdesk provides skills per-project.
 
 ## Global Config Changes
 
 ### Enabled Plugins (settings.base.json)
 
-**Keep globally:**
+**Keep:**
 
-- `claude-notifications-go` - system notifications
-- `tool-routing` - routes tool calls to better alternatives
+- `claude-notifications-go` — system notifications
+- `tool-routing` — redirects tool calls to better alternatives
 
-**Remove from global (now per-project via craftdesk):**
+**Move to craftdesk:**
 
 - `superpowers`
 - `elements-of-style`
@@ -50,13 +43,13 @@ Adopt a **hybrid model**:
 
 **Remove:**
 
-- All `Skill(...)` permissions
-- All `Read(~/.claude/plugins/cache/...)` permissions
-- Domain-specific WebFetch (karafka.io, trivy.dev, etc.)
+- All `Skill(...)` entries
+- All `Read(~/.claude/plugins/cache/...)` entries
+- Domain-specific WebFetch entries
 
 ### Marketplaces (claudeconfig.sh)
 
-**Keep all marketplaces** - they're just registries for browsing:
+Keep all marketplaces for browsing:
 
 - `superpowers-marketplace`
 - `anthropic-agent-skills`
@@ -65,7 +58,7 @@ Adopt a **hybrid model**:
 
 ### Installed Plugins (claudeconfig.sh)
 
-**Install only:**
+Install only:
 
 - `tool-routing@technicalpickles-marketplace`
 - `claude-notifications-go@claude-notifications-go`
@@ -86,20 +79,20 @@ Adopt a **hybrid model**:
 | working-in-monorepos                   | https://github.com/technicalpickles/pickled-claude-plugins.git     | plugins/working-in-monorepos |
 | dev-tools                              | https://github.com/technicalpickles/pickled-claude-plugins.git     | plugins/dev-tools            |
 
-### Updated Profiles
+### Profiles
 
-**minimal.json** - No dependencies (unchanged)
+**minimal.json** — No dependencies
 
-**superpowers.json** - Core workflows:
+**superpowers.json** — Core workflows:
 
 - superpowers
 - elements-of-style
 
-**document-skills.json** - Document creation (unchanged):
+**document-skills.json** — Document creation:
 
 - document-skills
 
-**full.json** - Everything:
+**full.json** — All skills:
 
 - superpowers
 - elements-of-style
@@ -113,9 +106,9 @@ Adopt a **hybrid model**:
 
 ## Tool-Routing Enhancement
 
-Tool-routing must discover routes from craftdesk-installed skills.
+Tool-routing must discover routes from craftdesk-installed skills at `.claude/skills/*/hooks/tool-routes.yaml`.
 
-### New Discovery Function (config.py)
+### New Function (config.py)
 
 ```python
 def discover_craftdesk_routes(project_root: Path) -> list[Path]:
@@ -135,12 +128,12 @@ def discover_craftdesk_routes(project_root: Path) -> list[Path]:
     return sorted(paths)
 ```
 
-### Updated get_all_routes (cli.py)
+### Integration (cli.py)
 
 Add after plugin routes discovery:
 
 ```python
-# 2.5. Craftdesk-installed skills' routes
+# Craftdesk-installed skills
 from tool_routing.config import discover_craftdesk_routes
 for path in discover_craftdesk_routes(project_root):
     routes = load_routes_file(path)
@@ -149,69 +142,65 @@ for path in discover_craftdesk_routes(project_root):
         all_sources.append(str(path))
 ```
 
-## Implementation Files
+## Files to Change
 
-1. `claude/settings.base.json` - Remove skill plugins from enabledPlugins
-2. `claude/permissions.json` - Remove Skill and plugin cache Read permissions
-3. `claudeconfig.sh` - Remove skill plugin installations
-4. `claude/profiles/superpowers.json` - Add elements-of-style
-5. `claude/profiles/full.json` - Add all skills
-6. `pickled-claude-plugins/plugins/tool-routing/src/tool_routing/config.py` - Add discover_craftdesk_routes
-7. `pickled-claude-plugins/plugins/tool-routing/src/tool_routing/cli.py` - Call discover_craftdesk_routes
+1. `claude/settings.base.json` — Remove skill plugins from enabledPlugins
+2. `claude/permissions.json` — Remove Skill and plugin cache Read entries
+3. `claudeconfig.sh` — Remove skill plugin installations
+4. `claude/profiles/superpowers.json` — Add elements-of-style
+5. `claude/profiles/full.json` — Add all skills
+6. `pickled-claude-plugins/plugins/tool-routing/src/tool_routing/config.py` — Add discover_craftdesk_routes
+7. `pickled-claude-plugins/plugins/tool-routing/src/tool_routing/cli.py` — Call discover_craftdesk_routes
 
 ## Migration
 
-### Migration Analysis Tool
+### Analysis Tool
 
-`bin/analyze-claude-sessions` analyzes Claude Code session history to prioritize migration:
+`bin/analyze-claude-sessions` parses Claude session history to prioritize migration:
 
 ```bash
-# Show all projects with skill usage and suggested profiles
+# Show projects with skill usage and suggested profiles
 analyze-claude-sessions
 
-# Output migration commands for top N projects
+# Generate migration commands for top N projects
 analyze-claude-sessions --migrate --limit 15
 
 # JSON output for scripting
 analyze-claude-sessions --json
 ```
 
-**Features:**
+The tool:
 
-- Parses `.claude/projects/` session files (JSONL format)
-- Extracts skill invocations from `tool_use` entries
-- Calculates per-project statistics (sessions, messages, last activity)
-- Suggests craftdesk profile based on actual skill usage
-- Flags uncovered skills (project-specific skills not in standard profiles)
+- Parses `.claude/projects/` session files
+- Extracts skill invocations from tool_use entries
+- Calculates session counts, message totals, and last activity
+- Suggests a craftdesk profile based on actual usage
+- Flags uncovered skills (project-specific, not in standard profiles)
 
-**Profile suggestion logic:**
+**Profile suggestions:**
 
-| Skills Used                      | Suggested Profile |
-| -------------------------------- | ----------------- |
-| None                             | minimal           |
-| Only superpowers/elements-style  | superpowers       |
-| Only document-skills             | document-skills   |
-| Mix of multiple skill categories | full              |
+| Skills Used                     | Profile         |
+| ------------------------------- | --------------- |
+| None                            | minimal         |
+| Only superpowers/elements-style | superpowers     |
+| Only document-skills            | document-skills |
+| Multiple categories             | full            |
 
-### Migration Workflow
+### Workflow
 
-1. **Analyze current usage:**
+1. **Analyze usage:**
 
    ```bash
    analyze-claude-sessions
    ```
 
-2. **Generate migration commands:**
+2. **Generate commands:**
 
    ```bash
    analyze-claude-sessions --migrate --limit 10 > migrate.sh
    ```
 
-3. **Migrate projects before updating global config:**
-
-   - Run `craftdesk-setup` in each project
-   - Select the suggested profile (or customize)
-   - Projects with craftdesk.json get skills from `.claude/skills/`
+3. **Migrate projects:** Run `craftdesk-setup` in each, selecting the suggested profile.
 
 4. **Update global config:**
 
@@ -219,15 +208,13 @@ analyze-claude-sessions --json
    ./claudeconfig.sh
    ```
 
-5. **Verify:**
-   - Open Claude in a migrated project
-   - Skills should load from local `.claude/skills/`
+5. **Verify:** Open Claude in a migrated project. Skills load from `.claude/skills/`.
 
-### Gradual Migration Option
+### Gradual Approach
 
-To avoid disruption, migrate gradually:
+To avoid disruption:
 
 1. Keep global plugins enabled initially
 2. Run `craftdesk-setup` in projects over time
-3. Once key projects are migrated, slim down global config
-4. Projects without craftdesk setup will lose skill access (intentional)
+3. Once key projects migrate, slim down global config
+4. Projects without craftdesk lose skill access intentionally
