@@ -1,10 +1,14 @@
 {
   "name": "local-project",
   "version": "1.0.0",
-  "description": "Brainstorming, planning, debugging workflows",
+  "description": "Core workflows - brainstorming, planning, debugging, writing",
   "dependencies": {
     "superpowers": {
       "git": "https://github.com/obra/superpowers.git",
+      "branch": "main"
+    },
+    "elements-of-style": {
+      "git": "https://github.com/obra/the-elements-of-style.git",
       "branch": "main"
     }
   }

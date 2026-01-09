@@ -1,16 +1,48 @@
 {
   "name": "local-project",
   "version": "1.0.0",
-  "description": "Full setup - superpowers + document skills",
+  "description": "Full setup - superpowers + document skills + chrome + git workflows",
   "dependencies": {
     "superpowers": {
       "git": "https://github.com/obra/superpowers.git",
+      "branch": "main"
+    },
+    "elements-of-style": {
+      "git": "https://github.com/obra/the-elements-of-style.git",
+      "branch": "main"
+    },
+    "superpowers-chrome": {
+      "git": "https://github.com/obra/superpowers-chrome.git",
+      "branch": "main"
+    },
+    "superpowers-developing-for-claude-code": {
+      "git": "https://github.com/obra/superpowers-developing-for-claude-code.git",
       "branch": "main"
     },
     "document-skills": {
       "git": "https://github.com/anthropics/skills.git",
       "branch": "main",
       "path": "skills"
+    },
+    "git-workflows": {
+      "git": "https://github.com/technicalpickles/pickled-claude-plugins.git",
+      "branch": "main",
+      "path": "plugins/git-workflows"
+    },
+    "ci-cd-tools": {
+      "git": "https://github.com/technicalpickles/pickled-claude-plugins.git",
+      "branch": "main",
+      "path": "plugins/ci-cd-tools"
+    },
+    "working-in-monorepos": {
+      "git": "https://github.com/technicalpickles/pickled-claude-plugins.git",
+      "branch": "main",
+      "path": "plugins/working-in-monorepos"
+    },
+    "dev-tools": {
+      "git": "https://github.com/technicalpickles/pickled-claude-plugins.git",
+      "branch": "main",
+      "path": "plugins/dev-tools"
     }
   }
 }
