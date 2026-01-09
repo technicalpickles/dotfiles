@@ -3,6 +3,24 @@
  * Based on: https://github.com/johnste/finicky
  */
 
+/**
+ * Global finicky object available at runtime
+ */
+declare const finicky: {
+  /**
+   * Get system information
+   */
+  getSystemInfo: () => {
+    name: string;
+    localizedName: string;
+  };
+
+  /**
+   * Get URL information (for debugging)
+   */
+  getUrlParts: (url: string) => URL;
+};
+
 declare module 'finicky' {
   /**
    * Main Finicky configuration object

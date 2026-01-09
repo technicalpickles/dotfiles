@@ -9,6 +9,14 @@ import type { FinickyConfig } from 'finicky';
 let personalChromeProfile = 'Profile 3';
 let workChromeProfile = 'Profile 1';
 
+// Slack workspace subdomain to team ID mapping
+// Find your team ID: Open Slack in browser, check boot_data.team_id in page source
+// Always use the T-prefixed team_id (not E-prefixed enterprise_id)
+const slackTeams: Record<string, string> = {
+  // For Enterprise Grid, use the team_id (T...) not enterprise_id (E...)
+  gustohq: 'T0250HMT7',
+};
+
 // Example: Customize per hostname
 // const hostname = finicky.getSystemInfo().name;
 // if (hostname === 'your-macbook-name') {
@@ -39,6 +47,46 @@ const config: FinickyConfig = {
         ];
         params.forEach((param) => url.searchParams.delete(param));
         return url;
+      },
+    },
+    {
+      // Rewrite Slack URLs to deep links
+      // @https://github.com/johnste/finicky/wiki/Configuration-ideas#open-slack-link-in-slack-app
+      match: (url: URL) =>
+        url.host.endsWith('.slack.com') && url.pathname !== '/',
+      url: (url: URL) => {
+        const subdomain = url.host.split('.')[0];
+        const teamId = slackTeams[subdomain];
+
+        if (!teamId) {
+          // No team ID configured - return unchanged, will open in browser
+          return url;
+        }
+
+        // Handle different Slack URL patterns
+        const pathParts = url.pathname.split('/').filter(Boolean);
+
+        // /archives/CXXXXXXXX or /archives/CXXXXXXXX/pXXXXXXXXXX (message permalink)
+        if (pathParts[0] === 'archives' && pathParts[1]) {
+          const channelId = pathParts[1];
+          const messageTs = pathParts[2]; // e.g., p1234567890123456
+
+          if (messageTs && messageTs.startsWith('p')) {
+            // Message permalink - convert pXXXX to timestamp format
+            const ts = messageTs.slice(1, 11) + '.' + messageTs.slice(11);
+            return `slack://channel?team=${teamId}&id=${channelId}&message=${ts}`;
+          }
+
+          return `slack://channel?team=${teamId}&id=${channelId}`;
+        }
+
+        // /files/UXXXXXXXX/FXXXXXXXX (file links)
+        if (pathParts[0] === 'files' && pathParts[2]) {
+          return `slack://file?team=${teamId}&id=${pathParts[2]}`;
+        }
+
+        // Fallback - just open Slack to the team
+        return `slack://open?team=${teamId}`;
       },
     },
     {
@@ -160,7 +208,6 @@ const config: FinickyConfig = {
 
   // Optional: log what Finicky is doing for debugging
   options: {
-    // Uncomment to see logs in Console.app
     // logRequests: true,
   },
 };
