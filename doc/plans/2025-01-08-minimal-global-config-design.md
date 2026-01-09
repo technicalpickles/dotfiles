@@ -1,118 +1,164 @@
-# Minimal Global Config with Craftdesk
+# Minimal Global Config Implementation Plan
 
-## Problem
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-`claudeconfig.sh` installs all skill plugins globally. This bloats `settings.json` with plugins many projects never use, clutters permissions with skill-specific entries, and prevents per-project customization.
+**Goal:** Move skill plugins from global config to per-project craftdesk installation, leaving only infrastructure plugins globally.
 
-Now that `craftdesk-setup` exists, projects can install their own skills. The global config should provide infrastructure only.
+**Architecture:** Global `claudeconfig.sh` installs only notifications and tool-routing. Craftdesk profiles provide skill dependencies per-project. Tool-routing discovers routes from `.claude/skills/` in addition to global plugins.
 
-## Decision
+**Tech Stack:** Bash (claudeconfig.sh), Python (tool-routing), JSON (profiles, settings)
 
-Adopt a hybrid model: global config provides infrastructure, craftdesk provides skills per-project.
+---
 
-## Global Config Changes
+## Task 1: Update Craftdesk Profiles
 
-### Enabled Plugins (settings.base.json)
+**Files:**
 
-**Keep:**
+- Modify: `claude/profiles/superpowers.json`
+- Modify: `claude/profiles/full.json`
 
-- `claude-notifications-go` — system notifications
-- `tool-routing` — redirects tool calls to better alternatives
+**Step 1: Update superpowers.json to include elements-of-style**
 
-**Move to craftdesk:**
+```json
+{
+  "name": "local-project",
+  "version": "1.0.0",
+  "description": "Core workflows - brainstorming, planning, debugging, writing",
+  "dependencies": {
+    "superpowers": {
+      "git": "https://github.com/obra/superpowers.git",
+      "branch": "main"
+    },
+    "elements-of-style": {
+      "git": "https://github.com/obra/the-elements-of-style.git",
+      "branch": "main"
+    }
+  }
+}
+```
 
-- `superpowers`
-- `elements-of-style`
-- `superpowers-developing-for-claude-code`
-- `superpowers-chrome`
-- `document-skills`
-- `git-workflows`
-- `ci-cd-tools`
-- `working-in-monorepos`
-- `dev-tools`
-- `debugging-tools`
-- `gopls-lsp`
+**Step 2: Update full.json with all skills**
 
-### Permissions (permissions.json)
+```json
+{
+  "name": "local-project",
+  "version": "1.0.0",
+  "description": "Full setup - superpowers + document skills + chrome + git workflows",
+  "dependencies": {
+    "superpowers": {
+      "git": "https://github.com/obra/superpowers.git",
+      "branch": "main"
+    },
+    "elements-of-style": {
+      "git": "https://github.com/obra/the-elements-of-style.git",
+      "branch": "main"
+    },
+    "superpowers-chrome": {
+      "git": "https://github.com/obra/superpowers-chrome.git",
+      "branch": "main"
+    },
+    "superpowers-developing-for-claude-code": {
+      "git": "https://github.com/obra/superpowers-developing-for-claude-code.git",
+      "branch": "main"
+    },
+    "document-skills": {
+      "git": "https://github.com/anthropics/skills.git",
+      "branch": "main",
+      "path": "skills"
+    },
+    "git-workflows": {
+      "git": "https://github.com/technicalpickles/pickled-claude-plugins.git",
+      "branch": "main",
+      "path": "plugins/git-workflows"
+    },
+    "ci-cd-tools": {
+      "git": "https://github.com/technicalpickles/pickled-claude-plugins.git",
+      "branch": "main",
+      "path": "plugins/ci-cd-tools"
+    },
+    "working-in-monorepos": {
+      "git": "https://github.com/technicalpickles/pickled-claude-plugins.git",
+      "branch": "main",
+      "path": "plugins/working-in-monorepos"
+    },
+    "dev-tools": {
+      "git": "https://github.com/technicalpickles/pickled-claude-plugins.git",
+      "branch": "main",
+      "path": "plugins/dev-tools"
+    }
+  }
+}
+```
 
-**Keep:**
+**Step 3: Commit**
 
-- `Bash(gh pr list:*)`, `Bash(gh pr view:*)`, `Bash(git worktree:*)`, `Bash(tree:*)`
-- `mcp__MCPProxy__call_tool`, `mcp__MCPProxy__retrieve_tools`
-- `WebFetch(domain:code.claude.com)`, `WebFetch(domain:github.com)`
+```bash
+git add claude/profiles/superpowers.json claude/profiles/full.json
+git commit -m "feat(craftdesk): extend profiles with all skill dependencies"
+```
 
-**Remove:**
+---
 
-- All `Skill(...)` entries
-- All `Read(~/.claude/plugins/cache/...)` entries
-- Domain-specific WebFetch entries
+## Task 2: Add Craftdesk Route Discovery to Tool-Routing
 
-### Marketplaces (claudeconfig.sh)
+**Files:**
 
-Keep all marketplaces for browsing:
+- Modify: `~/workspace/pickled-claude-plugins/plugins/tool-routing/src/tool_routing/config.py`
+- Test: `~/workspace/pickled-claude-plugins/plugins/tool-routing/tests/test_config.py`
 
-- `superpowers-marketplace`
-- `anthropic-agent-skills`
-- `technicalpickles-marketplace`
-- `claude-notifications-go`
+**Step 1: Write failing test for discover_craftdesk_routes**
 
-### Installed Plugins (claudeconfig.sh)
+Add to `tests/test_config.py`:
 
-Install only:
+```python
+def test_discover_craftdesk_routes_finds_routes_in_skills_dir(tmp_path):
+    """Test that craftdesk-installed skills' routes are discovered."""
+    # Create .claude/skills structure
+    skills_dir = tmp_path / ".claude" / "skills"
+    skill_a = skills_dir / "skill-a" / "hooks"
+    skill_b = skills_dir / "skill-b" / "hooks"
+    skill_a.mkdir(parents=True)
+    skill_b.mkdir(parents=True)
 
-- `tool-routing@technicalpickles-marketplace`
-- `claude-notifications-go@claude-notifications-go`
+    # Create route files
+    (skill_a / "tool-routes.yaml").write_text("routes: []")
+    (skill_b / "tool-routes.yaml").write_text("routes: []")
 
-## Craftdesk Profile Updates
+    # Skill without routes
+    (skills_dir / "skill-c").mkdir()
 
-### Git Sources
+    from tool_routing.config import discover_craftdesk_routes
+    paths = discover_craftdesk_routes(tmp_path)
 
-| Skill                                  | Git URL                                                            | Path                         |
-| -------------------------------------- | ------------------------------------------------------------------ | ---------------------------- |
-| superpowers                            | https://github.com/obra/superpowers.git                            | (root)                       |
-| elements-of-style                      | https://github.com/obra/the-elements-of-style.git                  | (root)                       |
-| superpowers-chrome                     | https://github.com/obra/superpowers-chrome.git                     | (root)                       |
-| superpowers-developing-for-claude-code | https://github.com/obra/superpowers-developing-for-claude-code.git | (root)                       |
-| document-skills                        | https://github.com/anthropics/skills.git                           | skills                       |
-| git-workflows                          | https://github.com/technicalpickles/pickled-claude-plugins.git     | plugins/git-workflows        |
-| ci-cd-tools                            | https://github.com/technicalpickles/pickled-claude-plugins.git     | plugins/ci-cd-tools          |
-| working-in-monorepos                   | https://github.com/technicalpickles/pickled-claude-plugins.git     | plugins/working-in-monorepos |
-| dev-tools                              | https://github.com/technicalpickles/pickled-claude-plugins.git     | plugins/dev-tools            |
+    assert len(paths) == 2
+    assert skill_a / "tool-routes.yaml" in paths
+    assert skill_b / "tool-routes.yaml" in paths
 
-### Profiles
 
-**minimal.json** — No dependencies
+def test_discover_craftdesk_routes_returns_empty_when_no_skills_dir(tmp_path):
+    """Test that missing .claude/skills returns empty list."""
+    from tool_routing.config import discover_craftdesk_routes
+    paths = discover_craftdesk_routes(tmp_path)
+    assert paths == []
+```
 
-**superpowers.json** — Core workflows:
+**Step 2: Run test to verify it fails**
 
-- superpowers
-- elements-of-style
+Run: `cd ~/workspace/pickled-claude-plugins/plugins/tool-routing && pytest tests/test_config.py -v -k craftdesk`
 
-**document-skills.json** — Document creation:
+Expected: FAIL with "cannot import name 'discover_craftdesk_routes'"
 
-- document-skills
+**Step 3: Implement discover_craftdesk_routes**
 
-**full.json** — All skills:
-
-- superpowers
-- elements-of-style
-- superpowers-chrome
-- superpowers-developing-for-claude-code
-- document-skills
-- git-workflows
-- ci-cd-tools
-- working-in-monorepos
-- dev-tools
-
-## Tool-Routing Enhancement
-
-Tool-routing must discover routes from craftdesk-installed skills at `.claude/skills/*/hooks/tool-routes.yaml`.
-
-### New Function (config.py)
+Add to `src/tool_routing/config.py`:
 
 ```python
 def discover_craftdesk_routes(project_root: Path) -> list[Path]:
-    """Find tool-routes.yaml in craftdesk-installed skills."""
+    """Find tool-routes.yaml in craftdesk-installed skills.
+
+    Craftdesk installs skills to: project_root/.claude/skills/<name>/
+    Each skill may have: hooks/tool-routes.yaml
+    """
     skills_dir = project_root / ".claude" / "skills"
     if not skills_dir.exists():
         return []
@@ -128,13 +174,72 @@ def discover_craftdesk_routes(project_root: Path) -> list[Path]:
     return sorted(paths)
 ```
 
-### Integration (cli.py)
+**Step 4: Run test to verify it passes**
 
-Add after plugin routes discovery:
+Run: `cd ~/workspace/pickled-claude-plugins/plugins/tool-routing && pytest tests/test_config.py -v -k craftdesk`
+
+Expected: PASS
+
+**Step 5: Commit**
+
+```bash
+cd ~/workspace/pickled-claude-plugins/plugins/tool-routing
+git add src/tool_routing/config.py tests/test_config.py
+git commit -m "feat(tool-routing): discover routes from craftdesk-installed skills"
+```
+
+---
+
+## Task 3: Integrate Craftdesk Routes in CLI
+
+**Files:**
+
+- Modify: `~/workspace/pickled-claude-plugins/plugins/tool-routing/src/tool_routing/cli.py`
+- Test: `~/workspace/pickled-claude-plugins/plugins/tool-routing/tests/test_cli.py`
+
+**Step 1: Write failing test for craftdesk routes integration**
+
+Add to `tests/test_cli.py`:
 
 ```python
-# Craftdesk-installed skills
+def test_get_all_routes_includes_craftdesk_skills(tmp_path, monkeypatch):
+    """Test that craftdesk-installed skill routes are included."""
+    # Create craftdesk skill with routes
+    skill_dir = tmp_path / ".claude" / "skills" / "test-skill" / "hooks"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "tool-routes.yaml").write_text("""
+routes:
+  - tool: TestTool
+    description: "Test tool from craftdesk skill"
+""")
+
+    monkeypatch.chdir(tmp_path)
+
+    from tool_routing.cli import get_all_routes
+    routes, sources = get_all_routes()
+
+    # Should find the craftdesk skill routes
+    craftdesk_sources = [s for s in sources if ".claude/skills" in s]
+    assert len(craftdesk_sources) == 1
+    assert "test-skill" in craftdesk_sources[0]
+```
+
+**Step 2: Run test to verify it fails**
+
+Run: `cd ~/workspace/pickled-claude-plugins/plugins/tool-routing && pytest tests/test_cli.py -v -k craftdesk`
+
+Expected: FAIL (craftdesk routes not discovered)
+
+**Step 3: Add craftdesk discovery to get_all_routes**
+
+In `src/tool_routing/cli.py`, find `get_all_routes()` and add after plugin routes discovery:
+
+```python
 from tool_routing.config import discover_craftdesk_routes
+
+# ... existing code ...
+
+# Craftdesk-installed skills' routes
 for path in discover_craftdesk_routes(project_root):
     routes = load_routes_file(path)
     if routes:
@@ -142,79 +247,188 @@ for path in discover_craftdesk_routes(project_root):
         all_sources.append(str(path))
 ```
 
-## Files to Change
+**Step 4: Run test to verify it passes**
 
-1. `claude/settings.base.json` — Remove skill plugins from enabledPlugins
-2. `claude/permissions.json` — Remove Skill and plugin cache Read entries
-3. `claudeconfig.sh` — Remove skill plugin installations
-4. `claude/profiles/superpowers.json` — Add elements-of-style
-5. `claude/profiles/full.json` — Add all skills
-6. `pickled-claude-plugins/plugins/tool-routing/src/tool_routing/config.py` — Add discover_craftdesk_routes
-7. `pickled-claude-plugins/plugins/tool-routing/src/tool_routing/cli.py` — Call discover_craftdesk_routes
+Run: `cd ~/workspace/pickled-claude-plugins/plugins/tool-routing && pytest tests/test_cli.py -v -k craftdesk`
 
-## Migration
+Expected: PASS
 
-### Analysis Tool
+**Step 5: Run full test suite**
 
-`bin/analyze-claude-sessions` parses Claude session history to prioritize migration:
+Run: `cd ~/workspace/pickled-claude-plugins/plugins/tool-routing && pytest`
+
+Expected: All tests pass
+
+**Step 6: Commit**
 
 ```bash
-# Show projects with skill usage and suggested profiles
-analyze-claude-sessions
-
-# Generate migration commands for top N projects
-analyze-claude-sessions --migrate --limit 15
-
-# JSON output for scripting
-analyze-claude-sessions --json
+cd ~/workspace/pickled-claude-plugins/plugins/tool-routing
+git add src/tool_routing/cli.py tests/test_cli.py
+git commit -m "feat(tool-routing): include craftdesk skill routes in discovery"
 ```
 
-The tool:
+---
 
-- Parses `.claude/projects/` session files
-- Extracts skill invocations from tool_use entries
-- Calculates session counts, message totals, and last activity
-- Suggests a craftdesk profile based on actual usage
-- Flags uncovered skills (project-specific, not in standard profiles)
+## Task 4: Slim Down Global Settings
 
-**Profile suggestions:**
+**Files:**
 
-| Skills Used                     | Profile         |
-| ------------------------------- | --------------- |
-| None                            | minimal         |
-| Only superpowers/elements-style | superpowers     |
-| Only document-skills            | document-skills |
-| Multiple categories             | full            |
+- Modify: `claude/settings.base.json`
 
-### Workflow
+**Step 1: Update settings.base.json to only enable infrastructure plugins**
 
-1. **Analyze usage:**
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "~/workspace/dotfiles/bin/claude-status-line"
+  },
+  "includeCoAuthoredBy": false,
+  "alwaysThinkingEnabled": false,
+  "enabledPlugins": {
+    "claude-notifications-go@claude-notifications-go": true,
+    "tool-routing@technicalpickles-marketplace": true
+  }
+}
+```
 
-   ```bash
-   analyze-claude-sessions
-   ```
+**Step 2: Commit**
 
-2. **Generate commands:**
+```bash
+git add claude/settings.base.json
+git commit -m "feat(claude): slim down global plugins to infrastructure only"
+```
 
-   ```bash
-   analyze-claude-sessions --migrate --limit 10 > migrate.sh
-   ```
+---
 
-3. **Migrate projects:** Run `craftdesk-setup` in each, selecting the suggested profile.
+## Task 5: Slim Down Global Permissions
 
-4. **Update global config:**
+**Files:**
 
-   ```bash
-   ./claudeconfig.sh
-   ```
+- Modify: `claude/permissions.json`
 
-5. **Verify:** Open Claude in a migrated project. Skills load from `.claude/skills/`.
+**Step 1: Update permissions.json to remove skill-related entries**
 
-### Gradual Approach
+```json
+[
+  "Bash(gh pr list:*)",
+  "Bash(gh pr view:*)",
+  "Bash(git worktree:*)",
+  "Bash(tree:*)",
+  "mcp__MCPProxy__call_tool",
+  "mcp__MCPProxy__retrieve_tools",
+  "WebFetch(domain:code.claude.com)",
+  "WebFetch(domain:github.com)"
+]
+```
 
-To avoid disruption:
+**Step 2: Commit**
 
-1. Keep global plugins enabled initially
-2. Run `craftdesk-setup` in projects over time
-3. Once key projects migrate, slim down global config
-4. Projects without craftdesk lose skill access intentionally
+```bash
+git add claude/permissions.json
+git commit -m "feat(claude): remove skill-related permissions from global config"
+```
+
+---
+
+## Task 6: Update claudeconfig.sh
+
+**Files:**
+
+- Modify: `claudeconfig.sh`
+
+**Step 1: Update marketplaces array (keep all)**
+
+Find the `marketplaces` array and ensure it contains:
+
+```bash
+local marketplaces=(
+  "superpowers-marketplace"
+  "anthropic-agent-skills"
+  "technicalpickles-marketplace"
+  "claude-notifications-go"
+)
+```
+
+**Step 2: Update plugins array (infrastructure only)**
+
+Find the `plugins` array and replace with:
+
+```bash
+local plugins=(
+  "tool-routing@technicalpickles-marketplace"
+  "claude-notifications-go@claude-notifications-go"
+)
+```
+
+**Step 3: Add helpful message at end**
+
+Add after settings generation:
+
+```bash
+echo ""
+echo "Note: Skills are now installed per-project via craftdesk."
+echo "  Run 'craftdesk-setup' in a project to configure skills."
+```
+
+**Step 4: Commit**
+
+```bash
+git add claudeconfig.sh
+git commit -m "feat(claudeconfig): install only infrastructure plugins globally"
+```
+
+---
+
+## Task 7: Test Full Migration Flow
+
+**Step 1: Regenerate global config**
+
+Run: `./claudeconfig.sh`
+
+Expected: Completes without error, shows note about craftdesk
+
+**Step 2: Verify settings.json has minimal plugins**
+
+Run: `jq '.enabledPlugins' ~/.claude/settings.json`
+
+Expected: Only `claude-notifications-go` and `tool-routing`
+
+**Step 3: Test craftdesk-setup in a test project**
+
+```bash
+cd /tmp/craftdesk-test
+craftdesk-setup
+# Select "full" profile
+craftdesk install
+```
+
+Expected: Skills installed to `.claude/skills/`
+
+**Step 4: Verify tool-routing finds craftdesk routes**
+
+```bash
+cd /tmp/craftdesk-test
+# Add a tool-routes.yaml to one of the installed skills for testing
+tool-routing validate
+```
+
+Expected: Shows routes from `.claude/skills/` if any exist
+
+**Step 5: Final commit for dotfiles**
+
+```bash
+git add -A
+git commit -m "feat: complete minimal global config migration"
+```
+
+---
+
+## Migration Checklist
+
+After implementation, use `bin/analyze-claude-sessions` to migrate existing projects:
+
+1. Run `analyze-claude-sessions` to see projects and suggested profiles
+2. Run `analyze-claude-sessions --migrate --limit 10` for migration commands
+3. Execute `craftdesk-setup` in each project
+4. Verify skills load from `.claude/skills/`
