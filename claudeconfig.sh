@@ -51,15 +51,7 @@ install_plugins() {
   echo "Installing plugins..."
 
   local plugins=(
-    "superpowers@superpowers-marketplace"
-    "elements-of-style@superpowers-marketplace"
-    "superpowers-developing-for-claude-code@superpowers-marketplace"
-    "git-workflows@technicalpickles-marketplace"
-    "working-in-monorepos@technicalpickles-marketplace"
-    "ci-cd-tools@technicalpickles-marketplace"
-    "debugging-tools@technicalpickles-marketplace"
-    "dev-tools@technicalpickles-marketplace"
-    "document-skills@anthropic-agent-skills"
+    "tool-routing@technicalpickles-marketplace"
     "claude-notifications-go@claude-notifications-go"
   )
   for plugin in "${plugins[@]}"; do
@@ -161,3 +153,6 @@ echo ""
 echo "✓ Claude Code configuration complete"
 echo "  Settings: $HOME/.claude/settings.json"
 echo "  Role: $ROLE"
+echo ""
+echo "Note: Skills are now installed per-project via craftdesk."
+echo "  Run 'craftdesk-setup' in a project to configure skills."
