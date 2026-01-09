@@ -152,6 +152,8 @@ home/.claude/*
 !home/.claude/skills/
 !home/.claude/commands/
 
+# craftdesk - installed skills (like node_modules)
+.claude/skills/
 .claude/settings.local.json
 
 # vagrant
