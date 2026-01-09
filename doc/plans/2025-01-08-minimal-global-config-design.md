@@ -161,8 +161,73 @@ for path in discover_craftdesk_routes(project_root):
 
 ## Migration
 
-After implementation:
+### Migration Analysis Tool
 
-1. Run `./claudeconfig.sh` to update global settings
-2. In each project, run `craftdesk-setup` to install desired skills
-3. Existing projects with craftdesk.json continue working
+`bin/analyze-claude-sessions` analyzes Claude Code session history to prioritize migration:
+
+```bash
+# Show all projects with skill usage and suggested profiles
+analyze-claude-sessions
+
+# Output migration commands for top N projects
+analyze-claude-sessions --migrate --limit 15
+
+# JSON output for scripting
+analyze-claude-sessions --json
+```
+
+**Features:**
+
+- Parses `.claude/projects/` session files (JSONL format)
+- Extracts skill invocations from `tool_use` entries
+- Calculates per-project statistics (sessions, messages, last activity)
+- Suggests craftdesk profile based on actual skill usage
+- Flags uncovered skills (project-specific skills not in standard profiles)
+
+**Profile suggestion logic:**
+
+| Skills Used                      | Suggested Profile |
+| -------------------------------- | ----------------- |
+| None                             | minimal           |
+| Only superpowers/elements-style  | superpowers       |
+| Only document-skills             | document-skills   |
+| Mix of multiple skill categories | full              |
+
+### Migration Workflow
+
+1. **Analyze current usage:**
+
+   ```bash
+   analyze-claude-sessions
+   ```
+
+2. **Generate migration commands:**
+
+   ```bash
+   analyze-claude-sessions --migrate --limit 10 > migrate.sh
+   ```
+
+3. **Migrate projects before updating global config:**
+
+   - Run `craftdesk-setup` in each project
+   - Select the suggested profile (or customize)
+   - Projects with craftdesk.json get skills from `.claude/skills/`
+
+4. **Update global config:**
+
+   ```bash
+   ./claudeconfig.sh
+   ```
+
+5. **Verify:**
+   - Open Claude in a migrated project
+   - Skills should load from local `.claude/skills/`
+
+### Gradual Migration Option
+
+To avoid disruption, migrate gradually:
+
+1. Keep global plugins enabled initially
+2. Run `craftdesk-setup` in projects over time
+3. Once key projects are migrated, slim down global config
+4. Projects without craftdesk setup will lose skill access (intentional)
