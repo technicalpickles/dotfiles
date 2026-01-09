@@ -1,0 +1,393 @@
+#!/usr/bin/env python3
+"""Analyze Claude Code sessions to identify projects and skill usage.
+
+Outputs project usage statistics to help prioritize craftdesk migration.
+"""
+
+import json
+import os
+import sys
+from collections import defaultdict
+from datetime import datetime
+from pathlib import Path
+
+
+def parse_project_path(dir_name: str) -> str:
+    """Convert directory name back to original path."""
+    # Directory names use - instead of /
+    # e.g., -Users-josh-nichols-workspace-dotfiles -> /Users/josh.nichols/workspace/dotfiles
+    return dir_name.replace("-", "/").replace("/josh/nichols", "/josh.nichols")
+
+
+def extract_sessions(project_dir: Path) -> list[dict]:
+    """Extract session metadata from a project directory."""
+    sessions = []
+
+    for jsonl_file in project_dir.glob("*.jsonl"):
+        # Skip agent files
+        if jsonl_file.name.startswith("agent-"):
+            continue
+
+        session_id = jsonl_file.stem
+        skills_used = set()
+        first_timestamp = None
+        last_timestamp = None
+        message_count = 0
+
+        try:
+            with open(jsonl_file, "r") as f:
+                for line in f:
+                    try:
+                        entry = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+
+                    # Track timestamps
+                    if "timestamp" in entry:
+                        ts = entry["timestamp"]
+                        if first_timestamp is None or ts < first_timestamp:
+                            first_timestamp = ts
+                        if last_timestamp is None or ts > last_timestamp:
+                            last_timestamp = ts
+
+                    # Count messages
+                    if entry.get("type") in ("user", "assistant"):
+                        message_count += 1
+
+                    # Extract skill usage from assistant tool_use
+                    if entry.get("type") == "assistant":
+                        message = entry.get("message", {})
+                        content = message.get("content", [])
+                        if isinstance(content, list):
+                            for block in content:
+                                if isinstance(block, dict) and block.get("name") == "Skill":
+                                    skill = block.get("input", {}).get("skill", "")
+                                    if skill:
+                                        skills_used.add(skill)
+        except Exception as e:
+            print(f"Error reading {jsonl_file}: {e}", file=sys.stderr)
+            continue
+
+        if message_count > 0:
+            sessions.append({
+                "session_id": session_id,
+                "skills": list(skills_used),
+                "first_timestamp": first_timestamp,
+                "last_timestamp": last_timestamp,
+                "message_count": message_count,
+            })
+
+    return sessions
+
+
+def analyze_projects(projects_dir: Path) -> dict:
+    """Analyze all projects and return usage statistics."""
+    results = {}
+
+    for project_dir in projects_dir.iterdir():
+        if not project_dir.is_dir():
+            continue
+
+        project_path = parse_project_path(project_dir.name)
+        sessions = extract_sessions(project_dir)
+
+        if not sessions:
+            continue
+
+        # Aggregate statistics
+        all_skills = set()
+        total_messages = 0
+        earliest = None
+        latest = None
+
+        for session in sessions:
+            all_skills.update(session["skills"])
+            total_messages += session["message_count"]
+
+            if session["last_timestamp"]:
+                if latest is None or session["last_timestamp"] > latest:
+                    latest = session["last_timestamp"]
+            if session["first_timestamp"]:
+                if earliest is None or session["first_timestamp"] < earliest:
+                    earliest = session["first_timestamp"]
+
+        results[project_path] = {
+            "session_count": len(sessions),
+            "total_messages": total_messages,
+            "skills_used": sorted(all_skills),
+            "first_activity": earliest,
+            "last_activity": latest,
+        }
+
+    return results
+
+
+# Map skills to craftdesk profile categories
+SKILL_TO_PROFILE = {
+    # superpowers profile
+    "superpowers:brainstorming": "superpowers",
+    "superpowers:executing-plans": "superpowers",
+    "superpowers:finishing-a-development-branch": "superpowers",
+    "superpowers:receiving-code-review": "superpowers",
+    "superpowers:requesting-code-review": "superpowers",
+    "superpowers:subagent-driven-development": "superpowers",
+    "superpowers:systematic-debugging": "superpowers",
+    "superpowers:test-driven-development": "superpowers",
+    "superpowers:using-git-worktrees": "superpowers",
+    "superpowers:verification-before-completion": "superpowers",
+    "superpowers:writing-plans": "superpowers",
+    "superpowers:writing-skills": "superpowers",
+    "superpowers:testing-skills-with-subagents": "superpowers",
+    "superpowers:dispatching-parallel-agents": "superpowers",
+    "elements-of-style:writing-clearly-and-concisely": "superpowers",
+    # superpowers-chrome
+    "superpowers-chrome:browsing": "superpowers-chrome",
+    # superpowers-developing-for-claude-code
+    "superpowers-developing-for-claude-code:working-with-claude-code": "superpowers-developing-for-claude-code",
+    "superpowers-developing-for-claude-code:developing-claude-code-plugins": "superpowers-developing-for-claude-code",
+    # document-skills
+    "document-skills:skill-creator": "document-skills",
+    "document-skills:pdf": "document-skills",
+    "document-skills:docx": "document-skills",
+    "document-skills:pptx": "document-skills",
+    "document-skills:xlsx": "document-skills",
+    # git-workflows
+    "git-workflows:gh-pr": "git-workflows",
+    "git-workflows:writing-pull-requests": "git-workflows",
+    # ci-cd-tools
+    "ci-cd-tools:working-with-buildkite-builds": "ci-cd-tools",
+    "ci-cd-tools:monitoring-buildkite-builds": "ci-cd-tools",
+    "ci-cd-tools:developing-buildkite-pipelines": "ci-cd-tools",
+    # working-in-monorepos
+    "working-in-monorepos:working-in-monorepos": "working-in-monorepos",
+    "working-in-monorepos:monorepo-init": "working-in-monorepos",
+    # dev-tools
+    "dev-tools:working-in-scratch-areas": "dev-tools",
+    "dev-tools:using-mcpproxy-tools": "dev-tools",
+}
+
+# Profile hierarchy - full includes all, superpowers is baseline
+PROFILE_HIERARCHY = {
+    "minimal": [],
+    "superpowers": ["superpowers"],
+    "document-skills": ["document-skills"],
+    "full": [
+        "superpowers",
+        "superpowers-chrome",
+        "superpowers-developing-for-claude-code",
+        "document-skills",
+        "git-workflows",
+        "ci-cd-tools",
+        "working-in-monorepos",
+        "dev-tools",
+    ],
+}
+
+
+def suggest_profile(skills_used: list[str]) -> tuple[str, list[str]]:
+    """Suggest a craftdesk profile based on skills used.
+
+    Returns (profile_name, uncovered_skills).
+    """
+    if not skills_used:
+        return "minimal", []
+
+    # Determine which profile categories are needed
+    needed_categories = set()
+    uncovered = []
+
+    for skill in skills_used:
+        category = SKILL_TO_PROFILE.get(skill)
+        if category:
+            needed_categories.add(category)
+        else:
+            uncovered.append(skill)
+
+    # Find smallest profile that covers all needed categories
+    if not needed_categories:
+        return "minimal", uncovered
+
+    # Check if superpowers alone is sufficient
+    if needed_categories == {"superpowers"}:
+        return "superpowers", uncovered
+
+    # Check if document-skills alone is sufficient
+    if needed_categories == {"document-skills"}:
+        return "document-skills", uncovered
+
+    # Otherwise suggest full
+    return "full", uncovered
+
+
+def format_output(results: dict, sort_by: str = "last_activity") -> None:
+    """Print formatted output sorted by specified field."""
+
+    # Sort projects
+    if sort_by == "last_activity":
+        sorted_projects = sorted(
+            results.items(),
+            key=lambda x: x[1].get("last_activity") or "",
+            reverse=True
+        )
+    elif sort_by == "messages":
+        sorted_projects = sorted(
+            results.items(),
+            key=lambda x: x[1]["total_messages"],
+            reverse=True
+        )
+    elif sort_by == "sessions":
+        sorted_projects = sorted(
+            results.items(),
+            key=lambda x: x[1]["session_count"],
+            reverse=True
+        )
+    else:
+        sorted_projects = sorted(results.items())
+
+    # Collect all skills across all projects
+    all_skills = set()
+    for data in results.values():
+        all_skills.update(data["skills_used"])
+
+    print(f"Projects: {len(results)}")
+    print(f"Unique skills used: {len(all_skills)}")
+    print()
+
+    # Print skill summary
+    skill_counts = defaultdict(int)
+    for data in results.values():
+        for skill in data["skills_used"]:
+            skill_counts[skill] += 1
+
+    print("Skills by project count:")
+    for skill, count in sorted(skill_counts.items(), key=lambda x: -x[1]):
+        print(f"  {skill}: {count} projects")
+    print()
+
+    # Print project details
+    print("Projects (sorted by last activity):")
+    print("-" * 80)
+
+    for project_path, data in sorted_projects:
+        # Shorten path for display
+        display_path = project_path.replace("/Users/josh.nichols/workspace/", "~/workspace/")
+        display_path = display_path.replace("/Users/josh.nichols/", "~/")
+
+        last_activity = data.get("last_activity", "unknown")
+        if last_activity and last_activity != "unknown":
+            # Parse and format timestamp
+            try:
+                dt = datetime.fromisoformat(last_activity.replace("Z", "+00:00"))
+                last_activity = dt.strftime("%Y-%m-%d %H:%M")
+            except:
+                pass
+
+        # Suggest profile
+        profile, uncovered = suggest_profile(data["skills_used"])
+
+        print(f"{display_path}")
+        print(f"  Sessions: {data['session_count']}, Messages: {data['total_messages']}, Last: {last_activity}")
+        print(f"  Suggested profile: {profile}")
+        if data["skills_used"]:
+            skills_display = ", ".join(data["skills_used"][:5])
+            if len(data["skills_used"]) > 5:
+                skills_display += f" (+{len(data['skills_used']) - 5} more)"
+            print(f"  Skills: {skills_display}")
+        if uncovered:
+            print(f"  Uncovered skills: {', '.join(uncovered)}")
+        print()
+
+
+def format_migration_commands(results: dict, limit: int = 10) -> None:
+    """Print craftdesk-setup commands for migration."""
+    # Sort by last activity
+    sorted_projects = sorted(
+        results.items(),
+        key=lambda x: x[1].get("last_activity") or "",
+        reverse=True
+    )
+
+    print("# Migration commands for most recent projects")
+    print("# Run these in order of priority (most recent first)")
+    print()
+
+    count = 0
+    for project_path, data in sorted_projects:
+        if count >= limit:
+            break
+
+        # Check if project directory exists
+        if not Path(project_path).exists():
+            continue
+
+        profile, uncovered = suggest_profile(data["skills_used"])
+
+        # Skip minimal - no setup needed
+        if profile == "minimal" and not data["skills_used"]:
+            continue
+
+        count += 1
+        last_activity = data.get("last_activity", "")
+        if last_activity:
+            try:
+                dt = datetime.fromisoformat(last_activity.replace("Z", "+00:00"))
+                last_activity = dt.strftime("%Y-%m-%d")
+            except:
+                pass
+
+        print(f"# {project_path} (last: {last_activity}, profile: {profile})")
+        print(f"cd {project_path} && craftdesk-setup")
+        print()
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Analyze Claude Code session usage")
+    parser.add_argument(
+        "--sort",
+        choices=["last_activity", "messages", "sessions", "name"],
+        default="last_activity",
+        help="Sort projects by field (default: last_activity)"
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output as JSON"
+    )
+    parser.add_argument(
+        "--migrate",
+        action="store_true",
+        help="Output migration commands for craftdesk-setup"
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=10,
+        help="Limit number of projects for migration output (default: 10)"
+    )
+    parser.add_argument(
+        "--projects-dir",
+        type=Path,
+        default=Path.home() / ".claude" / "projects",
+        help="Path to Claude projects directory"
+    )
+
+    args = parser.parse_args()
+
+    if not args.projects_dir.exists():
+        print(f"Projects directory not found: {args.projects_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    results = analyze_projects(args.projects_dir)
+
+    if args.json:
+        print(json.dumps(results, indent=2, default=str))
+    elif args.migrate:
+        format_migration_commands(results, limit=args.limit)
+    else:
+        format_output(results, sort_by=args.sort)
+
+
+if __name__ == "__main__":
+    main()
