@@ -74,3 +74,7 @@
 	format = ssh
 [user]
 	signingkey = /Users/josh.nichols/.ssh/id_ed25519.pub
+	name = Josh Nichols
+	email = josh.nichols@gusto.com
+[credential]
+	helper = osxkeychain

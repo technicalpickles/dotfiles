@@ -19,57 +19,6 @@ fi
 ROLE="${DOTPICKLES_ROLE:-personal}"
 echo "Configuring Claude Code for role: $ROLE"
 
-# Install marketplaces (idempotent)
-install_marketplaces() {
-  echo "Installing marketplaces..."
-
-  local marketplaces=(
-    "superpowers-marketplace"
-    "anthropic-agent-skills"
-    "technicalpickles-marketplace"
-    "claude-notifications-go"
-  )
-
-  for marketplace in "${marketplaces[@]}"; do
-    if claude plugin marketplace list 2> /dev/null | grep -q "$marketplace"; then
-      echo "  ✓ $marketplace (already added)"
-    else
-      echo "  + Adding $marketplace..."
-      if claude marketplace add "$marketplace"; then
-        echo "    ✓ Added successfully"
-      else
-        echo "    ✗ Failed to add (continuing anyway)"
-      fi
-    fi
-  done
-}
-
-install_marketplaces
-
-# Install plugins (idempotent)
-install_plugins() {
-  echo "Installing plugins..."
-
-  local plugins=(
-    "tool-routing@technicalpickles-marketplace"
-    "claude-notifications-go@claude-notifications-go"
-  )
-  for plugin in "${plugins[@]}"; do
-    if claude plugin list 2> /dev/null | grep -q "$plugin"; then
-      echo "  ✓ $plugin (already installed)"
-    else
-      echo "  + Installing $plugin..."
-      if claude plugin install "$plugin"; then
-        echo "    ✓ Installed successfully"
-      else
-        echo "    ✗ Failed to install (continuing anyway)"
-      fi
-    fi
-  done
-}
-
-install_plugins
-
 # Generate settings.json
 generate_settings() {
   echo "Generating settings.json..."
@@ -148,6 +97,57 @@ generate_settings() {
 }
 
 generate_settings
+
+# Install marketplaces (idempotent)
+install_marketplaces() {
+  echo "Installing marketplaces..."
+
+  local marketplaces=(
+    "superpowers-marketplace"
+    "anthropic-agent-skills"
+    "technicalpickles-marketplace"
+    "claude-notifications-go"
+  )
+
+  for marketplace in "${marketplaces[@]}"; do
+    if claude plugin marketplace list 2> /dev/null | grep -q "$marketplace"; then
+      echo "  ✓ $marketplace (already added)"
+    else
+      echo "  + Adding $marketplace..."
+      if claude marketplace add "$marketplace"; then
+        echo "    ✓ Added successfully"
+      else
+        echo "    ✗ Failed to add (continuing anyway)"
+      fi
+    fi
+  done
+}
+
+install_marketplaces
+
+# Install plugins (idempotent)
+install_plugins() {
+  echo "Installing plugins..."
+
+  local plugins=(
+    "tool-routing@technicalpickles-marketplace"
+    "claude-notifications-go@claude-notifications-go"
+  )
+  for plugin in "${plugins[@]}"; do
+    if claude plugin list 2> /dev/null | grep -q "$plugin"; then
+      echo "  ✓ $plugin (already installed)"
+    else
+      echo "  + Installing $plugin..."
+      if claude plugin install "$plugin"; then
+        echo "    ✓ Installed successfully"
+      else
+        echo "    ✗ Failed to install (continuing anyway)"
+      fi
+    fi
+  done
+}
+
+install_plugins
 
 echo ""
 echo "✓ Claude Code configuration complete"

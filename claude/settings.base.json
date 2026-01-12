@@ -3,7 +3,7 @@
     "type": "command",
     "command": "~/workspace/dotfiles/bin/claude-status-line"
   },
-  "includeCoAuthoredBy": false,
+  "includeCoAuthoredBy": true,
   "alwaysThinkingEnabled": false,
   "enabledPlugins": {
     "claude-notifications-go@claude-notifications-go": true,
