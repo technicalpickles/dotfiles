@@ -89,6 +89,20 @@ The central architectural pattern is **role-based adaptation**. The role is dete
 
 Role detection logic is in [install.sh:12-23](install.sh#L12-L23). The role defaults to "work" for hostnames matching `josh-nichols-*`, otherwise "personal".
 
+### Synthetic Workspace Symlink (Work Only)
+
+On **work** machines running **macOS**, the installation automatically creates a `/workspace` symlink pointing to `~/workspace`. This allows using absolute paths like `/workspace/dotfiles` which can be helpful for certain tools and workflows.
+
+**How it works:**
+
+- Uses macOS's synthetic filesystem feature via `/etc/synthetic.conf`
+- The `setup_synthetic_workspace()` function in [functions.sh:172-211](functions.sh#L172-L211) manages the configuration
+- Called during installation only when `DOTPICKLES_ROLE=work` (see [install.sh:71-73](install.sh#L71-L73))
+- Idempotent: safe to run multiple times
+- Attempts to apply without restart using `apfs.util -t`, though a restart may be required in some cases
+
+**Why work-only?** This is specific to work environments where absolute workspace paths are preferred for consistency across tools and documentation.
+
 ### Dynamic Git Configuration
 
 Git settings are **generated**, not static. [gitconfig.sh](gitconfig.sh) rebuilds `~/.gitconfig.local` by:

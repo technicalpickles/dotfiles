@@ -67,6 +67,11 @@ if running_macos; then
   echo "🔐 configuring SSH to use keychain"
   ssh-add --apple-load-keychain
 
+  # Setup /workspace symlink for work environments
+  if [[ "$DOTPICKLES_ROLE" = "work" ]]; then
+    setup_synthetic_workspace
+  fi
+
   # ./gh-shorthand.sh
 fi
 

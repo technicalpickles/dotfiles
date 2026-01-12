@@ -98,56 +98,75 @@ generate_settings() {
 
 generate_settings
 
-# Install marketplaces (idempotent)
-install_marketplaces() {
-  echo "Installing marketplaces..."
+# Configure marketplaces (non-interactive)
+configure_marketplaces() {
+  echo "Configuring marketplaces..."
 
+  local known_marketplaces_file="$HOME/.claude/plugins/known_marketplaces.json"
+  local marketplaces_dir="$HOME/.claude/plugins/marketplaces"
+
+  # Ensure directories exist
+  mkdir -p "$marketplaces_dir"
+
+  # Define marketplaces with their GitHub repos
+  # Format: "marketplace-id:github-repo"
   local marketplaces=(
-    "superpowers-marketplace"
-    "anthropic-agent-skills"
-    "technicalpickles-marketplace"
-    "claude-notifications-go"
+    "pickled-claude-plugins:technicalpickles/pickled-claude-plugins"
+    "superpowers-marketplace:obra/superpowers"
+    "claude-notifications-go:777genius/claude-notifications-go"
   )
 
-  for marketplace in "${marketplaces[@]}"; do
-    if claude plugin marketplace list 2> /dev/null | grep -q "$marketplace"; then
-      echo "  ✓ $marketplace (already added)"
+  # Read existing marketplaces or start with empty object
+  local current_marketplaces="{}"
+  if [ -f "$known_marketplaces_file" ]; then
+    current_marketplaces=$(cat "$known_marketplaces_file")
+  fi
+
+  local updated=false
+
+  for entry in "${marketplaces[@]}"; do
+    IFS=':' read -r marketplace_id github_repo <<< "$entry"
+    local install_location="$marketplaces_dir/$marketplace_id"
+
+    # Check if marketplace already exists in JSON
+    if echo "$current_marketplaces" | jq -e ".[\"$marketplace_id\"]" > /dev/null 2>&1; then
+      echo "  ✓ $marketplace_id (already configured)"
     else
-      echo "  + Adding $marketplace..."
-      if claude marketplace add "$marketplace"; then
-        echo "    ✓ Added successfully"
+      echo "  + Adding $marketplace_id..."
+
+      # Add marketplace entry to JSON
+      current_marketplaces=$(echo "$current_marketplaces" | jq \
+        --arg id "$marketplace_id" \
+        --arg repo "$github_repo" \
+        --arg location "$install_location" \
+        --arg timestamp "$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")" \
+        '. + {($id): {source: {source: "github", repo: $repo}, installLocation: $location, lastUpdated: $timestamp}}')
+
+      updated=true
+      echo "    ✓ Added to known_marketplaces.json"
+    fi
+
+    # Clone marketplace repo if not present
+    if [ ! -d "$install_location" ]; then
+      echo "  + Cloning $marketplace_id from $github_repo..."
+      if git clone "https://github.com/$github_repo.git" "$install_location" 2> /dev/null; then
+        echo "    ✓ Cloned successfully"
       else
-        echo "    ✗ Failed to add (continuing anyway)"
+        echo "    ✗ Failed to clone (continuing anyway)"
       fi
+    else
+      echo "  ✓ $marketplace_id repository exists"
     fi
   done
+
+  # Write updated marketplaces JSON if changes were made
+  if [ "$updated" = true ]; then
+    echo "$current_marketplaces" | jq '.' > "$known_marketplaces_file"
+    echo "  ✓ Updated known_marketplaces.json"
+  fi
 }
 
-install_marketplaces
-
-# Install plugins (idempotent)
-install_plugins() {
-  echo "Installing plugins..."
-
-  local plugins=(
-    "tool-routing@technicalpickles-marketplace"
-    "claude-notifications-go@claude-notifications-go"
-  )
-  for plugin in "${plugins[@]}"; do
-    if claude plugin list 2> /dev/null | grep -q "$plugin"; then
-      echo "  ✓ $plugin (already installed)"
-    else
-      echo "  + Installing $plugin..."
-      if claude plugin install "$plugin"; then
-        echo "    ✓ Installed successfully"
-      else
-        echo "    ✗ Failed to install (continuing anyway)"
-      fi
-    fi
-  done
-}
-
-install_plugins
+configure_marketplaces
 
 echo ""
 echo "✓ Claude Code configuration complete"

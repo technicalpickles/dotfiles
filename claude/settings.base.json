@@ -3,10 +3,5 @@
     "type": "command",
     "command": "~/workspace/dotfiles/bin/claude-status-line"
   },
-  "includeCoAuthoredBy": true,
-  "alwaysThinkingEnabled": false,
-  "enabledPlugins": {
-    "claude-notifications-go@claude-notifications-go": true,
-    "tool-routing@technicalpickles-marketplace": true
-  }
+  "includeCoAuthoredBy": true
 }

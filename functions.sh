@@ -167,3 +167,45 @@ op_ensure_signed_in() {
     op signin
   fi
 }
+
+# Setup /workspace as synthetic symlink to ~/workspace (macOS only, work role only)
+setup_synthetic_workspace() {
+  local synthetic_conf="/etc/synthetic.conf"
+  local workspace_path="$HOME/workspace"
+
+  echo "🔗 Setting up /workspace synthetic symlink"
+
+  # Check if symlink already exists and points to correct location
+  if [ -L "/workspace" ] && [ "$(readlink /workspace)" = "$workspace_path" ]; then
+    echo "  → /workspace already configured correctly"
+    return 0
+  fi
+
+  # Check if entry already exists in synthetic.conf
+  if [ -f "$synthetic_conf" ] && grep -q "^workspace[[:space:]]" "$synthetic_conf"; then
+    echo "  → Entry already exists in $synthetic_conf"
+    # Try to apply it if symlink doesn't exist yet
+    if [ ! -L "/workspace" ]; then
+      echo "  → Applying synthetic filesystem configuration..."
+      sudo /System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util -t 2> /dev/null || true
+      sleep 1
+    fi
+  else
+    # Add entry to synthetic.conf (tab-separated)
+    echo "  → Adding workspace entry to $synthetic_conf"
+    printf "workspace\t%s\n" "$workspace_path" | sudo tee -a "$synthetic_conf" > /dev/null
+
+    # Try to apply without restart
+    echo "  → Applying synthetic filesystem configuration..."
+    sudo /System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util -t 2> /dev/null || true
+    sleep 1
+  fi
+
+  # Verify symlink was created
+  if [ -L "/workspace" ]; then
+    echo "  → ✅ /workspace symlink active: $(ls -l /workspace | awk '{print $9, $10, $11}')"
+  else
+    echo "  → ⚠️  Symlink will be created on next restart"
+    echo "  → You can restart now or continue without /workspace"
+  fi
+}
