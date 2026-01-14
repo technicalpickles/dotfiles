@@ -9,6 +9,8 @@ brew 'direnv'
 brew 'thefuck'
 brew 'tmux'
 brew 'reattach-to-user-namespace'
+tap 'joshmedeski/sesh'
+brew 'sesh'
 
 # git
 brew 'git-lfs'
