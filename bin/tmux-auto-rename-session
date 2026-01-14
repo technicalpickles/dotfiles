@@ -1,0 +1,30 @@
+#!/bin/bash
+# Auto-rename tmux session based on directory, with conditions:
+# - Skip if session was explicitly named (non-numeric name)
+# - Skip if started in excluded directories
+
+session_name="$1"
+pane_path="$2"
+
+# Skip if session has an explicit name (default names are numeric: 0, 1, 2, ...)
+if [[ ! "$session_name" =~ ^[0-9]+$ ]]; then
+  exit 0
+fi
+
+# Expand ~ in path for comparison
+expanded_path="${pane_path/#\~/$HOME}"
+
+# Skip if in excluded directories
+excluded_dirs=(
+  "$HOME/gt"
+)
+
+for excluded in "${excluded_dirs[@]}"; do
+  if [[ "$expanded_path" == "$excluded" || "$expanded_path" == "$excluded/"* ]]; then
+    exit 0
+  fi
+done
+
+# Rename to directory basename
+new_name="$(basename "$pane_path")"
+tmux rename-session -t "$session_name" "$new_name"
