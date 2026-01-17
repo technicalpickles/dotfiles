@@ -1,0 +1,279 @@
+#!/usr/bin/env python3
+"""Query Claude Code permissions across all known locations.
+
+Outputs structured data suitable for analysis by humans or agents.
+
+Usage:
+    claude-permissions                    # Summary view
+    claude-permissions --json             # JSON output (for agents/scripts)
+    claude-permissions --locations        # List file locations only
+    claude-permissions --raw              # Raw permissions by file
+    claude-permissions --aggregate        # Deduplicated list with counts
+"""
+
+import argparse
+import json
+import re
+import signal
+import sys
+from collections import Counter, defaultdict
+from dataclasses import dataclass, field
+from pathlib import Path
+
+# Handle broken pipe gracefully (e.g., when piped to head)
+signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
+
+@dataclass
+class PermissionSource:
+    """A source of Claude permissions."""
+    path: Path
+    scope: str  # 'global', 'project-local', 'dotfiles-template'
+    exists: bool
+    permissions: dict = field(default_factory=dict)
+
+
+def get_permission_sources() -> list[PermissionSource]:
+    """Return all known permission source locations deterministically."""
+    home = Path.home()
+    sources = []
+
+    # 1. Global settings
+    sources.append(PermissionSource(
+        path=home / ".claude" / "settings.json",
+        scope="global",
+        exists=(home / ".claude" / "settings.json").exists()
+    ))
+
+    # 2. Dotfiles templates (role-based)
+    dotfiles = home / "workspace" / "dotfiles"
+    for template in [
+        dotfiles / "claude" / "permissions.json",
+        dotfiles / "claude" / "permissions.personal.json",
+        dotfiles / "claude" / "permissions.work.json",
+    ]:
+        sources.append(PermissionSource(
+            path=template,
+            scope="dotfiles-template",
+            exists=template.exists()
+        ))
+
+    # 3. Project-local settings in workspace (deterministic sorted order)
+    workspace = home / "workspace"
+    if workspace.exists():
+        for project_dir in sorted(workspace.iterdir()):
+            if not project_dir.is_dir():
+                continue
+            if project_dir.name.startswith('.'):
+                continue
+
+            settings_file = project_dir / ".claude" / "settings.local.json"
+            sources.append(PermissionSource(
+                path=settings_file,
+                scope="project-local",
+                exists=settings_file.exists()
+            ))
+
+    return sources
+
+
+def load_permissions(source: PermissionSource) -> PermissionSource:
+    """Load permissions from a source file."""
+    if not source.exists:
+        return source
+
+    try:
+        with open(source.path) as f:
+            content = f.read()
+
+        # Handle trailing commas (common in hand-edited JSON)
+        content = re.sub(r',(\s*[\]\}])', r'\1', content)
+        data = json.loads(content)
+
+        # Handle different formats:
+        # 1. List format (dotfiles templates): ["perm1", "perm2"]
+        # 2. Dict with permissions key: {"permissions": {"allow": [...]}}
+        # 3. Dict with allow/deny/ask directly: {"allow": [...]}
+        if isinstance(data, list):
+            source.permissions = {"allow": data, "deny": [], "ask": []}
+        elif isinstance(data, dict):
+            if "permissions" in data:
+                source.permissions = data["permissions"]
+            elif "allow" in data or "deny" in data or "ask" in data:
+                source.permissions = data
+            else:
+                source.permissions = {"allow": [], "deny": [], "ask": []}
+        else:
+            source.permissions = {"allow": [], "deny": [], "ask": []}
+
+    except (json.JSONDecodeError, FileNotFoundError, PermissionError) as e:
+        print(f"Warning: Could not read {source.path}: {e}", file=sys.stderr)
+        source.permissions = {"allow": [], "deny": [], "ask": []}
+
+    return source
+
+
+def output_locations(sources: list[PermissionSource]) -> None:
+    """Output file locations."""
+    for scope in ["global", "dotfiles-template", "project-local"]:
+        scope_sources = [s for s in sources if s.scope == scope]
+        exists_sources = [s for s in scope_sources if s.exists]
+
+        print(f"## {scope} ({len(exists_sources)}/{len(scope_sources)} exist)")
+        for s in scope_sources:
+            if s.exists:
+                print(f"  {s.path}")
+        print()
+
+
+def output_raw(sources: list[PermissionSource]) -> None:
+    """Output raw permissions by file."""
+    for source in sources:
+        if not source.exists or not source.permissions:
+            continue
+
+        print(f"## {source.path}")
+        print(f"scope: {source.scope}")
+        for perm_type in ["allow", "deny", "ask"]:
+            perms = source.permissions.get(perm_type, [])
+            if perms:
+                print(f"{perm_type}:")
+                for p in sorted(perms):
+                    print(f"  - {p}")
+        print()
+
+
+def output_aggregate(sources: list[PermissionSource]) -> None:
+    """Output deduplicated permissions with occurrence counts."""
+    allows = Counter()
+    denies = Counter()
+    asks = Counter()
+
+    for source in sources:
+        for p in source.permissions.get("allow", []):
+            allows[p] += 1
+        for p in source.permissions.get("deny", []):
+            denies[p] += 1
+        for p in source.permissions.get("ask", []):
+            asks[p] += 1
+
+    print("## allow")
+    for perm, count in sorted(allows.items(), key=lambda x: (-x[1], x[0])):
+        print(f"  {count:3d}x {perm}")
+
+    print("\n## deny")
+    if denies:
+        for perm, count in sorted(denies.items(), key=lambda x: (-x[1], x[0])):
+            print(f"  {count:3d}x {perm}")
+    else:
+        print("  (none)")
+
+    print("\n## ask")
+    if asks:
+        for perm, count in sorted(asks.items(), key=lambda x: (-x[1], x[0])):
+            print(f"  {count:3d}x {perm}")
+    else:
+        print("  (none)")
+
+
+def output_json(sources: list[PermissionSource]) -> None:
+    """Output as JSON for agents/scripts."""
+    all_allows = Counter()
+    all_denies = Counter()
+    all_asks = Counter()
+
+    sources_data = []
+    for source in sources:
+        if not source.exists:
+            continue
+
+        sources_data.append({
+            "path": str(source.path),
+            "scope": source.scope,
+            "allow": source.permissions.get("allow", []),
+            "deny": source.permissions.get("deny", []),
+            "ask": source.permissions.get("ask", []),
+        })
+
+        for p in source.permissions.get("allow", []):
+            all_allows[p] += 1
+        for p in source.permissions.get("deny", []):
+            all_denies[p] += 1
+        for p in source.permissions.get("ask", []):
+            all_asks[p] += 1
+
+    result = {
+        "sources": sources_data,
+        "aggregated": {
+            "allow": [{"permission": p, "count": c} for p, c in all_allows.most_common()],
+            "deny": [{"permission": p, "count": c} for p, c in all_denies.most_common()],
+            "ask": [{"permission": p, "count": c} for p, c in all_asks.most_common()],
+        },
+        "stats": {
+            "sources_found": len(sources_data),
+            "unique_allows": len(all_allows),
+            "unique_denies": len(all_denies),
+            "unique_asks": len(all_asks),
+            "total_allow_entries": sum(all_allows.values()),
+        }
+    }
+
+    print(json.dumps(result, indent=2))
+
+
+def output_summary(sources: list[PermissionSource]) -> None:
+    """Output human-readable summary."""
+    existing = [s for s in sources if s.exists]
+
+    all_allows = Counter()
+    all_denies = Counter()
+    all_asks = Counter()
+
+    for source in sources:
+        for p in source.permissions.get("allow", []):
+            all_allows[p] += 1
+        for p in source.permissions.get("deny", []):
+            all_denies[p] += 1
+        for p in source.permissions.get("ask", []):
+            all_asks[p] += 1
+
+    print(f"sources: {len(existing)} files")
+    print(f"unique allows: {len(all_allows)} ({sum(all_allows.values())} total entries)")
+    print(f"unique denies: {len(all_denies)}")
+    print(f"unique asks: {len(all_asks)}")
+    print()
+    print("top 25 allows:")
+    for perm, count in all_allows.most_common(25):
+        print(f"  {count:3d}x {perm}")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Query Claude Code permissions",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__
+    )
+    parser.add_argument("--json", action="store_true", help="JSON output for agents/scripts")
+    parser.add_argument("--locations", action="store_true", help="List file locations only")
+    parser.add_argument("--raw", action="store_true", help="Raw permissions by file")
+    parser.add_argument("--aggregate", action="store_true", help="Deduplicated list with counts")
+
+    args = parser.parse_args()
+
+    sources = get_permission_sources()
+    sources = [load_permissions(s) for s in sources]
+
+    if args.locations:
+        output_locations(sources)
+    elif args.json:
+        output_json(sources)
+    elif args.raw:
+        output_raw(sources)
+    elif args.aggregate:
+        output_aggregate(sources)
+    else:
+        output_summary(sources)
+
+
+if __name__ == "__main__":
+    main()
