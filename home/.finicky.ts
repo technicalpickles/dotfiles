@@ -174,6 +174,15 @@ const config: FinickyConfig = {
       },
     },
 
+    // AWS - open in Chrome work profile
+    {
+      match: ['*.awsapps.com/*', 'awsapps.com/*'],
+      browser: {
+        name: 'Google Chrome',
+        profile: workChromeProfile,
+      },
+    },
+
     // YouTube - open in Chrome
     {
       match: ['youtube.com/*', '*.youtube.com/*', 'youtu.be/*'],
