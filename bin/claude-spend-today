@@ -4,8 +4,24 @@ set -euo pipefail
 PROJECTS_DIR="${HOME}/.claude/projects"
 TODAY=$(date +%Y-%m-%d)
 
-count=$(find "$PROJECTS_DIR" -name "*.jsonl" -mtime -2 -print0 2> /dev/null \
-  | xargs -0 grep -h "\"timestamp\":\"${TODAY}" 2> /dev/null \
-  | grep -c '"message":' || echo 0)
+if [[ ! -d "$PROJECTS_DIR" ]]; then
+  echo "0 tokens"
+  exit 0
+fi
 
-echo "Found $count assistant messages today"
+# Extract all usage objects for today and sum tokens
+result=$(find "$PROJECTS_DIR" -name "*.jsonl" -mtime -2 -print0 2> /dev/null \
+  | xargs -0 grep -h "\"timestamp\":\"${TODAY}" 2> /dev/null \
+  | grep '"usage":' \
+  | jq -s '
+        map(.message.usage // empty) |
+        {
+            input: (map(.input_tokens // 0) | add // 0),
+            output: (map(.output_tokens // 0) | add // 0),
+            cache_create: (map(.cache_creation_input_tokens // 0) | add // 0),
+            cache_read: (map(.cache_read_input_tokens // 0) | add // 0)
+        } |
+        . + {total: (.input + .output + .cache_create + .cache_read)}
+    ')
+
+echo "$result" | jq -r '"Input: \(.input), Output: \(.output), Cache Create: \(.cache_create), Cache Read: \(.cache_read), Total: \(.total)"'
