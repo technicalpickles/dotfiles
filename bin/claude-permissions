@@ -9,16 +9,73 @@ Usage:
     claude-permissions --locations        # List file locations only
     claude-permissions --raw              # Raw permissions by file
     claude-permissions --aggregate        # Deduplicated list with counts
+    claude-permissions cleanup            # Preview cleanup (dry run)
+    claude-permissions cleanup --force    # Actually remove duplicates
 """
 
 import argparse
 import json
+import os
 import re
 import signal
 import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
+
+
+# ANSI color codes
+class Colors:
+    """ANSI color codes for terminal output."""
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    MAGENTA = "\033[35m"
+    CYAN = "\033[36m"
+
+    @classmethod
+    def enabled(cls) -> bool:
+        """Check if colors should be enabled."""
+        if os.environ.get("NO_COLOR"):
+            return False
+        if not sys.stdout.isatty():
+            return False
+        return True
+
+
+def color(text: str, *codes: str) -> str:
+    """Apply color codes to text if colors are enabled."""
+    if not Colors.enabled():
+        return text
+    return f"{''.join(codes)}{text}{Colors.RESET}"
+
+
+def dim(text: str) -> str:
+    return color(text, Colors.DIM)
+
+
+def bold(text: str) -> str:
+    return color(text, Colors.BOLD)
+
+
+def green(text: str) -> str:
+    return color(text, Colors.GREEN)
+
+
+def yellow(text: str) -> str:
+    return color(text, Colors.YELLOW)
+
+
+def red(text: str) -> str:
+    return color(text, Colors.RED)
+
+
+def cyan(text: str) -> str:
+    return color(text, Colors.CYAN)
 
 # Handle broken pipe gracefully (e.g., when piped to head)
 signal.signal(signal.SIGPIPE, signal.SIG_DFL)
@@ -247,23 +304,161 @@ def output_summary(sources: list[PermissionSource]) -> None:
         print(f"  {count:3d}x {perm}")
 
 
+def cleanup_duplicates(sources: list[PermissionSource], force: bool = False) -> None:
+    """Remove project-local permissions that exist in global settings."""
+    dry_run = not force
+
+    # Get global permissions
+    global_source = next((s for s in sources if s.scope == "global" and s.exists), None)
+    if not global_source:
+        print(red("Error: No global settings.json found"), file=sys.stderr)
+        return
+
+    global_allow = set(global_source.permissions.get("allow", []))
+    global_deny = set(global_source.permissions.get("deny", []))
+    global_ask = set(global_source.permissions.get("ask", []))
+
+    # Header
+    if dry_run:
+        print(yellow("DRY RUN") + dim(" - showing what would be removed"))
+        print(dim("Run with --force to apply changes\n"))
+    else:
+        print(green("APPLYING CHANGES") + "\n")
+
+    files_modified = 0
+    entries_removed = 0
+    results = []
+
+    for source in sources:
+        if source.scope != "project-local" or not source.exists:
+            continue
+
+        local_allow = set(source.permissions.get("allow", []))
+        local_deny = set(source.permissions.get("deny", []))
+        local_ask = set(source.permissions.get("ask", []))
+
+        # Find duplicates
+        dup_allow = local_allow & global_allow
+        dup_deny = local_deny & global_deny
+        dup_ask = local_ask & global_ask
+
+        if not (dup_allow or dup_deny or dup_ask):
+            continue
+
+        # Calculate what remains
+        new_allow = sorted(local_allow - global_allow)
+        new_deny = sorted(local_deny - global_deny)
+        new_ask = sorted(local_ask - global_ask)
+
+        total_removed = len(dup_allow) + len(dup_deny) + len(dup_ask)
+        entries_removed += total_removed
+        files_modified += 1
+
+        # Extract project name from path
+        project_name = source.path.parent.parent.name
+
+        results.append({
+            "project": project_name,
+            "path": source.path,
+            "removed": total_removed,
+            "dup_allow": dup_allow,
+            "dup_deny": dup_deny,
+            "dup_ask": dup_ask,
+            "new_allow": new_allow,
+            "new_deny": new_deny,
+            "new_ask": new_ask,
+            "remaining": len(new_allow) + len(new_deny) + len(new_ask),
+        })
+
+        if not dry_run:
+            # Write updated file
+            new_permissions = {}
+            if new_allow:
+                new_permissions["allow"] = new_allow
+            if new_deny:
+                new_permissions["deny"] = new_deny
+            if new_ask:
+                new_permissions["ask"] = new_ask
+
+            # If nothing remains, write minimal structure
+            if not new_permissions:
+                new_permissions = {"allow": [], "deny": []}
+
+            with open(source.path, "w") as f:
+                json.dump(new_permissions, f, indent=2)
+                f.write("\n")
+
+    # Sort by number of removals (most first)
+    results.sort(key=lambda x: -x["removed"])
+
+    # Calculate column widths
+    if results:
+        max_removed_width = max(len(str(r["removed"])) for r in results) + 1  # +1 for "-"
+        max_project_width = max(len(r["project"]) for r in results)
+        max_remaining_width = max(
+            len(f"{r['remaining']} left") if r["remaining"] > 0 else len("empty")
+            for r in results
+        )
+
+    # Output results in a scannable format
+    for r in results:
+        # Build raw strings first, then apply color
+        removed_raw = f"-{r['removed']}"
+        project_raw = r["project"]
+        remaining_raw = f"{r['remaining']} left" if r["remaining"] > 0 else "empty"
+
+        # Pad raw strings, then colorize
+        removed_padded = removed_raw.rjust(max_removed_width)
+        project_padded = project_raw.ljust(max_project_width)
+        remaining_padded = remaining_raw.ljust(max_remaining_width)
+
+        status = f" {green('✓')}" if not dry_run else ""
+        print(f"{red(removed_padded)}  {bold(project_padded)}  {dim(remaining_padded)}{status}")
+
+    # Summary
+    print()
+    if dry_run:
+        print(f"{yellow('Would remove:')} {entries_removed} entries from {files_modified} files")
+        print(dim(f"\nRun: claude-permissions cleanup --force"))
+    else:
+        print(f"{green('Removed:')} {entries_removed} entries from {files_modified} files")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Query Claude Code permissions",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__
     )
+
+    # Output format flags for the default (query) mode
     parser.add_argument("--json", action="store_true", help="JSON output for agents/scripts")
     parser.add_argument("--locations", action="store_true", help="List file locations only")
     parser.add_argument("--raw", action="store_true", help="Raw permissions by file")
     parser.add_argument("--aggregate", action="store_true", help="Deduplicated list with counts")
+
+    # Subcommands
+    subparsers = parser.add_subparsers(dest="command", help="Commands")
+
+    # cleanup subcommand
+    cleanup_parser = subparsers.add_parser(
+        "cleanup",
+        help="Remove project-local permissions that duplicate global settings"
+    )
+    cleanup_parser.add_argument(
+        "--force", "-f",
+        action="store_true",
+        help="Actually apply changes (default is dry-run)"
+    )
 
     args = parser.parse_args()
 
     sources = get_permission_sources()
     sources = [load_permissions(s) for s in sources]
 
-    if args.locations:
+    if args.command == "cleanup":
+        cleanup_duplicates(sources, force=args.force)
+    elif args.locations:
         output_locations(sources)
     elif args.json:
         output_json(sources)
