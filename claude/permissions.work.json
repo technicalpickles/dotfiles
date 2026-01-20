@@ -1,7 +1,10 @@
-[
-  "Bash(bin/rspec:*)",
-  "Bash(bin/rubocop:*)",
-  "Bash(bundle exec rspec:*)",
-  "Bash(bundle exec rubocop:*)",
-  "Bash(bundle install)"
-]
+{
+  "allow": [
+    "Bash(bin/rspec:*)",
+    "Bash(bin/rubocop:*)",
+    "Bash(bundle exec rspec:*)",
+    "Bash(bundle exec rubocop:*)",
+    "Bash(bundle install)"
+  ],
+  "deny": []
+}

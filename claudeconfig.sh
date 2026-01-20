@@ -55,7 +55,7 @@ generate_settings() {
     merged_settings=$(cat "$base_settings")
   fi
 
-  # Merge permissions
+  # Merge permissions (allow and deny lists)
   local base_permissions="$DIR/claude/permissions.json"
   local role_permissions="$DIR/claude/permissions.$ROLE.json"
 
@@ -64,15 +64,27 @@ generate_settings() {
     exit 1
   fi
 
-  local merged_permissions
+  # Merge allow lists: base.allow + role.allow
+  local merged_allow
   if [ -f "$role_permissions" ]; then
-    merged_permissions=$(jq -s '.[0] + .[1]' "$base_permissions" "$role_permissions")
+    merged_allow=$(jq -s '.[0].allow + .[1].allow' "$base_permissions" "$role_permissions")
   else
-    merged_permissions=$(cat "$base_permissions")
+    merged_allow=$(jq '.allow' "$base_permissions")
   fi
 
-  # Combine settings + permissions
-  local final_settings=$(echo "$merged_settings" | jq --argjson perms "$merged_permissions" '. + {permissions: {allow: $perms}}')
+  # Merge deny lists: base.deny + role.deny
+  local merged_deny
+  if [ -f "$role_permissions" ]; then
+    merged_deny=$(jq -s '.[0].deny + .[1].deny' "$base_permissions" "$role_permissions")
+  else
+    merged_deny=$(jq '.deny' "$base_permissions")
+  fi
+
+  # Combine settings + permissions (with both allow and deny)
+  local final_settings=$(echo "$merged_settings" | jq \
+    --argjson allow "$merged_allow" \
+    --argjson deny "$merged_deny" \
+    '. + {permissions: {allow: $allow, deny: $deny}}')
 
   # Merge in local-only settings
   final_settings=$(echo "$final_settings" | jq --argjson local "$local_settings" '. * $local')
