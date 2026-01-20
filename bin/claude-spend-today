@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROJECTS_DIR="${HOME}/.claude/projects"
+TODAY=$(date +%Y-%m-%d)
+CACHE_DIR="${HOME}/.claude/powerline/usage"
+CACHE_FILE="${CACHE_DIR}/tmux-today.json"
+CACHE_TTL=60
+
+# Output format: cost (default), tokens, or both
+format="${1:-cost}"
+
+# Format token count for display (e.g., 45200000 -> "45.2M")
+format_tokens() {
+  local t="$1"
+  if ((t >= 1000000)); then
+    printf "%.1fM" "$(echo "$t / 1000000" | bc -l)"
+  elif ((t >= 1000)); then
+    printf "%.1fK" "$(echo "$t / 1000" | bc -l)"
+  else
+    echo "$t"
+  fi
+}
+
+# Format cost for display
+format_cost() {
+  local cost="$1"
+  if (($(echo "$cost < 0.01" | bc -l))); then
+    echo "<\$0.01"
+  else
+    printf "\$%.2f" "$cost"
+  fi
+}
+
+# Check if cache is valid and return cached data
+check_cache() {
+  [[ ! -f "$CACHE_FILE" ]] && return 1
+
+  local cache_mtime now
+  # macOS: date -r file +%s, Linux: stat -c %Y file
+  cache_mtime=$(date -r "$CACHE_FILE" +%s 2> /dev/null || stat -c %Y "$CACHE_FILE" 2> /dev/null) || return 1
+  now=$(date +%s)
+
+  if ((now - cache_mtime < CACHE_TTL)); then
+    cat "$CACHE_FILE"
+    return 0
+  fi
+  return 1
+}
+
+# Save result to cache
+save_cache() {
+  mkdir -p "$CACHE_DIR"
+  echo "$1" > "$CACHE_FILE"
+}
+
+# Try to use cached data
+if cached=$(check_cache); then
+  result="$cached"
+else
+  # Calculate fresh data
+  if [[ ! -d "$PROJECTS_DIR" ]]; then
+    result='{"tokens":{"total":0},"cost":0}'
+  else
+    result=$(find "$PROJECTS_DIR" -name "*.jsonl" -mtime -2 -print0 2> /dev/null \
+      | xargs -0 grep -h "\"timestamp\":\"${TODAY}" 2> /dev/null \
+      | grep '"usage":' \
+      | jq -s '
+                # Pricing per million tokens by model family (AWS Bedrock US regions)
+                def pricing:
+                    {
+                        opus:   {input: 15,   output: 75, cache_create: 18.75, cache_read: 1.5},
+                        sonnet: {input: 3,    output: 15, cache_create: 3.75,  cache_read: 0.3},
+                        haiku:  {input: 1,    output: 5,  cache_create: 1.25,  cache_read: 0.1}
+                    };
+
+                # Detect model family from model string
+                def model_family:
+                    if . == null then "opus"
+                    elif test("opus"; "i") then "opus"
+                    elif test("sonnet"; "i") then "sonnet"
+                    elif test("haiku"; "i") then "haiku"
+                    else "opus"
+                    end;
+
+                # Calculate cost for a single entry
+                def entry_cost:
+                    (.message.model | model_family) as $family |
+                    pricing[$family] as $price |
+                    (.message.usage // {}) as $usage |
+                    (
+                        (($usage.input_tokens // 0) * $price.input / 1000000) +
+                        (($usage.output_tokens // 0) * $price.output / 1000000) +
+                        (($usage.cache_creation_input_tokens // 0) * $price.cache_create / 1000000) +
+                        (($usage.cache_read_input_tokens // 0) * $price.cache_read / 1000000)
+                    );
+
+                # Sum tokens by type
+                def sum_tokens:
+                    {
+                        input: (map(.message.usage.input_tokens // 0) | add // 0),
+                        output: (map(.message.usage.output_tokens // 0) | add // 0),
+                        cache_create: (map(.message.usage.cache_creation_input_tokens // 0) | add // 0),
+                        cache_read: (map(.message.usage.cache_read_input_tokens // 0) | add // 0)
+                    } |
+                    . + {total: (.input + .output + .cache_create + .cache_read)};
+
+                {
+                    tokens: sum_tokens,
+                    cost: (map(entry_cost) | add // 0)
+                }
+            ')
+
+    # Handle empty result
+    if [[ -z "$result" || "$result" == "null" ]]; then
+      result='{"tokens":{"total":0},"cost":0}'
+    fi
+  fi
+
+  # Cache the raw result
+  save_cache "$result"
+fi
+
+# Extract values
+cost=$(echo "$result" | jq -r '.cost')
+tokens=$(echo "$result" | jq -r '.tokens.total')
+
+# Format and output based on requested format
+case "$format" in
+  tokens)
+    format_tokens "$tokens"
+    ;;
+  both)
+    printf "%s (%s)\n" "$(format_cost "$cost")" "$(format_tokens "$tokens")"
+    ;;
+  *)
+    format_cost "$cost"
+    ;;
+esac
