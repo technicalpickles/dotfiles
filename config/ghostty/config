@@ -6,6 +6,8 @@ cursor-style = block
 shell-integration-features = no-cursor
 
 
+auto-update-channel = tip
+
 font-family = "DankMono Nerd Font"
 font-size = 15
 
