@@ -3,6 +3,37 @@ set -euo pipefail
 
 PROJECTS_DIR="${HOME}/.claude/projects"
 TODAY=$(date +%Y-%m-%d)
+CACHE_DIR="${HOME}/.claude/powerline/usage"
+CACHE_FILE="${CACHE_DIR}/tmux-today.txt"
+CACHE_TTL=60
+
+# Check if cache is valid and return cached value
+check_cache() {
+  [[ ! -f "$CACHE_FILE" ]] && return 1
+
+  local cache_mtime now
+  # macOS: date -r file +%s, Linux: stat -c %Y file
+  cache_mtime=$(date -r "$CACHE_FILE" +%s 2> /dev/null || stat -c %Y "$CACHE_FILE" 2> /dev/null) || return 1
+  now=$(date +%s)
+
+  if ((now - cache_mtime < CACHE_TTL)); then
+    cat "$CACHE_FILE"
+    return 0
+  fi
+  return 1
+}
+
+# Save result to cache
+save_cache() {
+  mkdir -p "$CACHE_DIR"
+  echo "$1" > "$CACHE_FILE"
+}
+
+# Check cache first
+if cached=$(check_cache); then
+  echo "$cached"
+  exit 0
+fi
 
 if [[ ! -d "$PROJECTS_DIR" ]]; then
   echo "\$0.00"
@@ -65,7 +96,11 @@ tokens=$(echo "$result" | jq -r '.tokens.total')
 
 # Format output
 if (($(echo "$cost < 0.01" | bc -l))); then
-  echo "<\$0.01"
+  formatted="<\$0.01"
 else
-  printf "\$%.2f\n" "$cost"
+  formatted=$(printf "\$%.2f" "$cost")
 fi
+
+# Save to cache and output
+save_cache "$formatted"
+echo "$formatted"
