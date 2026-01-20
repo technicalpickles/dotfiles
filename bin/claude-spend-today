@@ -9,35 +9,59 @@ if [[ ! -d "$PROJECTS_DIR" ]]; then
   exit 0
 fi
 
-# Pricing per million tokens (using Opus as default since that's what's being used)
-# TODO: Could extract model from each entry for precise pricing
+# Extract usage with model info and calculate cost per model family
+# AWS Bedrock pricing per million tokens (US regions)
 result=$(find "$PROJECTS_DIR" -name "*.jsonl" -mtime -2 -print0 2> /dev/null \
   | xargs -0 grep -h "\"timestamp\":\"${TODAY}" 2> /dev/null \
   | grep '"usage":' \
   | jq -s '
-        # Opus pricing per million tokens
-        def pricing: {input: 15, output: 75, cache_create: 18.75, cache_read: 1.5};
+        # Pricing per million tokens by model family
+        def pricing:
+            {
+                opus:   {input: 15,   output: 75, cache_create: 18.75, cache_read: 1.5},
+                sonnet: {input: 3,    output: 15, cache_create: 3.75,  cache_read: 0.3},
+                haiku:  {input: 1,    output: 5,  cache_create: 1.25,  cache_read: 0.1}
+            };
 
-        map(.message.usage // empty) |
+        # Detect model family from model string
+        def model_family:
+            if . == null then "opus"
+            elif test("opus"; "i") then "opus"
+            elif test("sonnet"; "i") then "sonnet"
+            elif test("haiku"; "i") then "haiku"
+            else "opus"
+            end;
+
+        # Calculate cost for a single entry
+        def entry_cost:
+            (.message.model | model_family) as $family |
+            pricing[$family] as $price |
+            (.message.usage // {}) as $usage |
+            (
+                (($usage.input_tokens // 0) * $price.input / 1000000) +
+                (($usage.output_tokens // 0) * $price.output / 1000000) +
+                (($usage.cache_creation_input_tokens // 0) * $price.cache_create / 1000000) +
+                (($usage.cache_read_input_tokens // 0) * $price.cache_read / 1000000)
+            );
+
+        # Sum tokens by type
+        def sum_tokens:
+            {
+                input: (map(.message.usage.input_tokens // 0) | add // 0),
+                output: (map(.message.usage.output_tokens // 0) | add // 0),
+                cache_create: (map(.message.usage.cache_creation_input_tokens // 0) | add // 0),
+                cache_read: (map(.message.usage.cache_read_input_tokens // 0) | add // 0)
+            } |
+            . + {total: (.input + .output + .cache_create + .cache_read)};
+
         {
-            input: (map(.input_tokens // 0) | add // 0),
-            output: (map(.output_tokens // 0) | add // 0),
-            cache_create: (map(.cache_creation_input_tokens // 0) | add // 0),
-            cache_read: (map(.cache_read_input_tokens // 0) | add // 0)
-        } |
-        . + {
-            total_tokens: (.input + .output + .cache_create + .cache_read),
-            cost: (
-                (.input * pricing.input / 1000000) +
-                (.output * pricing.output / 1000000) +
-                (.cache_create * pricing.cache_create / 1000000) +
-                (.cache_read * pricing.cache_read / 1000000)
-            )
+            tokens: sum_tokens,
+            cost: (map(entry_cost) | add // 0)
         }
     ')
 
 cost=$(echo "$result" | jq -r '.cost')
-tokens=$(echo "$result" | jq -r '.total_tokens')
+tokens=$(echo "$result" | jq -r '.tokens.total')
 
 # Format output
 if (($(echo "$cost < 0.01" | bc -l))); then
