@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROJECTS_DIR="${HOME}/.claude/projects"
+TODAY=$(date +%Y-%m-%d)
+
+count=$(find "$PROJECTS_DIR" -name "*.jsonl" -mtime -2 -print0 2> /dev/null \
+  | xargs -0 grep -h "\"timestamp\":\"${TODAY}" 2> /dev/null \
+  | grep -c '"message":' || echo 0)
+
+echo "Found $count assistant messages today"
