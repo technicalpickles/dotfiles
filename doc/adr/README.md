@@ -13,3 +13,7 @@
 - [11. pattern-based-spotlight-exclusions](0011-pattern-based-spotlight-exclusions.md)
 - [12. extract-devcontainer-as-reusable-template](0012-extract-devcontainer-as-reusable-template.md)
 - [13. claude-code-configuration-management](0013-claude-code-configuration-management.md)
+- [14. readopt-tmux-for-claude-code-workflows](0014-readopt-tmux-for-claude-code-workflows.md)
+- [15. auto-session-naming](0015-auto-session-naming.md)
+- [16. tmux-mode-indicators](0016-tmux-mode-indicators.md)
+- [17. claude-spend-tmux-status](0017-claude-spend-tmux-status.md)
