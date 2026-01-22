@@ -1,11 +1,11 @@
 ---
 # dotfiles-4any
-title: 'Switch to LazyVim for nvim config'
-status: todo
+title: Switch to LazyVim for nvim config
+status: in-progress
 type: task
 priority: normal
 created_at: 2026-01-22T21:02:10Z
-updated_at: 2026-01-22T21:35:24Z
+updated_at: 2026-01-22T21:52:38Z
 ---
 
 Migrate from AstroVim to LazyVim with fresh configuration.
@@ -50,19 +50,18 @@ Migrate from AstroVim to LazyVim with fresh configuration.
 
 ## Checklist
 
-- [ ] **Phase 1: Create pickled-lazyvim Repository**
-  - [ ] Create repo on GitHub: `gh repo create pickled-lazyvim --private`
-  - [ ] Clone LazyVim starter to ~/workspace/pickled-lazyvim
-  - [ ] Remove LazyVim's git history and initialize our own repo
-  - [ ] Connect to GitHub remote and push
+- [x] **Phase 1: Create pickled-lazyvim Repository**
+  - [x] Create repo on GitHub: `gh repo create pickled-lazyvim --private`
+  - [x] Clone LazyVim starter to ~/workspace/pickled-lazyvim
+  - [x] Remove LazyVim's git history and initialize our own repo
+  - [x] Connect to GitHub remote and push
 - [ ] **Phase 2: Customize for Exploration Workflow**
   - [ ] Configure minimal LSP in lua/plugins/lsp.lua (optional)
   - [ ] Add fzf-lua plugin in lua/plugins/fzf-lua.lua (optional, test Telescope first)
   - [ ] Commit customizations to pickled-lazyvim repo
-- [ ] **Phase 3: Switch to pickled-lazyvim**
-  - [ ] Backup AstroVim data: mv ~/.local/share/nvim ~/.local/share/nvim.backup-astronvim
-  - [ ] Move AstroVim aside: mv ~/.config/nvim ~/.config/nvim.astronvim
-  - [ ] Clone pickled-lazyvim: git clone git@github.com:technicalpickles/pickled-lazyvim.git ~/.config/nvim
+- [x] **Phase 3: Switch to pickled-lazyvim**
+  - [x] Backup AstroVim data: mv ~/.local/share/nvim ~/.local/share/nvim.backup-astronvim
+  - [x] Symlink pickled-lazyvim: ln -s ~/workspace/pickled-lazyvim ~/.config/nvim (note: using symlink instead of clone)
   - [ ] Launch nvim (LazyVim will auto-install plugins)
 - [ ] **Phase 4: Test Thoroughly**
   - [ ] LazyVim installs plugins automatically
