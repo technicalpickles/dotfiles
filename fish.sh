@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # shellcheck source=./functions.sh
 source ./functions.sh
 
@@ -25,31 +27,110 @@ if ! fish -c "type fisher >/dev/null 2>/dev/null"; then
   fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher"
 fi
 
-plugins=(
-  jethrokuan/z
-  jorgebucaran/autopair.fish
-)
+# Read core plugins from file (skip comments and blank lines)
+core_plugins=()
+core_plugins_file="$DIR/config/fish/core_plugins"
+if [[ -f "$core_plugins_file" ]]; then
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    # Skip comments and blank lines
+    [[ "$line" =~ ^#.*$ || -z "${line// /}" ]] && continue
+    core_plugins+=("$line")
+  done < "$core_plugins_file"
+else
+  echo "Warning: $core_plugins_file not found, using empty core list"
+fi
 
+# Apply conditionals - add plugins that depend on available commands
 if command_available fzf; then
-  plugins+=(PatrickF1/fzf.fish)
+  core_plugins+=(patrickf1/fzf.fish)
 fi
 
 if command_available direnv; then
-  plugins+=(halostatue/fish-direnv)
+  core_plugins+=(halostatue/fish-direnv)
 fi
 
-echo "previous plugins:"
-if [ -f ~/.config/fish/fish_plugins ]; then
-  cat < ~/.config/fish/fish_plugins
+# Normalize plugin names to lowercase for comparison
+normalize_plugin() {
+  echo "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+# Read current fish_plugins if it exists
+current_plugins=()
+fish_plugins_file="$HOME/.config/fish/fish_plugins"
+if [[ -f "$fish_plugins_file" ]]; then
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "${line// /}" ]] && continue
+    current_plugins+=("$line")
+  done < "$fish_plugins_file"
 fi
 
-rm -f ~/.config/fish/fish_plugins
+# Find extra plugins (in current but not in core)
+extra_plugins=()
+for current in "${current_plugins[@]}"; do
+  current_normalized=$(normalize_plugin "$current")
+  is_core=false
+  for core in "${core_plugins[@]}"; do
+    core_normalized=$(normalize_plugin "$core")
+    if [[ "$current_normalized" == "$core_normalized" ]]; then
+      is_core=true
+      break
+    fi
+  done
+  if [[ "$is_core" == false ]]; then
+    extra_plugins+=("$current")
+  fi
+done
+
+# Display core plugins
+echo
+echo "Core plugins (${#core_plugins[@]}):"
+for plugin in "${core_plugins[@]}"; do
+  echo "  $plugin"
+done
+
+# Handle drift
+preserve_extras=()
+if [[ ${#extra_plugins[@]} -gt 0 ]]; then
+  echo
+  echo "Extra plugins found (${#extra_plugins[@]}):"
+  for plugin in "${extra_plugins[@]}"; do
+    echo "  $plugin"
+  done
+
+  if [[ -t 0 ]]; then
+    # Interactive - prompt user
+    echo
+    read -r -p "Keep extra plugins? [Y/n] " response
+    case "$response" in
+      [nN] | [nN][oO])
+        echo "Dropping extra plugins"
+        ;;
+      *)
+        echo "Keeping extra plugins"
+        preserve_extras=("${extra_plugins[@]}")
+        ;;
+    esac
+  else
+    # Non-interactive - auto-preserve
+    echo
+    echo "Non-interactive mode, auto-preserving extra plugins"
+    preserve_extras=("${extra_plugins[@]}")
+  fi
+fi
+
+# Remove old fish_plugins to rebuild
+rm -f "$fish_plugins_file"
 
 echo
+echo "Installing plugins..."
 
-echo "rebuilding list of plugins"
-for plugin in "${plugins[@]}"; do
-  echo "$plugin"
+# Install core plugins
+for plugin in "${core_plugins[@]}"; do
+  fish -c "fisher install $plugin"
+done
+
+# Install preserved extras
+for plugin in "${preserve_extras[@]}"; do
   fish -c "fisher install $plugin"
 done
 
