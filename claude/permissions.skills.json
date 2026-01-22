@@ -1,0 +1,13 @@
+{
+  "allow": [
+    "Skill(superpowers:brainstorming)",
+    "Skill(superpowers:executing-plans)",
+    "Skill(superpowers:finishing-a-development-branch)",
+    "Skill(superpowers:subagent-driven-development)",
+    "Skill(superpowers:systematic-debugging)",
+    "Skill(superpowers:using-git-worktrees)",
+    "Skill(superpowers:writing-plans)",
+    "Skill(superpowers:writing-skills)"
+  ],
+  "deny": []
+}

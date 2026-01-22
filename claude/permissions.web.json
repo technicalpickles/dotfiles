@@ -1,0 +1,9 @@
+{
+  "allow": [
+    "WebFetch(domain:code.claude.com)",
+    "WebFetch(domain:docs.github.com)",
+    "WebFetch(domain:github.com)",
+    "WebFetch(domain:raw.githubusercontent.com)"
+  ],
+  "deny": []
+}

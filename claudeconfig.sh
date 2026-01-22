@@ -15,6 +15,32 @@ if ! command_available jq; then
   exit 1
 fi
 
+# Read a JSON or JSONC file, stripping comments and trailing commas
+# Uses node if available for robust JSONC parsing, falls back to sed
+read_json() {
+  local file="$1"
+  if command -v node > /dev/null 2>&1; then
+    # Node handles JSONC natively with JSON5-like parsing
+    node -e "
+      const fs = require('fs');
+      const content = fs.readFileSync('$file', 'utf8');
+      // Strip comments and trailing commas
+      const stripped = content
+        .replace(/\/\/.*$/gm, '')           // Remove // comments
+        .replace(/\/\*[\s\S]*?\*\//g, '')   // Remove /* */ comments
+        .replace(/,(\s*[}\]])/g, '\$1');    // Remove trailing commas
+      console.log(JSON.stringify(JSON.parse(stripped)));
+    "
+  else
+    # Fallback: simple sed-based stripping (less robust)
+    sed -E 's|//[^"]*$||g' < "$file" \
+      | tr '\n' '\f' \
+      | sed -E 's|,([[:space:]\f]*[}\]])|\1|g' \
+      | tr '\f' '\n' \
+      | jq '.'
+  fi
+}
+
 # Detect role (uses existing DOTPICKLES_ROLE from environment)
 ROLE="${DOTPICKLES_ROLE:-personal}"
 echo "Configuring Claude Code for role: $ROLE"
@@ -64,21 +90,40 @@ generate_settings() {
     exit 1
   fi
 
-  # Merge allow lists: base.allow + role.allow
+  # Start with base permissions
   local merged_allow
+  local merged_deny
+  merged_allow=$(read_json "$base_permissions" | jq '.allow')
+  merged_deny=$(read_json "$base_permissions" | jq '.deny')
+
+  # Merge role-specific permissions
   if [ -f "$role_permissions" ]; then
-    merged_allow=$(jq -s '.[0].allow + .[1].allow' "$base_permissions" "$role_permissions")
-  else
-    merged_allow=$(jq '.allow' "$base_permissions")
+    merged_allow=$(echo "$merged_allow" | jq --argjson role "$(read_json "$role_permissions" | jq '.allow // []')" '. + $role')
+    merged_deny=$(echo "$merged_deny" | jq --argjson role "$(read_json "$role_permissions" | jq '.deny // []')" '. + $role')
   fi
 
-  # Merge deny lists: base.deny + role.deny
-  local merged_deny
-  if [ -f "$role_permissions" ]; then
-    merged_deny=$(jq -s '.[0].deny + .[1].deny' "$base_permissions" "$role_permissions")
-  else
-    merged_deny=$(jq '.deny' "$base_permissions")
-  fi
+  # Merge ecosystem permissions (node, ruby, go, rust, python, etc.)
+  # Supports both .json and .jsonc files
+  for ecosystem_file in "$DIR"/claude/permissions.*.json "$DIR"/claude/permissions.*.jsonc; do
+    [ -f "$ecosystem_file" ] || continue
+    local filename=$(basename "$ecosystem_file")
+    # Skip base, role-specific, and the main permissions file
+    case "$filename" in
+      permissions.json | permissions.jsonc | permissions.personal.json | permissions.personal.jsonc | permissions.work.json | permissions.work.jsonc)
+        continue
+        ;;
+    esac
+    local ecosystem_name="${filename#permissions.}"
+    ecosystem_name="${ecosystem_name%.jsonc}"
+    ecosystem_name="${ecosystem_name%.json}"
+    echo "  + Merging $ecosystem_name permissions"
+    merged_allow=$(echo "$merged_allow" | jq --argjson eco "$(read_json "$ecosystem_file" | jq '.allow // []')" '. + $eco')
+    merged_deny=$(echo "$merged_deny" | jq --argjson eco "$(read_json "$ecosystem_file" | jq '.deny // []')" '. + $eco')
+  done
+
+  # Deduplicate and sort
+  merged_allow=$(echo "$merged_allow" | jq 'unique | sort')
+  merged_deny=$(echo "$merged_deny" | jq 'unique | sort')
 
   # Combine settings + permissions (with both allow and deny)
   local final_settings=$(echo "$merged_settings" | jq \

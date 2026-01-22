@@ -1,0 +1,10 @@
+{
+  "allow": [
+    "mcp__MCPProxy__call_tool_read",
+    "mcp__MCPProxy__call_tool_write",
+    "mcp__MCPProxy__read_cache",
+    "mcp__MCPProxy__retrieve_tools",
+    "mcp__MCPProxy__upstream_servers"
+  ],
+  "deny": ["mcp__MCPProxy__call_tool_destructive"]
+}

@@ -1,0 +1,58 @@
+{
+  // Git operations - comprehensive coverage for daily workflow
+  "allow": [
+    // Staging and committing
+    "Bash(git add:*)",
+    "Bash(git commit:*)",
+    "Bash(git restore:*)",
+    "Bash(git stash:*)",
+
+    // Branching and navigation
+    "Bash(git branch:*)",
+    "Bash(git checkout:*)",
+    "Bash(git switch:*)",
+    "Bash(git worktree:*)",
+
+    // Synchronization
+    "Bash(git fetch:*)",
+    "Bash(git pull:*)",
+    "Bash(git push:*)",
+    "Bash(git remote:*)",
+
+    // History rewriting (non-destructive)
+    "Bash(git cherry-pick:*)",
+    "Bash(git merge:*)",
+    "Bash(git rebase:*)",
+
+    // Inspection and queries
+    "Bash(git check-ignore:*)",
+    "Bash(git config:*)",
+    "Bash(git diff:*)",
+    "Bash(git log:*)",
+    "Bash(git ls-files:*)",
+    "Bash(git ls-remote:*)",
+    "Bash(git ls-tree:*)",
+    "Bash(git merge-base:*)",
+    "Bash(git rev-parse:*)",
+    "Bash(git shortlog:*)",
+    "Bash(git show-ref:*)",
+    "Bash(git show:*)",
+    "Bash(git status:*)",
+
+    // File operations
+    "Bash(git mv:*)",
+    "Bash(git rm:*)",
+
+    // Tags and submodules
+    "Bash(git submodule:*)",
+    "Bash(git tag:*)",
+  ],
+
+  // Destructive operations that require explicit approval
+  "deny": [
+    "Bash(git clean -fd:*)", // Removes untracked files
+    "Bash(git push --force:*)", // Overwrites remote history
+    "Bash(git push -f:*)", // Same as above
+    "Bash(git reset --hard:*)", // Discards local changes
+  ],
+}
