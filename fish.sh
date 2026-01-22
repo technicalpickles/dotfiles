@@ -118,20 +118,51 @@ if [[ ${#extra_plugins[@]} -gt 0 ]]; then
   fi
 fi
 
-# Remove old fish_plugins to rebuild
-rm -f "$fish_plugins_file"
-
-echo
-echo "Installing plugins..."
-
-# Install core plugins
-for plugin in "${core_plugins[@]}"; do
-  fish -c "fisher install $plugin"
+# Determine plugins to remove (extras not being preserved)
+plugins_to_remove=()
+for extra in "${extra_plugins[@]}"; do
+  extra_normalized=$(normalize_plugin "$extra")
+  should_keep=false
+  for preserve in "${preserve_extras[@]}"; do
+    preserve_normalized=$(normalize_plugin "$preserve")
+    if [[ "$extra_normalized" == "$preserve_normalized" ]]; then
+      should_keep=true
+      break
+    fi
+  done
+  if [[ "$should_keep" == false ]]; then
+    plugins_to_remove+=("$extra")
+  fi
 done
 
-# Install preserved extras
-for plugin in "${preserve_extras[@]}"; do
-  fish -c "fisher install $plugin"
+# Remove plugins that are not being preserved
+if [[ ${#plugins_to_remove[@]} -gt 0 ]]; then
+  echo
+  echo "Removing plugins..."
+  for plugin in "${plugins_to_remove[@]}"; do
+    echo "  Removing $plugin"
+    fish -c "fisher remove $plugin" 2> /dev/null || true
+  done
+fi
+
+# Build list of all desired plugins (excluding fisher, handled separately)
+desired_plugins=()
+for plugin in "${core_plugins[@]}" "${preserve_extras[@]}"; do
+  if [[ "$(normalize_plugin "$plugin")" != "jorgebucaran/fisher" ]]; then
+    desired_plugins+=("$plugin")
+  fi
+done
+
+echo
+echo "Installing/updating plugins..."
+
+# Ensure fisher is installed first (don't remove it!)
+fish -c "fisher install jorgebucaran/fisher 2>/dev/null || true"
+
+# Install or update all other desired plugins
+# Remove first to handle orphaned files, then install fresh
+for plugin in "${desired_plugins[@]}"; do
+  fish -c "fisher remove $plugin 2>/dev/null; fisher install $plugin"
 done
 
 echo

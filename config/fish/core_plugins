@@ -2,5 +2,4 @@
 # Extra plugins added via `fisher install` will be detected and preserved
 
 jorgebucaran/fisher
-jethrokuan/z
 jorgebucaran/autopair.fish
