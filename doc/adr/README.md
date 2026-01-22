@@ -17,3 +17,4 @@
 - [15. auto-session-naming](0015-auto-session-naming.md)
 - [16. tmux-mode-indicators](0016-tmux-mode-indicators.md)
 - [17. claude-spend-tmux-status](0017-claude-spend-tmux-status.md)
+- [18. switch-to-zoxide](0018-switch-to-zoxide.md)
