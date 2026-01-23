@@ -1,9 +1,5 @@
 jorgebucaran/fisher
-jorgebucaran/nvm.fish
-halostatue/fish-direnv
-jethrokuan/z
 jorgebucaran/autopair.fish
-gazorby/fish-abbreviation-tips
-danhper/fish-ssh-agent
 patrickf1/fzf.fish
-wawa19933/starship.fish
+halostatue/fish-direnv
+danhper/fish-ssh-agent
