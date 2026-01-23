@@ -19,3 +19,4 @@
 - [17. claude-spend-tmux-status](0017-claude-spend-tmux-status.md)
 - [18. switch-to-zoxide](0018-switch-to-zoxide.md)
 - [19. fish-plugin-drift-detection](0019-fish-plugin-drift-detection.md)
+- [20. tmux-prefix-c-space](0020-tmux-prefix-c-space.md)
