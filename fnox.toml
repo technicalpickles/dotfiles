@@ -1,0 +1,5 @@
+default_provider = "keychain"
+
+[providers.keychain]
+type = "keychain"
+service = "dotfiles"
