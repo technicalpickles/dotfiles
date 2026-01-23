@@ -77,6 +77,23 @@ bin/adr list        # List all ADRs
 
 This repository documents all significant architectural decisions in [doc/adr/](doc/adr/). Before making major changes, review existing ADRs to understand the context and rationale behind current implementations. When making new architectural decisions, create an ADR documenting the context, decision, alternatives considered, and consequences.
 
+### Neovim/LazyVim
+
+This repository uses LazyVim as the Neovim configuration via the **pickled-lazyvim pattern** - a separate repository at `~/workspace/pickled-lazyvim/` that is symlinked to `~/.config/nvim` during installation.
+
+**See the pickled-lazyvim repository for Neovim-specific documentation:**
+
+- **[~/workspace/pickled-lazyvim/CLAUDE.md](../pickled-lazyvim/CLAUDE.md)** - Main guidance for working with this LazyVim config
+- **[~/workspace/pickled-lazyvim/doc/nvim-exploration.md](../pickled-lazyvim/doc/nvim-exploration.md)** - Comprehensive guide for exploring plugins, keybindings, and configuration
+
+**Quick references:**
+
+- LazyVim config: `~/workspace/pickled-lazyvim/` (symlinked from `~/.config/nvim`)
+- Installed plugins: `~/.local/share/nvim/lazy/`
+- Plugin manager: `:Lazy` (inside Neovim)
+- Check keybinding: `:verbose map <key>`
+- Plugin health: `:checkhealth`
+
 ## Architecture
 
 ### Role-Based Configuration System
