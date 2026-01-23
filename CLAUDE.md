@@ -297,55 +297,26 @@ These are used by other scripts and hooks.
 
 ## Claude Code Configuration
 
-Claude Code settings are managed using a role-based configuration system similar to git configuration.
+Claude Code settings and permissions are managed via templates in the `claude/` directory. **See [claude/CLAUDE.md](claude/CLAUDE.md) for detailed documentation** on the permission system, ecosystem files, and workflows.
 
-### Configuration Files
-
-```bash
-claude/
-├── settings.base.json        # Core settings (statusLine, alwaysThinkingEnabled, etc.)
-├── settings.personal.json    # Personal role overrides
-├── settings.work.json        # Work role overrides
-├── permissions.json          # Base permissions (common tools/skills)
-├── permissions.personal.json # Personal-specific permissions
-└── permissions.work.json     # Work-specific permissions
-```
-
-### Generation and Installation
+**Quick reference:**
 
 ```bash
-# Generate settings.json from configuration fragments
+# Regenerate ~/.claude/settings.json from templates
 ./claudeconfig.sh
 
-# Or regenerate during installation
-./install.sh
+# Check permission state across all projects
+claude-permissions
+
+# Clean up project-local duplicates of global permissions
+claude-permissions cleanup --force
 ```
 
-The script:
+**Key files:**
 
-1. Installs marketplaces (idempotent)
-2. Installs plugins (idempotent)
-3. Merges base + role-specific settings
-4. Merges base + role-specific permissions
-5. Preserves local-only settings (AWS credentials, etc.)
-6. Generates `~/.claude/settings.json`
-
-### Local-Only Settings
-
-Settings like `awsAuthRefresh` and `env` are considered local-only and are preserved across regenerations. Add these manually to `~/.claude/settings.json` after running `claudeconfig.sh`.
-
-### Adding New Permissions
-
-1. For common permissions: Add to `claude/permissions.json`
-2. For role-specific permissions: Add to `claude/permissions.personal.json` or `claude/permissions.work.json`
-3. Regenerate: `./claudeconfig.sh`
-
-### Adding New Plugins
-
-1. Add marketplace to `marketplaces` array in `claudeconfig.sh`
-2. Add plugin to `plugins` array in `claudeconfig.sh`
-3. Add to `enabledPlugins` in `claude/settings.base.json` (or role-specific settings)
-4. Regenerate: `./claudeconfig.sh`
+- `claude/settings.base.json` - Core settings
+- `claude/permissions.skills.json` - Skill permissions (add frequently-used skills here)
+- `claude/permissions.*.json` - Ecosystem permissions (node, ruby, github, etc.)
 
 ## Claude Code Skills Plugin
 

@@ -1,13 +1,30 @@
 {
   "allow": [
+    "Skill(buildkite-status)",
+    "Skill(checkout-pr)",
+    "Skill(ci-cd-tools:buildkite-status)",
+    "Skill(ci-cd-tools:developing-buildkite-pipelines)",
+    "Skill(ci-cd-tools:monitoring-buildkite-builds)",
+    "Skill(ci-cd-tools:working-with-buildkite-builds)",
+    "Skill(dev-tools:using-mcpproxy-tools)",
+    "Skill(dev-tools:working-in-scratch-areas)",
+    "Skill(git-workflows:gh-pr)",
+    "Skill(mcpproxy-debug)",
+    "Skill(second-brain:distill-conversation)",
+    "Skill(superpowers-developing-for-claude-code:working-with-claude-code)",
     "Skill(superpowers:brainstorming)",
     "Skill(superpowers:executing-plans)",
     "Skill(superpowers:finishing-a-development-branch)",
+    "Skill(superpowers:receiving-code-review)",
+    "Skill(superpowers:requesting-code-review)",
     "Skill(superpowers:subagent-driven-development)",
     "Skill(superpowers:systematic-debugging)",
     "Skill(superpowers:using-git-worktrees)",
     "Skill(superpowers:writing-plans)",
-    "Skill(superpowers:writing-skills)"
+    "Skill(superpowers:writing-skills)",
+    "Skill(working-in-monorepos)",
+    "Skill(working-in-monorepos:working-in-monorepos)",
+    "Skill(working-in-scratch-areas)"
   ],
   "deny": []
 }

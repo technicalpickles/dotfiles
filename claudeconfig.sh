@@ -81,7 +81,7 @@ generate_settings() {
     merged_settings=$(cat "$base_settings")
   fi
 
-  # Merge permissions (allow and deny lists)
+  # Merge permissions (allow, ask, and deny lists)
   local base_permissions="$DIR/claude/permissions.json"
   local role_permissions="$DIR/claude/permissions.$ROLE.json"
 
@@ -92,13 +92,16 @@ generate_settings() {
 
   # Start with base permissions
   local merged_allow
+  local merged_ask
   local merged_deny
-  merged_allow=$(read_json "$base_permissions" | jq '.allow')
-  merged_deny=$(read_json "$base_permissions" | jq '.deny')
+  merged_allow=$(read_json "$base_permissions" | jq '.allow // []')
+  merged_ask=$(read_json "$base_permissions" | jq '.ask // []')
+  merged_deny=$(read_json "$base_permissions" | jq '.deny // []')
 
   # Merge role-specific permissions
   if [ -f "$role_permissions" ]; then
     merged_allow=$(echo "$merged_allow" | jq --argjson role "$(read_json "$role_permissions" | jq '.allow // []')" '. + $role')
+    merged_ask=$(echo "$merged_ask" | jq --argjson role "$(read_json "$role_permissions" | jq '.ask // []')" '. + $role')
     merged_deny=$(echo "$merged_deny" | jq --argjson role "$(read_json "$role_permissions" | jq '.deny // []')" '. + $role')
   fi
 
@@ -118,18 +121,21 @@ generate_settings() {
     ecosystem_name="${ecosystem_name%.json}"
     echo "  + Merging $ecosystem_name permissions"
     merged_allow=$(echo "$merged_allow" | jq --argjson eco "$(read_json "$ecosystem_file" | jq '.allow // []')" '. + $eco')
+    merged_ask=$(echo "$merged_ask" | jq --argjson eco "$(read_json "$ecosystem_file" | jq '.ask // []')" '. + $eco')
     merged_deny=$(echo "$merged_deny" | jq --argjson eco "$(read_json "$ecosystem_file" | jq '.deny // []')" '. + $eco')
   done
 
   # Deduplicate and sort
   merged_allow=$(echo "$merged_allow" | jq 'unique | sort')
+  merged_ask=$(echo "$merged_ask" | jq 'unique | sort')
   merged_deny=$(echo "$merged_deny" | jq 'unique | sort')
 
-  # Combine settings + permissions (with both allow and deny)
+  # Combine settings + permissions (with allow, ask, and deny)
   local final_settings=$(echo "$merged_settings" | jq \
     --argjson allow "$merged_allow" \
+    --argjson ask "$merged_ask" \
     --argjson deny "$merged_deny" \
-    '. + {permissions: {allow: $allow, deny: $deny}}')
+    '. + {permissions: {allow: $allow, ask: $ask, deny: $deny}}')
 
   # Merge in local-only settings
   final_settings=$(echo "$final_settings" | jq --argjson local "$local_settings" '. * $local')

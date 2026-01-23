@@ -1,5 +1,11 @@
 {
   "allow": [
+    "Bash(claude-permissions)",
+    "Bash(claude-permissions --aggregate)",
+    "Bash(claude-permissions --json)",
+    "Bash(claude-permissions --locations)",
+    "Bash(claude-permissions --raw)",
+    "Bash(claude-permissions cleanup)",
     "Bash(cat:*)",
     "Bash(chmod:*)",
     "Bash(command -v:*)",
@@ -40,6 +46,10 @@
     "Bash(wc:*)",
     "Bash(which:*)",
     "Bash(xargs:*)"
+  ],
+  "ask": [
+    "Bash(claude-permissions cleanup --force)",
+    "Bash(claude-permissions cleanup -f)"
   ],
   "deny": []
 }
