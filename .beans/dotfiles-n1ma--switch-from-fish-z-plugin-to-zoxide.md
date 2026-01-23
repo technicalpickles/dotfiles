@@ -1,11 +1,11 @@
 ---
 # dotfiles-n1ma
 title: Switch from fish z plugin to zoxide
-status: in-progress
+status: completed
 type: task
 priority: normal
 created_at: 2026-01-22T14:20:26Z
-updated_at: 2026-01-22T17:08:34Z
+updated_at: 2026-01-22T20:41:55Z
 ---
 
 Replace the fish z plugin with zoxide shell integration to unify directory frecency tracking with sesh.
