@@ -3,6 +3,10 @@
     "WebFetch(domain:code.claude.com)",
     "WebFetch(domain:docs.github.com)",
     "WebFetch(domain:github.com)",
+    "WebFetch(domain:hk.jdx.dev)",
+    "WebFetch(domain:karafka.io)",
+    "WebFetch(domain:lima-vm.io)",
+    "WebFetch(domain:mise.jdx.dev)",
     "WebFetch(domain:raw.githubusercontent.com)"
   ],
   "deny": []
