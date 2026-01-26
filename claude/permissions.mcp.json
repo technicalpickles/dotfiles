@@ -6,5 +6,6 @@
     "mcp__MCPProxy__retrieve_tools",
     "mcp__MCPProxy__upstream_servers"
   ],
-  "deny": ["mcp__MCPProxy__call_tool_destructive"]
+  "ask": ["mcp__MCPProxy__call_tool_destructive"],
+  "deny": []
 }

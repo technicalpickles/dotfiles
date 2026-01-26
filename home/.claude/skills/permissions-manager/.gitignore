@@ -1,0 +1,18 @@
+# Temporary analysis files
+/tmp/
+*.tmp
+*.temp
+
+# Generated recommendations (unless intentionally committed)
+recommendations-*.md
+
+# Aggregated data (often contains private info)
+aggregate-*.txt
+permissions-aggregate-*.txt
+
+# Backup files
+*.bak
+*.backup
+
+# OS files
+.DS_Store

@@ -156,6 +156,9 @@ home/.claude/*
 .claude/skills/
 .claude/settings.local.json
 
+# permissions-manager skill generated output
+doc/permissions/
+
 # vagrant
 .vagrant
 .vagrant/**/*

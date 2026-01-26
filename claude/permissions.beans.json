@@ -1,0 +1,15 @@
+{
+  "allow": [
+    "Bash(beans create:*)",
+    "Bash(beans list:*)",
+    "Bash(beans query:*)",
+    "Bash(beans show:*)",
+    "Bash(beans update:*)",
+    "Bash(beans:*)"
+  ],
+  "ask": [
+    "Bash(beans archive:*)",
+    "Bash(beans delete:*)"
+  ],
+  "deny": []
+}
