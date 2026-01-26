@@ -30,7 +30,10 @@ Analyzes current permissions and generates a recommendations document.
 5. Redacts all project names and private information
 
 **Output:**
-- `doc/permissions-analysis-YYYY-MM-DD.md` (safe to commit)
+- `doc/permissions/YYYY-MM-DD/` directory containing:
+  - `analysis.md` - Recommendations (safe to commit after redaction)
+  - `aggregate.txt` - Raw aggregated data
+  - `wildcards.txt` - Wildcard safety analysis
 - Shows high/medium frequency patterns
 - Lists security concerns
 - Provides specific recommendations
@@ -110,7 +113,7 @@ The skill automatically checks for:
 /permissions-manager analyze
 ```
 
-This creates `doc/permissions-analysis-2026-01-25.md` with recommendations.
+This creates `doc/permissions/2026-01-25/` with analysis files.
 
 ### Review Recommendations
 
@@ -261,10 +264,10 @@ The skill uses these environment variables (optional):
 ```bash
 # 1. Analyze current state
 /permissions-manager analyze
-# Creates: doc/permissions-analysis-2026-01-25.md
+# Creates: doc/permissions/2026-01-25/
 
 # 2. Review the recommendations
-cat doc/permissions-analysis-2026-01-25.md
+cat doc/permissions/2026-01-25/analysis.md
 
 # 3. Apply selected changes
 /permissions-manager apply
@@ -274,7 +277,7 @@ cat doc/permissions-analysis-2026-01-25.md
 /permissions-manager review
 
 # 5. Check generated change summary
-cat doc/permissions-changes-2026-01-25.md
+cat doc/permissions/2026-01-25/changes.md
 ```
 
 ### Quick Security Check
@@ -305,9 +308,8 @@ Potential improvements:
 ## See Also
 
 - [Claude Permissions Documentation](../../../claude/CLAUDE.md)
-- [Permissions Analysis Template](../../../doc/claude-permissions-analysis.md)
-- [Safe Patterns Guide](../../../doc/claude-permissions-safe-patterns.md)
-- [Wildcard Safety](../../../doc/claude-permissions-wildcard-safety.md)
+- [Safe Patterns Guide](docs/safe-patterns.md)
+- [Wildcard Safety](docs/wildcard-safety.md)
 
 ## Support
 
