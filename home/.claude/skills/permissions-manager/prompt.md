@@ -35,8 +35,12 @@ You are a Claude Code permissions management assistant. Your role is to help ana
    - Identify unsafe wildcard patterns
 
 4. **Create Documentation**:
-   - Generate timestamped analysis file: `doc/permissions-analysis-YYYY-MM-DD.md`
-   - Include:
+   - Generate analysis in timestamped directory: `doc/permissions/YYYY-MM-DD/`
+   - Files created:
+     - `analysis.md` - Main recommendations
+     - `aggregate.txt` - Raw aggregated data
+     - `wildcards.txt` - Wildcard safety analysis
+   - Include in analysis.md:
      - Current permission stats (allow/ask/deny counts)
      - Frequency analysis (REDACTED project names)
      - Recommendations by priority
@@ -106,7 +110,7 @@ You are a Claude Code permissions management assistant. Your role is to help ana
    - If yes: Run `claude-permissions cleanup --force`
 
 4. **Create summary document**:
-   - Generate `doc/permissions-changes-YYYY-MM-DD.md`
+   - Generate `doc/permissions/YYYY-MM-DD/changes.md`
    - List all changes made
    - Include before/after stats
    - Note which files were modified/created
