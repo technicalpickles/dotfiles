@@ -17,7 +17,7 @@ pre-commit:
       run: bin/prettier --write {staged_files}
     typecheck:
       glob: '*.ts'
-      run: npx tsc --noEmit
+      run: npx -y tsc --noEmit
 #     rubocop:
 #       tags: backend style
 #       glob: "*.rb"

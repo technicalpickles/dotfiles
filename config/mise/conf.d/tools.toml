@@ -1,0 +1,5 @@
+[tools]
+fnox = "latest"
+goss = "latest"
+hk = "1.20.0"
+pkl = "0.30.0"

@@ -1,0 +1,7 @@
+[env]
+_.path = [
+  "~/bin",
+  "~/.local/bin",
+  "~/.cargo/bin",
+  "~/.bun/bin",   # bun global packages (qmd, etc.)
+]
