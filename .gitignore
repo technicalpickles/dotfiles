@@ -168,3 +168,7 @@ doc/permissions/
 
 # bedrock pricing - saved HTML page for manual pricing updates
 Pricing.html
+
+# mise - config.toml is machine-specific (language versions vary)
+# versioned conf.d/ files provide PATH and dotfiles-managed tools
+config/mise/config.toml

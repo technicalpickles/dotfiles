@@ -41,6 +41,7 @@ fi
 echo
 
 ./gitconfig.sh
+./miseconfig.sh
 
 # Setup Claude Code configuration
 if command_available claude; then
