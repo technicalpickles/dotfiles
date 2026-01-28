@@ -335,3 +335,25 @@ Personal Claude Code skills are maintained in a separate plugin repository: [tec
 - `technicalpickles:mcpproxy-debug` - MCPProxy debugging helpers
 
 **Development:** Skills are edited in `~/workspace/claude-skills/skills/` and changes are immediately available via the symlink.
+
+## Working with Nerd Fonts / Special Unicode Characters
+
+When editing files that contain Nerd Font glyphs (e.g., tmux status bar configs, starship prompt), Claude often cannot reliably insert these characters directly. The characters may be lost, corrupted, or replaced during the edit process.
+
+**Workaround:** Use placeholder text (e.g., `LEFT`, `RIGHT`, `ICON`) and let the user copy-paste the actual glyphs, or define tmux user options for the glyphs:
+
+```bash
+# In .tmux.conf - define glyphs as variables
+set -g @_pill_left "" # User pastes actual glyph here
+set -g @_pill_right ""
+
+# Then reference them in format strings
+set -g @_mode_tmux "#[fg=#a6e3a1,bg=#181825]#{@_pill_left}#[fg=#11111b,bg=#a6e3a1] TMUX #[fg=#a6e3a1,bg=#181825]#{@_pill_right}#[default]"
+```
+
+**Common Nerd Font characters used in this repo:**
+
+- (U+E0B6) - left rounded separator
+- (U+E0B4) - right rounded separator
+- (U+E0B0) - right triangle separator
+- (U+E0B2) - left triangle separator
