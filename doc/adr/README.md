@@ -20,3 +20,4 @@
 - [18. switch-to-zoxide](0018-switch-to-zoxide.md)
 - [19. fish-plugin-drift-detection](0019-fish-plugin-drift-detection.md)
 - [20. tmux-prefix-c-space](0020-tmux-prefix-c-space.md)
+- [21. tmux-pillbox-styled-session-chooser](0021-tmux-pillbox-styled-session-chooser.md)
