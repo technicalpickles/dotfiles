@@ -16,3 +16,6 @@ theme = "catppuccin-mocha.conf"
 macos-icon = custom-style
 macos-icon-frame = plastic
 macos-icon-screen-color = "#1a1b26"
+
+# Cursor jump highlight (triggers on tmux pane switches, etc.)
+custom-shader = shaders/cursor_jump.glsl
