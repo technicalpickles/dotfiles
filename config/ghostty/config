@@ -1,5 +1,7 @@
 # vim: ft=conf
 
+macos-option-as-alt = true
+
 cursor-style-blink = false
 cursor-style = block
 # https://github.com/ghostty-org/ghostty/discussions/4471
