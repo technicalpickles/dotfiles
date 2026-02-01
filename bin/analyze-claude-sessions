@@ -219,6 +219,82 @@ def suggest_profile(skills_used: list[str]) -> tuple[str, list[str]]:
     return "full", uncovered
 
 
+# ============================================================================
+# ANSI Color Constants (Catppuccin Mocha-inspired)
+# ============================================================================
+class Colors:
+    """ANSI escape codes for terminal colors."""
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+
+    # Foreground colors (using 256-color palette for precision)
+    # Catppuccin Mocha: green=#a6e3a1, blue=#89b4fa, yellow=#f9e2af,
+    #                   red=#f38ba8, sky=#74c7ec, text=#cdd6f4
+    GREEN = "\033[38;5;114m"      # Soft green for "today"
+    BLUE = "\033[38;5;111m"       # Soft blue for "this week"
+    YELLOW = "\033[38;5;222m"     # Soft yellow for "this month"
+    RED = "\033[38;5;210m"        # Soft red for errors/critical
+    SKY = "\033[38;5;117m"        # Sky blue for info
+    MAUVE = "\033[38;5;183m"      # Mauve for document-skills
+    TEXT = "\033[38;5;252m"       # Light gray for normal text
+    SUBTEXT = "\033[38;5;245m"    # Dimmer for secondary info
+
+    # Background colors for pills
+    BG_GREEN = "\033[48;5;114m"
+    BG_BLUE = "\033[48;5;111m"
+    BG_YELLOW = "\033[48;5;222m"
+    BG_MAUVE = "\033[48;5;183m"
+    BG_SURFACE = "\033[48;5;236m"  # Dark surface for pill content
+    FG_CRUST = "\033[38;5;234m"    # Dark text on light backgrounds
+
+
+def pill(text: str, fg: str = Colors.TEXT, bg: str = "") -> str:
+    """Create a pill-styled text element."""
+    if bg:
+        # Colored pill with background
+        return f"{bg}{Colors.FG_CRUST} {text} {Colors.RESET}"
+    else:
+        # Simple bracketed pill
+        return f"{Colors.SUBTEXT}({Colors.RESET}{fg}{text}{Colors.RESET}{Colors.SUBTEXT}){Colors.RESET}"
+
+
+def recency_color(timestamp: str | None) -> tuple[str, str]:
+    """Return (color, label) based on how recent the timestamp is."""
+    if not timestamp:
+        return Colors.SUBTEXT, "unknown"
+
+    try:
+        dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+        now = datetime.now(dt.tzinfo)
+        delta = now - dt
+
+        if delta.days == 0:
+            return Colors.GREEN, dt.strftime("%H:%M today")
+        elif delta.days < 7:
+            return Colors.BLUE, f"{delta.days}d ago"
+        elif delta.days < 30:
+            return Colors.YELLOW, f"{delta.days}d ago"
+        else:
+            return Colors.SUBTEXT, dt.strftime("%Y-%m-%d")
+    except:
+        return Colors.SUBTEXT, "unknown"
+
+
+def profile_pill(profile: str) -> str:
+    """Create a colored pill for the profile type."""
+    colors = {
+        "minimal": (Colors.SUBTEXT, ""),
+        "superpowers": (Colors.BLUE, Colors.BG_BLUE),
+        "document-skills": (Colors.MAUVE, Colors.BG_MAUVE),
+        "full": (Colors.GREEN, Colors.BG_GREEN),
+    }
+    fg, bg = colors.get(profile, (Colors.TEXT, ""))
+    if bg:
+        return f"{bg}{Colors.FG_CRUST} {profile} {Colors.RESET}"
+    return f"{fg}{profile}{Colors.RESET}"
+
+
 def format_output(results: dict, sort_by: str = "last_activity") -> None:
     """Print formatted output sorted by specified field."""
 
@@ -249,53 +325,50 @@ def format_output(results: dict, sort_by: str = "last_activity") -> None:
     for data in results.values():
         all_skills.update(data["skills_used"])
 
-    print(f"Projects: {len(results)}")
-    print(f"Unique skills used: {len(all_skills)}")
+    # Header with pills
+    print(f"{Colors.BOLD}Claude Sessions{Colors.RESET}  "
+          f"{pill(str(len(results)), Colors.SKY)} projects  "
+          f"{pill(str(len(all_skills)), Colors.MAUVE)} skills")
     print()
 
-    # Print skill summary
-    skill_counts = defaultdict(int)
-    for data in results.values():
-        for skill in data["skills_used"]:
-            skill_counts[skill] += 1
-
-    print("Skills by project count:")
-    for skill, count in sorted(skill_counts.items(), key=lambda x: -x[1]):
-        print(f"  {skill}: {count} projects")
-    print()
-
-    # Print project details
-    print("Projects (sorted by last activity):")
-    print("-" * 80)
-
+    # Print project details - compact table format
     for project_path, data in sorted_projects:
         # Shorten path for display
-        display_path = project_path.replace("/Users/josh.nichols/workspace/", "~/workspace/")
+        display_path = project_path.replace("/Users/josh.nichols/workspace/", "")
         display_path = display_path.replace("/Users/josh.nichols/", "~/")
 
-        last_activity = data.get("last_activity", "unknown")
-        if last_activity and last_activity != "unknown":
-            # Parse and format timestamp
-            try:
-                dt = datetime.fromisoformat(last_activity.replace("Z", "+00:00"))
-                last_activity = dt.strftime("%Y-%m-%d %H:%M")
-            except:
-                pass
+        # Recency with color
+        recency_clr, recency_label = recency_color(data.get("last_activity"))
 
         # Suggest profile
-        profile, uncovered = suggest_profile(data["skills_used"])
+        profile, _ = suggest_profile(data["skills_used"])
 
-        print(f"{display_path}")
-        print(f"  Sessions: {data['session_count']}, Messages: {data['total_messages']}, Last: {last_activity}")
-        print(f"  Suggested profile: {profile}")
+        # Build the line: project path (bold) + stats + recency + profile
+        stats = f"{Colors.SUBTEXT}{data['session_count']}s/{data['total_messages']}m{Colors.RESET}"
+        recency = f"{recency_clr}{recency_label}{Colors.RESET}"
+
+        print(f"{Colors.BOLD}{display_path}{Colors.RESET}  "
+              f"{stats}  {recency}  {profile_pill(profile)}")
+
+        # Skills on second line if present (compact)
         if data["skills_used"]:
-            skills_display = ", ".join(data["skills_used"][:5])
-            if len(data["skills_used"]) > 5:
-                skills_display += f" (+{len(data['skills_used']) - 5} more)"
-            print(f"  Skills: {skills_display}")
-        if uncovered:
-            print(f"  Uncovered skills: {', '.join(uncovered)}")
-        print()
+            # Shorten skill names by removing common prefixes
+            short_skills = []
+            for s in data["skills_used"][:4]:
+                # Remove plugin prefix if it matches the skill name
+                parts = s.split(":")
+                if len(parts) == 2 and parts[0] == parts[1]:
+                    short_skills.append(parts[1])
+                else:
+                    short_skills.append(s.split(":")[-1])  # Just the skill part
+
+            skills_str = f"{Colors.SUBTEXT}  └ {', '.join(short_skills)}"
+            if len(data["skills_used"]) > 4:
+                skills_str += f" +{len(data['skills_used']) - 4}"
+            skills_str += Colors.RESET
+            print(skills_str)
+
+    print()
 
 
 def format_migration_commands(results: dict, limit: int = 10) -> None:
