@@ -94,3 +94,13 @@ export GIT_MERGE_AUTOEDIT=no
 
 # eza config directory (consistent across platforms)
 export EZA_CONFIG_DIR="$HOME/.config/eza"
+
+# git-ai
+if [[ -d "$HOME/.git-ai/bin" ]]; then
+  export PATH="$HOME/.git-ai/bin:$PATH"
+fi
+
+# bun
+if [[ -d "$HOME/.bun/bin" ]]; then
+  export PATH="$HOME/.bun/bin:$PATH"
+fi
