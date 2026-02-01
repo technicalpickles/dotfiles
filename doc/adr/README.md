@@ -21,3 +21,4 @@
 - [19. fish-plugin-drift-detection](0019-fish-plugin-drift-detection.md)
 - [20. tmux-prefix-c-space](0020-tmux-prefix-c-space.md)
 - [21. tmux-pillbox-styled-session-chooser](0021-tmux-pillbox-styled-session-chooser.md)
+- [22. use-pickled-lazyvim-for-neovim](0022-use-pickled-lazyvim-for-neovim.md)

@@ -1,11 +1,11 @@
 ---
 # dotfiles-4any
 title: Switch to LazyVim for nvim config
-status: in-progress
+status: completed
 type: task
 priority: normal
 created_at: 2026-01-22T21:02:10Z
-updated_at: 2026-01-22T21:52:38Z
+updated_at: 2026-02-01T23:02:05Z
 ---
 
 Migrate from AstroVim to LazyVim with fresh configuration.
