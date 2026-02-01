@@ -25,6 +25,21 @@ Disables Spotlight indexing on all volumes at startup.
 
 **Note:** This requires sudo privileges. You may need to configure passwordless sudo for mdutil, or Spotlight will re-enable on reboot.
 
+### `com.technicalpickles.qmd-refresh.plist`
+
+Refreshes QMD semantic search index for the Obsidian vault.
+
+**What it does:**
+
+- Runs `qmd update && qmd embed` to refresh text and vector indexes
+- Runs hourly at minute 0
+- Logs to `/tmp/com.technicalpickles.qmd-refresh.{out,err}`
+
+**Prerequisites:**
+
+- QMD installed: `bun install -g https://github.com/tobi/qmd`
+- Collection configured: `qmd collection add ~/Vaults/pickled-knowledge/pickled-knowledge --name second-brain`
+
 ## Setup
 
 The `install.sh` script automatically symlinks all `.plist` files from this directory to `~/Library/LaunchAgents/`.
