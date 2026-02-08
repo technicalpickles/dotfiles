@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+#
+# Refresh ccusage cache for tmux status bar
+#
+# This script is designed to be run periodically by a LaunchAgent.
+# It fetches Claude Code usage data and caches it for quick access.
+#
+# Usage:
+#   ccusage-refresh          # Run refresh
+#   ccusage-refresh --status # Show cache status
+#
+set -euo pipefail
+
+CACHE_DIR="${HOME}/.claude/powerline/usage"
+CACHE_FILE="${CACHE_DIR}/ccusage-daily.json"
+LOCK_FILE="${CACHE_DIR}/.ccusage-refresh.lock"
+LOG_FILE="${CACHE_DIR}/ccusage-refresh.log"
+
+# Calculate date for --since (yesterday)
+SINCE_DATE=$(date -v-1d +%Y%m%d 2>/dev/null || date -d "yesterday" +%Y%m%d)
+
+log() {
+  local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+  echo "[$timestamp] $*" >> "$LOG_FILE"
+}
+
+show_status() {
+  echo "Cache file: $CACHE_FILE"
+  if [[ -f "$CACHE_FILE" ]]; then
+    local mtime=$(date -r "$CACHE_FILE" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || stat -c '%y' "$CACHE_FILE" 2>/dev/null | cut -d. -f1)
+    local size=$(wc -c < "$CACHE_FILE" | tr -d ' ')
+    echo "Last updated: $mtime"
+    echo "Size: $size bytes"
+
+    # Show today's cost if available
+    local today=$(date +%Y-%m-%d)
+    local cost=$(jq -r --arg date "$today" '.daily[] | select(.date == $date) | .totalCost // 0' "$CACHE_FILE" 2>/dev/null || echo "0")
+    printf "Today's cost: \$%.2f\n" "$cost"
+  else
+    echo "Cache file does not exist"
+  fi
+
+  if [[ -f "$LOG_FILE" ]]; then
+    echo ""
+    echo "Recent log entries:"
+    tail -5 "$LOG_FILE"
+  fi
+}
+
+refresh_cache() {
+  mkdir -p "$CACHE_DIR"
+
+  # Simple lock to prevent concurrent runs
+  if [[ -f "$LOCK_FILE" ]]; then
+    local lock_age=$(($(date +%s) - $(date -r "$LOCK_FILE" +%s 2>/dev/null || echo 0)))
+    if ((lock_age < 300)); then
+      log "Another refresh is running (lock age: ${lock_age}s), skipping"
+      exit 0
+    else
+      log "Stale lock file found (age: ${lock_age}s), removing"
+      rm -f "$LOCK_FILE"
+    fi
+  fi
+
+  touch "$LOCK_FILE"
+  trap 'rm -f "$LOCK_FILE"' EXIT
+
+  log "Starting ccusage refresh (since: $SINCE_DATE)"
+
+  local tmp_file="${CACHE_FILE}.tmp"
+  local start_time=$(date +%s)
+
+  # Run ccusage and capture output
+  if npx ccusage@latest daily --offline --since "$SINCE_DATE" --json > "$tmp_file" 2>/dev/null; then
+    local end_time=$(date +%s)
+    local duration=$((end_time - start_time))
+
+    # Validate JSON before replacing cache
+    if jq empty "$tmp_file" 2>/dev/null; then
+      mv "$tmp_file" "$CACHE_FILE"
+      log "Refresh completed in ${duration}s"
+    else
+      log "ERROR: Invalid JSON output from ccusage"
+      rm -f "$tmp_file"
+      exit 1
+    fi
+  else
+    log "ERROR: ccusage command failed"
+    rm -f "$tmp_file"
+    exit 1
+  fi
+}
+
+# Main
+case "${1:-}" in
+  --status|-s)
+    show_status
+    ;;
+  --help|-h)
+    echo "Usage: ccusage-refresh [--status|--help]"
+    echo ""
+    echo "Refresh ccusage cache for tmux status bar."
+    echo ""
+    echo "Options:"
+    echo "  --status, -s  Show cache status"
+    echo "  --help, -h    Show this help"
+    ;;
+  *)
+    refresh_cache
+    ;;
+esac
