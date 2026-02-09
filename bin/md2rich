@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# md2rich - Convert markdown to rich text and copy to clipboard
+#
+# Usage:
+#   md2rich file.md        # from file
+#   cat file.md | md2rich  # from stdin
+#   md2rich <<< "**bold**" # from heredoc
+
+set -euo pipefail
+
+usage() {
+    cat <<EOF
+Usage: md2rich [file.md]
+
+Convert markdown to rich text and copy to clipboard.
+
+If no file is provided, reads from stdin.
+
+Examples:
+    md2rich README.md
+    cat notes.md | md2rich
+    echo "**bold** and *italic*" | md2rich
+EOF
+    exit "${1:-0}"
+}
+
+# Check dependencies
+if ! command -v pandoc &>/dev/null; then
+    echo "error: pandoc is required but not installed" >&2
+    echo "  brew install pandoc" >&2
+    exit 1
+fi
+
+# Handle --help
+[[ "${1:-}" == "-h" || "${1:-}" == "--help" ]] && usage 0
+
+# Get input from file or stdin
+if [[ $# -gt 0 ]]; then
+    # File argument
+    if [[ ! -f "$1" ]]; then
+        echo "error: file not found: $1" >&2
+        exit 1
+    fi
+    input=$(cat "$1")
+else
+    # Stdin
+    if [[ -t 0 ]]; then
+        echo "error: no input provided (pass a file or pipe markdown)" >&2
+        usage 1
+    fi
+    input=$(cat)
+fi
+
+# Check for empty input
+if [[ -z "$input" ]]; then
+    echo "error: input is empty" >&2
+    exit 1
+fi
+
+# Convert and copy
+echo "$input" | pandoc -s -t rtf | pbcopy
+
+echo "Copied to clipboard as rich text"
