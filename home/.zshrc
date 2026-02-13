@@ -104,3 +104,8 @@ fi
 if [[ -d "$HOME/.bun/bin" ]]; then
   export PATH="$HOME/.bun/bin:$PATH"
 fi
+
+# Pickletown CLI alias (renamed to avoid tcllib pt conflict)
+if command -v pickletown &> /dev/null; then
+  alias pt=pickletown
+fi
