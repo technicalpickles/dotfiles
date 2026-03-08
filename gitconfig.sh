@@ -89,16 +89,3 @@ if command_available git-duet; then
   echo "  → enabling git-duet specific settings"
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/duet
 fi
-
-code=$(vscode_command)
-if [ -n "${code}" ]; then
-  echo "  → enabling vscode specific settings"
-
-  if running_macos; then
-    git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/vscode-macos
-  else
-    git config --file ~/.gitconfig.local mergetool.code.cmd "${code}"
-  fi
-
-  git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/vscode
-fi

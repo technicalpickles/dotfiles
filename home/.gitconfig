@@ -50,7 +50,6 @@
 [merge]
 	autoedit = no
 	conflictstyle = merge
-	tool = code
 
 [diff]
 	colorMoved = plain
@@ -72,5 +71,3 @@
 	autoSquash = true
 	autoStash = true
 	updateRefs = true
-[mergetool "code"]
-	cmd = "/Applications/Visual Studio Code - Insiders.app/Contents/Frameworks/Code - Insiders Helper (Plugin).app/Contents/MacOS/Code - Insiders Helper (Plugin)" "$BASE"

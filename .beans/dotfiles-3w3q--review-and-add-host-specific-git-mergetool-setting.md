@@ -1,32 +1,24 @@
 ---
 # dotfiles-3w3q
 title: Review and add host-specific git mergetool settings in .gitconfig.d
-status: todo
+status: completed
 type: task
+priority: normal
 created_at: 2026-03-08T19:45:55Z
-updated_at: 2026-03-08T19:45:55Z
+updated_at: 2026-03-08T20:29:58Z
 ---
 
 During a git pull conflict resolution session, we identified that mergetool configuration (especially with absolute paths like VS Code Insiders) should be host-specific rather than shared in the main .gitconfig.
 
-## Context
+## Resolution
 
-The shared home/.gitconfig currently has:
-
-- [merge] conflictstyle = merge
-
-But mergetool definitions with hardcoded paths (e.g. VS Code Insiders) should live in host-specific config files. The pattern for this is .gitconfig.d/ with includeIf directives.
-
-## Plan
-
-- Review the current .gitconfig.d/ directory structure
-- Decide on naming convention for host-specific files
-- Add mergetool definitions (e.g. mergetool 'code' with VS Code Insiders path)
-- Consider whether 'tool = code' should also be host-specific or stay shared
+Decided to remove VS Code mergetool support entirely since VS Code is not currently in use. Git does not have a built-in env var equivalent to \$EDITOR for merge tools, so config-based approaches are the only option.
 
 ## Checklist
 
-- [ ] Audit current .gitconfig.d/ contents and any existing includeIf patterns
-- [ ] Decide naming convention for host-specific gitconfig files
-- [ ] Add host-specific mergetool definition for VS Code Insiders
-- [ ] Wire up the include in home/.gitconfig
+- [x] Audit current .gitconfig.d/ contents and any existing includeIf patterns
+- [x] Decide naming convention for host-specific gitconfig files
+- [x] Remove vscode and vscode-macos from .gitconfig.d/
+- [x] Remove [mergetool "code"] block from home/.gitconfig
+- [x] Remove vscode detection block from gitconfig.sh
+- [x] Remove vscode-macos include from .gitconfig.local
