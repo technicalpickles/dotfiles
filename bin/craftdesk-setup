@@ -1,0 +1,253 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Constants
+DOTFILES_DIR="${DOTFILES_DIR:-$HOME/workspace/dotfiles}"
+PROFILES_DIR="$DOTFILES_DIR/claude/profiles"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Helper functions
+info() { echo -e "${BLUE}$*${NC}"; }
+success() { echo -e "${GREEN}✓ $*${NC}"; }
+warn() { echo -e "${YELLOW}⚠ $*${NC}"; }
+error() { echo -e "${RED}✗ $*${NC}" >&2; }
+die() {
+  error "$*"
+  exit 1
+}
+
+# Prerequisite checks
+check_prerequisites() {
+  # Check for git
+  if ! command -v git &> /dev/null; then
+    die "git is required but not installed"
+  fi
+
+  # Check for craftdesk
+  if ! command -v craftdesk &> /dev/null; then
+    die "craftdesk is required but not installed. Install with: npm install -g craftdesk"
+  fi
+
+  # Check for jq
+  if ! command -v jq &> /dev/null; then
+    die "jq is required but not installed. Install with: brew install jq"
+  fi
+
+  # Check we're in a git repo
+  if ! git rev-parse --is-inside-work-tree &> /dev/null; then
+    die "Not inside a git repository"
+  fi
+
+  # Check profiles directory exists
+  if [[ ! -d "$PROFILES_DIR" ]]; then
+    die "Profiles directory not found: $PROFILES_DIR"
+  fi
+}
+
+# Detect current repo state
+detect_repo_state() {
+  REPO_ROOT=$(git rev-parse --show-toplevel)
+  PROJECT_NAME=$(basename "$REPO_ROOT")
+
+  # Check if craftdesk.json exists
+  if [[ -f "$REPO_ROOT/craftdesk.json" ]]; then
+    CRAFTDESK_EXISTS=true
+  else
+    CRAFTDESK_EXISTS=false
+  fi
+
+  # Check if .claude/ exists and is tracked
+  if [[ -d "$REPO_ROOT/.claude" ]]; then
+    CLAUDE_DIR_EXISTS=true
+    if git ls-files --error-unmatch "$REPO_ROOT/.claude" &> /dev/null 2>&1; then
+      CLAUDE_DIR_TRACKED=true
+    else
+      CLAUDE_DIR_TRACKED=false
+    fi
+  else
+    CLAUDE_DIR_EXISTS=false
+    CLAUDE_DIR_TRACKED=false
+  fi
+}
+
+# List available profiles
+list_profiles() {
+  local profiles=()
+  for f in "$PROFILES_DIR"/*.json; do
+    [[ -f "$f" ]] || continue
+    local name=$(basename "$f" .json)
+    local desc=$(jq -r '.description // "No description"' "$f")
+    profiles+=("$name|$desc")
+  done
+  printf '%s\n' "${profiles[@]}"
+}
+
+# Prompt for profile selection
+select_profile() {
+  local profiles_list
+  profiles_list=$(list_profiles)
+
+  if [[ -z "$profiles_list" ]]; then
+    die "No profiles found in $PROFILES_DIR"
+  fi
+
+  echo ""
+  info "Available profiles:"
+  local i=1
+  while IFS='|' read -r name desc; do
+    echo "  $i) $name - $desc"
+    ((i++))
+  done <<< "$profiles_list"
+  echo ""
+
+  local profile_count
+  profile_count=$(echo "$profiles_list" | wc -l | tr -d ' ')
+
+  read -rp "Which profile? [1]: " choice
+  choice=${choice:-1}
+
+  if ! [[ "$choice" =~ ^[0-9]+$ ]] || ((choice < 1 || choice > profile_count)); then
+    die "Invalid selection: $choice"
+  fi
+
+  SELECTED_PROFILE=$(echo "$profiles_list" | sed -n "${choice}p" | cut -d'|' -f1)
+  SELECTED_PROFILE_PATH="$PROFILES_DIR/$SELECTED_PROFILE.json"
+
+  success "Selected profile: $SELECTED_PROFILE"
+}
+
+# Prompt for commit strategy
+select_commit_strategy() {
+  echo ""
+  info "How should craftdesk files be managed?"
+  echo "  1) Commit to repo (for repos you own)"
+  echo "  2) Keep local only (for repos you don't control)"
+  echo ""
+
+  read -rp "Choice [2]: " choice
+  choice=${choice:-2}
+
+  case "$choice" in
+    1)
+      COMMIT_STRATEGY="commit"
+      success "Strategy: commit to repo"
+      ;;
+    2)
+      COMMIT_STRATEGY="local"
+      success "Strategy: keep local only"
+      ;;
+    *)
+      die "Invalid selection: $choice"
+      ;;
+  esac
+}
+
+# Copy profile to craftdesk.json with project name substitution
+copy_profile() {
+  info "Creating craftdesk.json from $SELECTED_PROFILE profile..."
+
+  jq --arg name "$PROJECT_NAME" '.name = $name' "$SELECTED_PROFILE_PATH" > "$REPO_ROOT/craftdesk.json"
+
+  success "Created craftdesk.json"
+}
+
+# Configure git exclusions based on strategy
+configure_git_exclusions() {
+  if [[ "$COMMIT_STRATEGY" == "local" ]]; then
+    info "Adding craftdesk files to .git/info/exclude..."
+
+    local exclude_file="$REPO_ROOT/.git/info/exclude"
+
+    # Check if already configured
+    if grep -q "craftdesk (local)" "$exclude_file" 2> /dev/null; then
+      warn "Exclusions already configured in .git/info/exclude"
+      return
+    fi
+
+    cat >> "$exclude_file" << 'EOF'
+
+# craftdesk (local)
+craftdesk.json
+craftdesk.lock
+.claude/
+EOF
+
+    success "Added exclusions to .git/info/exclude"
+  else
+    info "Adding .claude/settings.local.json to .gitignore..."
+
+    local gitignore="$REPO_ROOT/.gitignore"
+
+    # Check if already in gitignore
+    if grep -q ".claude/settings.local.json" "$gitignore" 2> /dev/null; then
+      warn ".claude/settings.local.json already in .gitignore"
+      return
+    fi
+
+    echo "" >> "$gitignore"
+    echo "# Claude Code local settings" >> "$gitignore"
+    echo ".claude/settings.local.json" >> "$gitignore"
+
+    success "Added .claude/settings.local.json to .gitignore"
+  fi
+}
+
+# Run craftdesk install
+run_craftdesk_install() {
+  info "Running craftdesk install..."
+
+  cd "$REPO_ROOT"
+  craftdesk install
+
+  success "Dependencies installed"
+}
+
+# Show final summary
+show_summary() {
+  echo ""
+  success "Craftdesk configured with '$SELECTED_PROFILE' profile"
+  echo "  - craftdesk.json created"
+  echo "  - Dependencies installed to .claude/"
+
+  if [[ "$COMMIT_STRATEGY" == "local" ]]; then
+    echo "  - Files excluded from git (local only mode)"
+  else
+    echo "  - Ready to commit (run: git add craftdesk.json craftdesk.lock .claude/)"
+  fi
+
+  echo ""
+  info "Run 'craftdesk list' to see installed crafts."
+}
+
+main() {
+  check_prerequisites
+  detect_repo_state
+
+  info "Repository: $PROJECT_NAME"
+
+  # Check for existing craftdesk.json
+  if [[ "$CRAFTDESK_EXISTS" == "true" ]]; then
+    warn "craftdesk.json already exists"
+    read -rp "Overwrite? [y/N]: " overwrite
+    if [[ ! "$overwrite" =~ ^[Yy]$ ]]; then
+      die "Aborted"
+    fi
+  fi
+
+  select_profile
+  select_commit_strategy
+
+  copy_profile
+  configure_git_exclusions
+  run_craftdesk_install
+
+  show_summary
+}
+
+main "$@"

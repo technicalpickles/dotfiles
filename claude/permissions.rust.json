@@ -1,0 +1,29 @@
+{
+  "allow": [
+    "Bash(cargo bench:*)",
+    "Bash(cargo build:*)",
+    "Bash(cargo check:*)",
+    "Bash(cargo clean:*)",
+    "Bash(cargo clippy:*)",
+    "Bash(cargo doc:*)",
+    "Bash(cargo fmt:*)",
+    "Bash(cargo info:*)",
+    "Bash(cargo install:*)",
+    "Bash(cargo new:*)",
+    "Bash(cargo run:*)",
+    "Bash(cargo search:*)",
+    "Bash(cargo test:*)",
+    "Bash(cargo update:*)",
+    "Bash(cargo:*)",
+    "Bash(rustc --version)",
+    "Bash(rustc:*)",
+    "Bash(rustfmt:*)",
+    "Bash(rustup component:*)",
+    "Bash(rustup default:*)",
+    "Bash(rustup override:*)",
+    "Bash(rustup show:*)",
+    "Bash(rustup update:*)",
+    "Bash(rustup:*)"
+  ],
+  "deny": []
+}

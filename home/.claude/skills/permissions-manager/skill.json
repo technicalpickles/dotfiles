@@ -1,0 +1,24 @@
+{
+  "name": "permissions-manager",
+  "version": "1.0.0",
+  "description": "Analyze and manage Claude Code permissions across projects",
+  "author": "Josh Nichols",
+  "commands": [
+    {
+      "name": "analyze",
+      "description": "Analyze permissions and generate recommendations",
+      "args": []
+    },
+    {
+      "name": "apply",
+      "description": "Apply permission changes interactively",
+      "args": []
+    },
+    {
+      "name": "review",
+      "description": "Review current permission configuration",
+      "args": []
+    }
+  ],
+  "systemPromptFile": "prompt.md"
+}

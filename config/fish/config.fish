@@ -22,13 +22,17 @@ else
 
       set -gx MISE_NODE_COREPACK true
 
-      mise activate --shims fish | source
+      mise activate fish | source
     end
   end
 end
 
 if which op > /dev/null && test -f ~/.config/op/plugins.sh
     source ~/.config/op/plugins.sh
+end
+
+if which fnox > /dev/null
+    fnox activate fish | source
 end
 
 if [ -n "$HOMEBREW_PREFIX" ]

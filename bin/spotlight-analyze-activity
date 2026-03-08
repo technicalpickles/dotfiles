@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+
+# spotlight-analyze-activity
+#
+# Purpose: Analyze what directories and files Spotlight processes are actively indexing
+# Created: 2025-10-08
+# Updated: 2025-10-28 - Moved to bin/ with consistent naming
+# Usage: spotlight-analyze-activity [duration_in_seconds] [process_filter]
+#
+# This script monitors Spotlight filesystem activity and identifies:
+# - Most frequently accessed directories
+# - File types being indexed most often
+# - Potential high-volume directories to exclude from Spotlight
+#
+# Monitored processes: mds, mds_stores, mdworker, mdworker_shared, mdsync
+# Process filter examples: "mds_stores", "mds|mdworker", or leave empty for all
+#
+# Based on: https://apple.stackexchange.com/questions/144474/mds-and-mds-stores-constantly-consuming-cpu
+
+set -euo pipefail
+
+# Default duration: 30 seconds
+DURATION="${1:-30}"
+# Process filter: empty means all mds-related processes
+PROCESS_FILTER="${2:-}"
+TEMP_FILE=$(mktemp)
+
+# Build process filter
+if [ -z "$PROCESS_FILTER" ]; then
+  # Monitor all spotlight-related processes
+  PROCESS_PATTERN="mds"
+  PROCESS_DESC="all Spotlight processes (mds, mds_stores, mdworker, mdworker_shared, mdsync)"
+else
+  PROCESS_PATTERN="$PROCESS_FILTER"
+  PROCESS_DESC="$PROCESS_FILTER"
+fi
+
+echo "🔍 Monitoring Spotlight activity for ${DURATION} seconds..."
+echo "   Processes: $PROCESS_DESC"
+echo "   (This requires sudo access)"
+echo ""
+
+# Cleanup function
+cleanup() {
+  rm -f "$TEMP_FILE"
+}
+trap cleanup EXIT
+
+# Run fs_usage and capture output
+echo "   Starting capture... (Press Ctrl+C to stop early)"
+sudo timeout "${DURATION}s" fs_usage -w -f filesys "$PROCESS_PATTERN" 2> /dev/null > "$TEMP_FILE" || true
+
+echo ""
+echo "📊 Analysis Results"
+echo "==================="
+echo ""
+
+# Extract file paths and analyze
+# fs_usage output format includes paths that we need to extract
+# Typical line: "    12:13:46.660891    WrData[S]       D=0x03a7d92b  B=0x1000   /dev/disk1s1  /path/to/file"
+
+# Function to extract and count directories
+analyze_directories() {
+  echo "🗂️  Top 20 Directories by Access Count:"
+  echo "────────────────────────────────────────"
+
+  # Extract paths (everything after the last field that looks like /dev/disk or timestamp)
+  grep -o '/[^ ]*' "$TEMP_FILE" \
+    | grep -v '^/dev/' \
+    | grep -v '^\s*$' \
+    | sed 's|/[^/]*$||' \
+    | sort | uniq -c | sort -rn | head -20 \
+    | awk '{printf "%6d  %s\n", $1, $2}'
+
+  echo ""
+}
+
+# Function to analyze file types
+analyze_file_types() {
+  echo "📄 Top File Types by Access Count:"
+  echo "────────────────────────────────────────"
+
+  # Extract file extensions
+  grep -o '/[^ ]*\.[a-zA-Z0-9]*' "$TEMP_FILE" \
+    | sed 's/.*\.//' \
+    | sort | uniq -c | sort -rn | head -15 \
+    | awk '{printf "%6d  .%s\n", $1, $2}'
+
+  echo ""
+}
+
+# Function to identify high-volume directories (good candidates for exclusion)
+identify_candidates() {
+  echo "💡 High-Volume Directories (Consider adding to Spotlight Privacy):"
+  echo "────────────────────────────────────────────────────────────────────"
+
+  # Find directories with >50 accesses
+  grep -o '/[^ ]*' "$TEMP_FILE" \
+    | grep -v '^/dev/' \
+    | grep -v '^\s*$' \
+    | sed 's|/[^/]*$||' \
+    | sort | uniq -c | sort -rn \
+    | awk '$1 > 50 {printf "   • %s (%d accesses)\n", $2, $1}'
+
+  echo ""
+}
+
+# Function to show real-time sample
+show_sample() {
+  echo "📝 Sample of Recent Activity (last 10 unique paths):"
+  echo "────────────────────────────────────────────────────"
+
+  grep -o '/[^ ]*' "$TEMP_FILE" \
+    | grep -v '^/dev/' \
+    | grep -v '^\s*$' \
+    | tail -20 | sort -u | tail -10 \
+    | sed 's/^/   /'
+
+  echo ""
+}
+
+# Run analyses
+analyze_directories
+analyze_file_types
+show_sample
+identify_candidates
+
+# Summary and recommendations
+echo "🎯 Recommendations:"
+echo "──────────────────"
+echo "1. Add high-volume directories to: System Preferences → Spotlight → Privacy"
+echo "2. Consider excluding cache directories (~/Library/Caches, etc.)"
+echo "3. Exclude build artifacts, node_modules, vendor directories if present"
+echo "4. For external drives, disable indexing unless needed"
+echo ""
+echo "📖 To add exclusions:"
+echo "   Method 1 (RECOMMENDED): Use pattern-based exclusions"
+echo "      • Edit: ~/.config/spotlight-exclusions"
+echo "      • Run: bin/spotlight-apply-exclusions ~/.config/spotlight-exclusions"
+echo ""
+echo "   Method 2: Manual GUI (one-off exclusions)"
+echo "      • System Settings → Spotlight → Search Privacy → Click '+' → Select folder"
+echo ""
+echo "   Method 3: Rename directory"
+echo "      • mv /path/to/dir /path/to/dir.noindex"
+echo ""
+echo "See doc/spotlight-exclusions.md for complete documentation."
+echo ""
+echo "Total lines captured: $(wc -l < "$TEMP_FILE")"

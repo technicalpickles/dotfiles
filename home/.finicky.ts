@@ -1,0 +1,224 @@
+// Finicky configuration
+// See: https://github.com/johnste/finicky/wiki/Configuration
+
+/// <reference path="./finicky.d.ts" />
+import type { FinickyConfig } from 'finicky';
+
+// System-specific Chrome profiles
+// Edit these values for each system, or add hostname-based conditionals below
+let personalChromeProfile = 'Profile 3';
+let workChromeProfile = 'Profile 1';
+
+// Slack workspace subdomain to team ID mapping
+// Find your team ID: Open Slack in browser, check boot_data.team_id in page source
+// Always use the T-prefixed team_id (not E-prefixed enterprise_id)
+const slackTeams: Record<string, string> = {
+  // For Enterprise Grid, use the team_id (T...) not enterprise_id (E...)
+  gustohq: 'T0250HMT7',
+};
+
+// Example: Customize per hostname
+// const hostname = finicky.getSystemInfo().name;
+// if (hostname === 'your-macbook-name') {
+//   personalChromeProfile = 'Profile 3';
+//   workChromeProfile = 'Profile 1';
+// }
+//
+
+const config: FinickyConfig = {
+  // Chrome is the default for everything not explicitly routed
+  defaultBrowser: 'com.google.Chrome',
+
+  // Rewrite URLs before opening them
+  rewrite: [
+    {
+      // Remove common tracking parameters
+      match: (url: URL) => url.search.includes('utm_'),
+      url: (url: URL) => {
+        const params = [
+          'utm_source',
+          'utm_medium',
+          'utm_campaign',
+          'utm_term',
+          'utm_content',
+          'fbclid',
+          'gclid',
+          'ref',
+        ];
+        params.forEach((param) => url.searchParams.delete(param));
+        return url;
+      },
+    },
+    {
+      // Rewrite Slack URLs to deep links
+      // @https://github.com/johnste/finicky/wiki/Configuration-ideas#open-slack-link-in-slack-app
+      match: (url: URL) =>
+        url.host.endsWith('.slack.com') && url.pathname !== '/',
+      url: (url: URL) => {
+        const subdomain = url.host.split('.')[0];
+        const teamId = slackTeams[subdomain];
+
+        if (!teamId) {
+          // No team ID configured - return unchanged, will open in browser
+          return url;
+        }
+
+        // Handle different Slack URL patterns
+        const pathParts = url.pathname.split('/').filter(Boolean);
+
+        // /archives/CXXXXXXXX or /archives/CXXXXXXXX/pXXXXXXXXXX (message permalink)
+        if (pathParts[0] === 'archives' && pathParts[1]) {
+          const channelId = pathParts[1];
+          const messageTs = pathParts[2]; // e.g., p1234567890123456
+
+          if (messageTs && messageTs.startsWith('p')) {
+            // Message permalink - convert pXXXX to timestamp format
+            const ts = messageTs.slice(1, 11) + '.' + messageTs.slice(11);
+            return `slack://channel?team=${teamId}&id=${channelId}&message=${ts}`;
+          }
+
+          return `slack://channel?team=${teamId}&id=${channelId}`;
+        }
+
+        // /files/UXXXXXXXX/FXXXXXXXX (file links)
+        if (pathParts[0] === 'files' && pathParts[2]) {
+          return `slack://file?team=${teamId}&id=${pathParts[2]}`;
+        }
+
+        // Fallback - just open Slack to the team
+        return `slack://open?team=${teamId}`;
+      },
+    },
+    {
+      // Rewrite Zoom URLs to open in Zoom app with password
+      // @https://github.com/johnste/finicky/wiki/Configuration-ideas#open-zoom-links-in-zoom-app-with-or-without-password
+      match: (url: URL) =>
+        url.host.includes('zoom.us') && url.pathname.includes('/j/'),
+      url: (url: URL) => {
+        try {
+          const match = url.search.match(/pwd=(\w*)/);
+          var pass = match ? '&pwd=' + match[1] : '';
+        } catch {
+          var pass = '';
+        }
+        const pathMatch = url.pathname.match(/\/j\/(\d+)/);
+        var conf = 'confno=' + (pathMatch ? pathMatch[1] : '');
+        url.search = conf + pass;
+        url.pathname = '/join';
+        url.protocol = 'zoommtg';
+        return url;
+      },
+    },
+  ],
+
+  // Route specific URLs to specific browsers
+  handlers: [
+    // Open Slack links in Slack app
+    // @https://github.com/johnste/finicky/wiki/Configuration-ideas#open-slack-link-in-slack-app
+    {
+      match: (url) => url.protocol === 'slack:' || url.protocol === 'slack',
+      browser: 'Slack',
+    },
+    {
+      match: '*.slack.com/*',
+      browser: 'Slack',
+    },
+
+    // Open Spotify links in Spotify app
+    {
+      match: ['open.spotify.com/*', '*.open.spotify.com/*'],
+      browser: 'Spotify',
+    },
+
+    // Open Zoom links in Zoom app
+    {
+      match: /zoom\.us\/join/,
+      browser: 'us.zoom.xos',
+    },
+
+    // Google Meet works better in Chrome
+    {
+      match: ['meet.google.com/*', '*.meet.google.com/*'],
+      browser: {
+        name: 'Google Chrome',
+        profile: workChromeProfile,
+      },
+    },
+
+    // Google Calendar - open in Chrome installed app
+    {
+      match: 'calendar.google.com/*',
+      browser: 'Google Calendar',
+    },
+
+    // Other Google Workspace apps that might work better in Chrome
+    {
+      match: [
+        'docs.google.com/*',
+        'sheets.google.com/*',
+        'slides.google.com/*',
+        'drive.google.com/*',
+      ],
+      browser: {
+        name: 'Google Chrome',
+        profile: workChromeProfile,
+      },
+    },
+
+    // Datadog - open in Chrome
+    {
+      match: ['*.datadoghq.com/*', 'datadoghq.com/*'],
+      browser: {
+        name: 'Google Chrome',
+        profile: workChromeProfile,
+      },
+    },
+
+    // AWS - open in Chrome work profile
+    {
+      match: ['*.awsapps.com/*', 'awsapps.com/*'],
+      browser: {
+        name: 'Google Chrome',
+        profile: workChromeProfile,
+      },
+    },
+
+    // YouTube - open in Chrome
+    {
+      match: ['youtube.com/*', '*.youtube.com/*', 'youtu.be/*'],
+      browser: {
+        name: 'Google Chrome',
+        profile: personalChromeProfile,
+      },
+    },
+
+    // Sites that commonly have Chrome-specific optimizations
+    {
+      match: ['*.figma.com/*', 'figma.com/*', '*.notion.so/*', 'notion.so/*'],
+      browser: 'Google Chrome',
+    },
+
+    // Development/localhost - might want these in Chrome for DevTools
+    {
+      match: [
+        'localhost*',
+        '*.localhost*',
+        '127.0.0.1*',
+        '*.local*',
+        '*.test*',
+        '*.dev*',
+      ],
+      browser: {
+        name: 'Google Chrome',
+        profile: workChromeProfile,
+      },
+    },
+  ],
+
+  // Optional: log what Finicky is doing for debugging
+  options: {
+    // logRequests: true,
+  },
+};
+
+export default config;

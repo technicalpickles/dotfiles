@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+
+# spotlight-monitor-live
+#
+# Purpose: Real-time monitoring of Spotlight processes with live updates
+# Created: 2025-10-08
+# Updated: 2025-10-28 - Moved to bin/ with consistent naming
+# Usage: spotlight-monitor-live [process_filter]
+#
+# This script provides a live view of what Spotlight is currently indexing.
+# Press Ctrl+C to stop and see summary statistics.
+#
+# Monitored processes: mds, mds_stores, mdworker, mdworker_shared, mdsync
+# Process filter examples: "mds_stores", "mds|mdworker", or leave empty for all
+#
+# Based on: https://apple.stackexchange.com/questions/144474/mds-and-mds-stores-constantly-consuming-cpu
+
+set -euo pipefail
+
+# Process filter: empty means all mds-related processes
+PROCESS_FILTER="${1:-}"
+
+# Build process filter
+if [ -z "$PROCESS_FILTER" ]; then
+  # Monitor all spotlight-related processes
+  PROCESS_PATTERN="mds"
+  PROCESS_DESC="all Spotlight processes (mds, mds_stores, mdworker, mdworker_shared, mdsync)"
+else
+  PROCESS_PATTERN="$PROCESS_FILTER"
+  PROCESS_DESC="$PROCESS_FILTER"
+fi
+
+TEMP_FILE=$(mktemp)
+STATS_FILE=$(mktemp)
+
+# Cleanup function
+cleanup() {
+  rm -f "$TEMP_FILE" "$STATS_FILE"
+}
+trap cleanup EXIT
+
+# Function to extract directory from path
+get_directory() {
+  local path="$1"
+  # Remove filename, keep directory
+  dirname "$path" 2> /dev/null || echo "$path"
+}
+
+# Function to extract extension
+get_extension() {
+  local path="$1"
+  if [[ "$path" =~ \.([a-zA-Z0-9]+)$ ]]; then
+    echo ".${BASH_REMATCH[1]}"
+  else
+    echo "(no extension)"
+  fi
+}
+
+# Print header
+clear 2> /dev/null || true
+echo "🔍 Real-Time Spotlight Activity Monitor"
+echo "========================================"
+echo ""
+echo "Monitoring: $PROCESS_DESC"
+echo "Press Ctrl+C to stop and see summary"
+echo ""
+echo "Recent files being indexed:"
+echo "──────────────────────────────────────────────────────────────────────────────"
+
+# Counter for display
+count=0
+
+# Run fs_usage and process line by line
+sudo fs_usage -w -f filesys "$PROCESS_PATTERN" 2> /dev/null | while IFS= read -r line; do
+  # Extract path (looking for absolute paths)
+  if [[ "$line" =~ (/[^ ]+) ]]; then
+    path="${BASH_REMATCH[1]}"
+
+    # Skip /dev/ paths
+    if [[ "$path" =~ ^/dev/ ]]; then
+      continue
+    fi
+
+    # Store for later analysis
+    echo "$path" >> "$TEMP_FILE"
+
+    # Store directory for stats
+    dir=$(get_directory "$path")
+    echo "$dir" >> "$STATS_FILE"
+
+    # Display the file (truncate if too long)
+    printf "%-80s\n" "$path" | cut -c1-80
+
+    # Every 20 lines, show a quick summary
+    ((count++))
+    if ((count % 20 == 0)); then
+      echo ""
+      echo "Quick Stats (top 3 directories so far):"
+      sort "$STATS_FILE" | uniq -c | sort -rn | head -3 \
+        | awk '{printf "  • %s (%d accesses)\n", $2, $1}'
+      echo "──────────────────────────────────────────────────────────────────────────────"
+    fi
+  fi
+done
+
+# This section runs after Ctrl+C
+echo ""
+echo ""
+echo "📊 Final Summary"
+echo "================"
+echo ""
+
+if [ -s "$STATS_FILE" ]; then
+  echo "Top Directories:"
+  sort "$STATS_FILE" | uniq -c | sort -rn | head -15 \
+    | awk '{printf "  %4d  %s\n", $1, $2}'
+else
+  echo "  No data collected"
+fi
+
+echo ""
+
+if [ -s "$TEMP_FILE" ]; then
+  echo "Top File Types:"
+  grep -o '\.[a-zA-Z0-9]*$' "$TEMP_FILE" 2> /dev/null \
+    | sort | uniq -c | sort -rn | head -10 \
+    | awk '{printf "  %4d  %s\n", $1, $2}' || echo "  No file extensions detected"
+else
+  echo "  No data collected"
+fi
+
+echo ""
+echo "Total files monitored: $count"

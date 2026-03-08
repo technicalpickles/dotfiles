@@ -1,0 +1,27 @@
+{
+  "allow": [
+    "Bash(docker build:*)",
+    "Bash(docker compose build:*)",
+    "Bash(docker compose down:*)",
+    "Bash(docker compose exec:*)",
+    "Bash(docker compose logs:*)",
+    "Bash(docker compose ps:*)",
+    "Bash(docker compose pull:*)",
+    "Bash(docker compose restart:*)",
+    "Bash(docker compose run:*)",
+    "Bash(docker compose up:*)",
+    "Bash(docker compose:*)",
+    "Bash(docker exec:*)",
+    "Bash(docker images:*)",
+    "Bash(docker info:*)",
+    "Bash(docker inspect:*)",
+    "Bash(docker logs:*)",
+    "Bash(docker network:*)",
+    "Bash(docker ps:*)",
+    "Bash(docker pull:*)",
+    "Bash(docker run:*)",
+    "Bash(docker stop:*)",
+    "Bash(docker volume:*)"
+  ],
+  "deny": []
+}

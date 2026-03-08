@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+# List Spotlight excluded directories from VolumeConfiguration.plist
+#
+# Usage: spotlight-list-exclusions
+#
+# This script reads Spotlight exclusions from all mounted volumes by parsing
+# the VolumeConfiguration.plist files. On modern macOS (Catalina+), user data
+# lives on /System/Volumes/Data, so exclusions for /Users/* paths are stored
+# on the Data volume, not the root volume.
+#
+# Requires: sudo access (to read VolumeConfiguration.plist via mdutil), Python 3
+
+set -euo pipefail
+
+echo "=== Spotlight Exclusions ==="
+echo ""
+
+# Function to extract exclusions from a volume's config
+list_exclusions_for_volume() {
+  local volume="$1"
+  local volume_name="$2"
+
+  echo "### $volume_name ###"
+  echo ""
+
+  # Check if volume exists and is accessible
+  if [ ! -d "$volume" ]; then
+    echo "  Volume not found or not mounted"
+    echo ""
+    return
+  fi
+
+  # Check indexing status
+  local status
+  status=$(mdutil -s "$volume" 2>&1 || echo "Cannot check status")
+  echo "Status: $status"
+
+  echo ""
+  echo "Exclusions:"
+
+  # Use Python to parse the plist properly (avoids regex issues with XML)
+  python3 << EOF
+import subprocess
+import plistlib
+import sys
+
+try:
+    # Get plist XML from mdutil
+    result = subprocess.run(
+        ['sudo', 'mdutil', '-P', '$volume'],
+        capture_output=True,
+        text=False  # Get bytes for plistlib
+    )
+
+    if result.returncode != 0:
+        print("  (error running mdutil)", file=sys.stderr)
+        sys.exit(1)
+
+    # Parse the plist
+    data = plistlib.loads(result.stdout)
+    exclusions = data.get('Exclusions', [])
+
+    if exclusions:
+        for path in exclusions:
+            print(f"  • {path}")
+    else:
+        print("  (none)")
+except Exception as e:
+    print(f"  (error: {e})", file=sys.stderr)
+    sys.exit(1)
+EOF
+
+  echo ""
+}
+
+# Check primary volumes
+list_exclusions_for_volume "/" "System Volume"
+list_exclusions_for_volume "/System/Volumes/Data" "Data Volume (User Data)"
+
+# Check for additional mounted volumes
+echo "=== Additional Mounted Volumes ==="
+echo ""
+
+found_additional=false
+for vol in /Volumes/*; do
+  if [ -d "$vol" ] && [ "$vol" != "/Volumes/Macintosh HD" ]; then
+    found_additional=true
+    volume_name=$(basename "$vol")
+    list_exclusions_for_volume "$vol" "External: $volume_name"
+  fi
+done
+
+if [ "$found_additional" = false ]; then
+  echo "(none mounted)"
+  echo ""
+fi
+
+# Help text
+echo "=== Alternative Exclusion Methods ==="
+echo ""
+echo "Besides the GUI-managed exclusions shown above, you can also exclude directories by:"
+echo ""
+echo "1. Adding .noindex extension:"
+echo "   mv directory directory.noindex"
+echo ""
+echo "2. Using the spotlight-add-exclusion script:"
+echo "   bin/spotlight-add-exclusion /path/to/directory"
+echo ""

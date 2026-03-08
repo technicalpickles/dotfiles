@@ -24,19 +24,25 @@ brew 'neovide'
 brew 'bat'
 brew 'cheat'
 brew 'coreutils'
+brew 'dua'
+brew 'dust'
+brew 'eza'
 brew 'fd'
 brew 'findutils'
+brew 'fortune'
 brew 'fzf'
+brew 'gh'
 brew 'jq'
 brew 'less'
 brew 'moreutils'
+brew 'procs'
 brew 'pstree'
 brew 'the_silver_searcher'
 brew 'tree'
 brew 'watch'
-brew 'gh'
-brew 'fortune'
 brew 'yq'
+brew 'dysk'
+brew 'choose-rust'
 
 # networky
 brew 'mtr'
@@ -45,12 +51,10 @@ brew 'socat'
 brew 'wget'
 
 # programming languages
-# see Brewfile.* for ruby stuff
 brew 'rbspy'
 brew 'shellcheck'
 brew 'mise'
 brew 'specstoryai/tap/specstory'
-
 
 # benchmarking
 brew "hyperfine"

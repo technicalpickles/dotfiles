@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# tmux-smart-open - Open URLs from tmux selection
+#
+# Used with copy-pipe-and-cancel: receives selection via stdin
+# If it looks like a URL, opens in browser; otherwise does nothing
+# (the copy still happens either way)
+
+selection=$(cat)
+
+# Check if it looks like a URL
+if [[ $selection =~ ^https?:// ]]; then
+  open "$selection"
+fi

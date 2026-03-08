@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "lockfileVersion": 1,
+  "crafts": {
+    "superpowers": {
+      "version": "main",
+      "resolved": "https://github.com/obra/superpowers.git",
+      "integrity": "b9e16498b9b6b06defa34cf0d6d345cd2c13ad31",
+      "type": "skill",
+      "author": "git",
+      "git": "https://github.com/obra/superpowers.git",
+      "branch": "main",
+      "dependencies": {}
+    },
+    "elements-of-style": {
+      "version": "main",
+      "resolved": "https://github.com/obra/the-elements-of-style.git",
+      "integrity": "6099c505c2a8eb066f3777f83a97d9d828f7954c",
+      "type": "skill",
+      "author": "git",
+      "git": "https://github.com/obra/the-elements-of-style.git",
+      "branch": "main",
+      "dependencies": {}
+    }
+  }
+}

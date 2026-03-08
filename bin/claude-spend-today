@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+#
+# Display today's Claude Code spend from ccusage cache
+#
+# This script reads from a cache file that is periodically refreshed
+# by the ccusage-refresh script (via LaunchAgent).
+#
+# Usage:
+#   claude-spend-today         # Show cost (default)
+#   claude-spend-today cost    # Show cost: $5.23
+#   claude-spend-today tokens  # Show tokens: 45.2M
+#   claude-spend-today both    # Show both: $5.23 (45.2M)
+#
+set -euo pipefail
+
+CACHE_FILE="${HOME}/.claude/powerline/usage/ccusage-daily.json"
+TODAY=$(date +%Y-%m-%d)
+
+# Output format: cost (default), tokens, or both
+format="${1:-cost}"
+
+# Format token count for display (e.g., 45200000 -> "45.2M")
+format_tokens() {
+  local t="$1"
+  if ((t >= 1000000)); then
+    printf "%.1fM" "$(echo "$t / 1000000" | bc -l)"
+  elif ((t >= 1000)); then
+    printf "%.1fK" "$(echo "$t / 1000" | bc -l)"
+  else
+    echo "$t"
+  fi
+}
+
+# Format cost for display
+format_cost() {
+  local cost="$1"
+  if (($(echo "$cost < 0.01" | bc -l))); then
+    echo "<\$0.01"
+  else
+    printf "\$%.2f" "$cost"
+  fi
+}
+
+# Read from ccusage cache
+if [[ ! -f "$CACHE_FILE" ]]; then
+  # No cache yet - show placeholder
+  echo "..."
+  exit 0
+fi
+
+# Extract today's data from the daily array
+result=$(jq -r --arg date "$TODAY" '
+  .daily[] | select(.date == $date) | {
+    cost: .totalCost,
+    tokens: .totalTokens
+  }
+' "$CACHE_FILE" 2> /dev/null)
+
+# Handle missing today's entry
+if [[ -z "$result" || "$result" == "null" ]]; then
+  echo "\$0.00"
+  exit 0
+fi
+
+# Extract values
+cost=$(echo "$result" | jq -r '.cost // 0')
+tokens=$(echo "$result" | jq -r '.tokens // 0')
+
+# Format and output based on requested format
+case "$format" in
+  tokens)
+    format_tokens "$tokens"
+    ;;
+  both)
+    printf "%s (%s)\n" "$(format_cost "$cost")" "$(format_tokens "$tokens")"
+    ;;
+  *)
+    format_cost "$cost"
+    ;;
+esac

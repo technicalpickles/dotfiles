@@ -1,0 +1,5 @@
+# Core fish plugins - managed by fish.sh
+# Extra plugins added via `fisher install` will be detected and preserved
+
+jorgebucaran/fisher
+jorgebucaran/autopair.fish

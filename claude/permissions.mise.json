@@ -1,0 +1,21 @@
+{
+  "allow": [
+    "Bash(mise --version:*)",
+    "Bash(mise activate:*)",
+    "Bash(mise current:*)",
+    "Bash(mise doctor:*)",
+    "Bash(mise exec:*)",
+    "Bash(mise install:*)",
+    "Bash(mise list:*)",
+    "Bash(mise ls-remote:*)",
+    "Bash(mise ls:*)",
+    "Bash(mise plugins:*)",
+    "Bash(mise run:*)",
+    "Bash(mise settings:*)",
+    "Bash(mise tasks:*)",
+    "Bash(mise trust:*)",
+    "Bash(mise use:*)",
+    "Bash(mise which:*)"
+  ],
+  "deny": []
+}

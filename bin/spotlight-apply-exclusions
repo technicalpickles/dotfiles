@@ -1,0 +1,308 @@
+#!/usr/bin/env bash
+# Apply Spotlight exclusions from a pattern file
+#
+# Usage: spotlight-apply-exclusions [OPTIONS] PATTERN_FILE
+#
+# Options:
+#   --dry-run, -n     Show what would be excluded without applying
+#   --verbose, -v     Show detailed progress
+#   --max-depth N     Limit recursion depth for globstar patterns (default: 10)
+#   --validate        Validate patterns before applying
+#   --help, -h        Show this help message
+#
+# This script:
+#   1. Expands patterns using spotlight-expand-patterns
+#   2. Shows a summary of directories to be excluded
+#   3. Applies exclusions using spotlight-add-exclusion (unless --dry-run)
+#   4. Reports progress and final summary
+#
+# Exit Codes:
+#   0 - Success
+#   1 - Invalid usage or error
+#   2 - Pattern file not found or not readable
+
+set -euo pipefail
+
+# Get script directory for finding other bin scripts
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Default options
+DRY_RUN=false
+VERBOSE=false
+MAX_DEPTH=10
+VALIDATE=false
+PATTERN_FILE=""
+
+# Colors for output (only if connected to terminal)
+if [ -t 1 ]; then
+  RED='\033[0;31m'
+  GREEN='\033[0;32m'
+  YELLOW='\033[0;33m'
+  BLUE='\033[0;34m'
+  CYAN='\033[0;36m'
+  BOLD='\033[1m'
+  NC='\033[0m' # No Color
+else
+  RED=''
+  GREEN=''
+  YELLOW=''
+  BLUE=''
+  CYAN=''
+  BOLD=''
+  NC=''
+fi
+
+# Show usage information
+usage() {
+  cat << EOF
+Usage: spotlight-apply-exclusions [OPTIONS] PATTERN_FILE
+
+Apply Spotlight exclusions from a gitignore-style pattern file.
+
+Options:
+  --dry-run, -n     Show what would be excluded without applying
+  --verbose, -v     Show detailed progress
+  --max-depth N     Limit recursion depth for globstar patterns (default: 10)
+  --validate        Validate patterns before applying
+  --help, -h        Show this help message
+
+Examples:
+  # Preview what would be excluded
+  spotlight-apply-exclusions --dry-run ~/.config/spotlight-exclusions
+
+  # Apply exclusions with progress
+  spotlight-apply-exclusions --verbose ~/.config/spotlight-exclusions
+
+  # Limit search depth
+  spotlight-apply-exclusions --max-depth 5 patterns.txt
+
+EOF
+}
+
+# Log to stdout
+log() {
+  echo -e "$*"
+}
+
+# Info message
+info() {
+  echo -e "${BLUE}[info]${NC} $*"
+}
+
+# Warning message
+warn() {
+  echo -e "${YELLOW}[warn]${NC} $*"
+}
+
+# Error message
+error() {
+  echo -e "${RED}[error]${NC} $*" >&2
+}
+
+# Success message
+success() {
+  echo -e "${GREEN}✓${NC} $*"
+}
+
+# Parse command line arguments
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --dry-run | -n)
+        DRY_RUN=true
+        shift
+        ;;
+      --verbose | -v)
+        VERBOSE=true
+        shift
+        ;;
+      --max-depth)
+        if [[ -z "${2:-}" ]] || [[ "$2" =~ ^- ]]; then
+          error "--max-depth requires a numeric argument"
+          exit 1
+        fi
+        MAX_DEPTH="$2"
+        shift 2
+        ;;
+      --validate)
+        VALIDATE=true
+        shift
+        ;;
+      --help | -h)
+        usage
+        exit 0
+        ;;
+      -*)
+        error "Unknown option: $1"
+        usage
+        exit 1
+        ;;
+      *)
+        if [ -n "$PATTERN_FILE" ]; then
+          error "Multiple pattern files specified"
+          exit 1
+        fi
+        PATTERN_FILE="$1"
+        shift
+        ;;
+    esac
+  done
+
+  # Check pattern file was provided
+  if [ -z "$PATTERN_FILE" ]; then
+    error "No pattern file specified"
+    usage
+    exit 1
+  fi
+
+  # Check pattern file exists
+  if [ ! -f "$PATTERN_FILE" ]; then
+    error "Pattern file not found: $PATTERN_FILE"
+    exit 2
+  fi
+}
+
+# Expand patterns to directories
+expand_patterns() {
+  local expand_cmd="$SCRIPT_DIR/spotlight-expand-patterns"
+  local args=()
+
+  if [ "$VERBOSE" = true ]; then
+    args+=("--verbose")
+  fi
+
+  if [ "$VALIDATE" = true ]; then
+    args+=("--validate")
+  fi
+
+  args+=("--max-depth" "$MAX_DEPTH")
+  args+=("$PATTERN_FILE")
+
+  "$expand_cmd" "${args[@]}"
+}
+
+# Show dry-run output grouped by pattern
+show_dry_run() {
+  local dirs=("$@")
+  local total="${#dirs[@]}"
+
+  echo ""
+  echo -e "${BOLD}Dry Run - Would exclude $total directories:${NC}"
+  echo ""
+
+  # Show all directories
+  for dir in "${dirs[@]}"; do
+    echo "  $dir"
+  done
+
+  echo ""
+  echo -e "${CYAN}Total: $total directories${NC}"
+  echo ""
+  echo "To apply these exclusions, run without --dry-run"
+}
+
+# Apply exclusions using spotlight-add-exclusion
+apply_exclusions() {
+  local dirs=("$@")
+  local total="${#dirs[@]}"
+  local added=0
+  local skipped=0
+  local failed=0
+
+  echo ""
+  echo -e "${BOLD}Applying exclusions to $total directories...${NC}"
+  echo ""
+
+  local add_cmd="$SCRIPT_DIR/spotlight-add-exclusion"
+
+  # Check if spotlight-add-exclusion exists
+  if [ ! -x "$add_cmd" ]; then
+    error "spotlight-add-exclusion not found or not executable: $add_cmd"
+    exit 1
+  fi
+
+  # Process directories in a single batch by passing all paths to spotlight-add-exclusion
+  # This is much more efficient than calling it once per directory
+  if [ "$VERBOSE" = true ]; then
+    info "Calling spotlight-add-exclusion with $total directories..."
+  fi
+
+  # Call spotlight-add-exclusion with all directories
+  local output
+  if output=$("$add_cmd" "${dirs[@]}" 2>&1); then
+    # Parse output to count what happened
+    added=$(echo "$output" | grep -c "✓ Added:" || echo "0")
+    skipped=$(echo "$output" | grep -c "Skipping" || echo "0")
+
+    if [ "$VERBOSE" = true ]; then
+      echo "$output"
+    fi
+
+    echo ""
+    success "Successfully processed $total directories"
+    if [ "$added" -gt 0 ]; then
+      echo "  Added: $added"
+    fi
+    if [ "$skipped" -gt 0 ]; then
+      echo "  Skipped: $skipped (already excluded or don't exist)"
+    fi
+  else
+    error "Failed to apply exclusions"
+    if [ "$VERBOSE" = true ]; then
+      echo "$output"
+    fi
+    exit 1
+  fi
+}
+
+# Main logic
+main() {
+  parse_args "$@"
+
+  # Show header
+  echo ""
+  echo -e "${BOLD}Spotlight Exclusion Applier${NC}"
+  echo ""
+
+  # Expand patterns
+  info "Expanding patterns from: $PATTERN_FILE"
+
+  local temp_file
+  temp_file=$(mktemp)
+
+  if ! expand_patterns > "$temp_file" 2>&1; then
+    error "Failed to expand patterns"
+    cat "$temp_file" >&2
+    rm -f "$temp_file"
+    exit 1
+  fi
+
+  # Read expanded directories into array
+  local dirs=()
+  while IFS= read -r dir; do
+    if [ -n "$dir" ]; then
+      dirs+=("$dir")
+    fi
+  done < "$temp_file"
+
+  rm -f "$temp_file"
+
+  # Check if any directories were found
+  if [ "${#dirs[@]}" -eq 0 ]; then
+    warn "No directories found matching patterns"
+    exit 0
+  fi
+
+  info "Found ${#dirs[@]} directories matching patterns"
+
+  # Either show dry-run or apply exclusions
+  if [ "$DRY_RUN" = true ]; then
+    show_dry_run "${dirs[@]}"
+  else
+    apply_exclusions "${dirs[@]}"
+  fi
+
+  echo ""
+}
+
+main "$@"

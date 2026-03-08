@@ -1,0 +1,357 @@
+#!/usr/bin/env bash
+# Expand pattern file to concrete directory paths for Spotlight exclusions
+#
+# Usage: spotlight-expand-patterns [OPTIONS] PATTERN_FILE
+#
+# Options:
+#   --max-depth N    Limit recursion depth for globstar patterns (default: 10)
+#   --verbose, -v    Show detailed expansion process
+#   --validate       Check all base paths exist before searching
+#   --help, -h       Show this help message
+#
+# Pattern Syntax:
+#   # Comments and blank lines are ignored
+#   ~/.cache                    # Literal path (tilde expanded)
+#   ~/workspace/**/node_modules # Globstar pattern (recursive)
+#   ~/workspace/*/dist          # Single-level glob
+#
+# Output:
+#   Absolute directory paths, one per line, sorted and deduplicated
+#
+# Exit Codes:
+#   0 - Success
+#   1 - Invalid usage or pattern syntax error
+#   2 - Pattern file not found or not readable
+
+set -euo pipefail
+
+# Default options
+MAX_DEPTH=10
+VERBOSE=false
+VALIDATE=false
+PATTERN_FILE=""
+
+# Colors for output (only if connected to terminal)
+if [ -t 2 ]; then
+  RED='\033[0;31m'
+  YELLOW='\033[0;33m'
+  BLUE='\033[0;34m'
+  NC='\033[0m' # No Color
+else
+  RED=''
+  YELLOW=''
+  BLUE=''
+  NC=''
+fi
+
+# Show usage information
+usage() {
+  cat << EOF
+Usage: spotlight-expand-patterns [OPTIONS] PATTERN_FILE
+
+Expand gitignore-style patterns to concrete directory paths for Spotlight exclusions.
+
+Options:
+  --max-depth N    Limit recursion depth for globstar patterns (default: 10)
+  --verbose, -v    Show detailed expansion process
+  --validate       Check all base paths exist before searching
+  --help, -h       Show this help message
+
+Pattern Syntax:
+  # Comments and blank lines are ignored
+  ~/.cache                    # Literal path (tilde expanded)
+  ~/workspace/**/node_modules # Globstar pattern (recursive)
+  ~/workspace/*/dist          # Single-level glob
+
+Output:
+  Absolute directory paths, one per line, sorted and deduplicated
+
+Exit Codes:
+  0 - Success
+  1 - Invalid usage or pattern syntax error
+  2 - Pattern file not found or not readable
+
+Examples:
+  spotlight-expand-patterns ~/.config/spotlight-exclusions
+  spotlight-expand-patterns --verbose --max-depth 5 patterns.txt
+  spotlight-expand-patterns --dry-run patterns.txt | wc -l
+
+EOF
+}
+
+# Log to stderr
+log() {
+  if [ "$VERBOSE" = true ]; then
+    echo -e "${BLUE}[expand]${NC} $*" >&2
+  fi
+}
+
+# Warning to stderr
+warn() {
+  echo -e "${YELLOW}[warn]${NC} $*" >&2
+}
+
+# Error to stderr
+error() {
+  echo -e "${RED}[error]${NC} $*" >&2
+}
+
+# Parse command line arguments
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --max-depth)
+        if [[ -z "${2:-}" ]] || [[ "$2" =~ ^- ]]; then
+          error "--max-depth requires a numeric argument"
+          exit 1
+        fi
+        MAX_DEPTH="$2"
+        shift 2
+        ;;
+      --verbose | -v)
+        VERBOSE=true
+        shift
+        ;;
+      --validate)
+        VALIDATE=true
+        shift
+        ;;
+      --help | -h)
+        usage
+        exit 0
+        ;;
+      -*)
+        error "Unknown option: $1"
+        usage
+        exit 1
+        ;;
+      *)
+        if [ -n "$PATTERN_FILE" ]; then
+          error "Multiple pattern files specified"
+          exit 1
+        fi
+        PATTERN_FILE="$1"
+        shift
+        ;;
+    esac
+  done
+
+  # Check pattern file was provided
+  if [ -z "$PATTERN_FILE" ]; then
+    error "No pattern file specified"
+    usage
+    exit 1
+  fi
+
+  # Check pattern file exists and is readable
+  if [ ! -f "$PATTERN_FILE" ]; then
+    error "Pattern file not found: $PATTERN_FILE"
+    exit 2
+  fi
+
+  if [ ! -r "$PATTERN_FILE" ]; then
+    error "Pattern file not readable: $PATTERN_FILE"
+    exit 2
+  fi
+}
+
+# Expand tilde to HOME
+expand_tilde() {
+  local path="$1"
+  if [[ "$path" =~ ^~ ]]; then
+    echo "${path/#\~/$HOME}"
+  else
+    echo "$path"
+  fi
+}
+
+# Check if a pattern contains glob characters
+has_glob() {
+  local pattern="$1"
+  [[ "$pattern" == *"*"* ]]
+}
+
+# Check if a pattern contains globstar (**)
+has_globstar() {
+  local pattern="$1"
+  [[ "$pattern" == *"**"* ]]
+}
+
+# Expand a literal path (no globs)
+expand_literal() {
+  local path="$1"
+
+  log "Literal path: $path"
+
+  if [ -d "$path" ]; then
+    echo "$path"
+    log "  → Found: $path"
+  else
+    warn "Directory does not exist: $path"
+  fi
+}
+
+# Expand a globstar pattern (**/pattern)
+expand_globstar() {
+  local pattern="$1"
+
+  log "Globstar pattern: $pattern"
+
+  # Split into base path and search pattern using regex
+  # Example: ~/workspace/**/node_modules -> base=~/workspace, search=node_modules
+  local base_path=""
+  local search_pattern=""
+
+  if [[ "$pattern" =~ ^(.+)/\*\*/(.+)$ ]]; then
+    base_path="${BASH_REMATCH[1]}"
+    search_pattern="${BASH_REMATCH[2]}"
+  else
+    error "Invalid globstar pattern (expected BASE/**/PATTERN): $pattern"
+    return 1
+  fi
+
+  log "  Base: $base_path"
+  log "  Search: $search_pattern"
+
+  # Check base path exists
+  if [ ! -d "$base_path" ]; then
+    warn "Base path does not exist: $base_path"
+    return 0
+  fi
+
+  # Search for directories matching pattern using fd
+  local count=0
+  while IFS= read -r dir; do
+    echo "$dir"
+    count=$((count + 1))
+    log "  → Found: $dir"
+  done < <(fd --type d --maxdepth "$MAX_DEPTH" --full-path --absolute-path "^.*/${search_pattern}\$" "$base_path" 2> /dev/null || true)
+
+  if [ "$count" -eq 0 ]; then
+    log "  → No matches found"
+  fi
+}
+
+# Expand a single-level glob pattern (*/pattern)
+expand_glob() {
+  local pattern="$1"
+
+  log "Glob pattern: $pattern"
+
+  # Split into base path and glob pattern
+  # Example: ~/workspace/*/dist -> base=~/workspace, glob=*/dist
+  # Find the path before the first *, then get the directory part
+  local before_star="${pattern%%\**}"
+  local base_path="${before_star%/*}"
+  local glob_part="${pattern#$base_path/}"
+
+  log "  Base: $base_path"
+  log "  Glob: $glob_part"
+
+  # Check base path exists
+  if [ ! -d "$base_path" ]; then
+    warn "Base path does not exist: $base_path"
+    return 0
+  fi
+
+  # Determine maxdepth based on number of / in glob part
+  local depth
+  depth=$(echo "$glob_part" | tr -cd '/' | wc -c)
+  depth=$((depth + 1))
+
+  # Use fd with the pattern directly - fd can handle the glob matching
+  local count=0
+  # Extract the directory name we're looking for (e.g., "node_modules" from "*/node_modules")
+  local search_name="${glob_part##*/}"
+
+  while IFS= read -r dir; do
+    # Remove trailing slash if present (fd adds them)
+    dir="${dir%/}"
+    # Use bash pattern matching to filter
+    local rel_path="${dir#$base_path/}"
+    if [[ "$rel_path" == $glob_part ]]; then
+      echo "$dir"
+      count=$((count + 1))
+      log "  → Found: $dir"
+    fi
+  done < <(fd --type d --maxdepth "$depth" --absolute-path "$search_name" "$base_path" 2> /dev/null || true)
+
+  if [ "$count" -eq 0 ]; then
+    log "  → No matches found"
+  fi
+}
+
+# Process a single pattern
+process_pattern() {
+  local pattern="$1"
+  local original_pattern="$pattern"
+
+  # Expand tilde BEFORE determining pattern type
+  pattern=$(expand_tilde "$pattern")
+
+  # Determine pattern type and expand accordingly
+  if has_globstar "$original_pattern"; then
+    expand_globstar "$pattern"
+  elif has_glob "$original_pattern"; then
+    expand_glob "$pattern"
+  else
+    expand_literal "$pattern"
+  fi
+}
+
+# Main expansion logic
+expand_patterns() {
+  # Check for fd dependency
+  if ! command -v fd &> /dev/null; then
+    error "fd is required but not installed. Install with: brew install fd"
+    exit 3
+  fi
+
+  log "Reading patterns from: $PATTERN_FILE"
+  log "Max depth: $MAX_DEPTH"
+  log ""
+
+  local line_num=0
+  local pattern_count=0
+  local temp_output
+  temp_output=$(mktemp)
+
+  # Read pattern file line by line
+  while IFS= read -r line || [ -n "$line" ]; do
+    line_num=$((line_num + 1))
+
+    # Trim whitespace
+    line=$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+    # Skip empty lines and comments
+    if [ -z "$line" ] || [[ "$line" =~ ^# ]]; then
+      continue
+    fi
+
+    pattern_count=$((pattern_count + 1))
+
+    log "Pattern $pattern_count (line $line_num): $line"
+
+    # Process pattern and append to temp file
+    process_pattern "$line" >> "$temp_output" || true
+
+    log ""
+  done < "$PATTERN_FILE"
+
+  log "Processed $pattern_count patterns from $line_num lines"
+
+  # Sort and deduplicate results
+  if [ -s "$temp_output" ]; then
+    sort -u "$temp_output"
+  fi
+
+  rm -f "$temp_output"
+}
+
+# Main entry point
+main() {
+  parse_args "$@"
+  expand_patterns
+}
+
+main "$@"

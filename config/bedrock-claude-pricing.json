@@ -1,0 +1,24 @@
+{
+  "lastUpdated": "2025-12-02",
+  "source": "https://aws.amazon.com/bedrock/pricing/",
+  "models": {
+    "Claude 3 Haiku": { "inputPerMTok": 0.25, "outputPerMTok": 1.25 },
+    "Claude 3.5 Sonnet v2": { "inputPerMTok": 3.0, "outputPerMTok": 15.0 },
+    "Claude 3.5 Sonnet": { "inputPerMTok": 3.0, "outputPerMTok": 15.0 },
+    "Claude 3.7 Sonnet": { "inputPerMTok": 3.0, "outputPerMTok": 15.0 },
+    "Claude Haiku 4.5": { "inputPerMTok": 1.0, "outputPerMTok": 5.0 },
+    "Claude Opus 4.1": { "inputPerMTok": 15.0, "outputPerMTok": 75.0 },
+    "Claude Opus 4.5": { "inputPerMTok": 5.0, "outputPerMTok": 25.0 },
+    "Claude Opus 4": { "inputPerMTok": 15.0, "outputPerMTok": 75.0 },
+    "Claude Sonnet 4 - Long Context": {
+      "inputPerMTok": 6.0,
+      "outputPerMTok": 22.5
+    },
+    "Claude Sonnet 4.5 - Long Context": {
+      "inputPerMTok": 6.0,
+      "outputPerMTok": 22.5
+    },
+    "Claude Sonnet 4.5": { "inputPerMTok": 3.0, "outputPerMTok": 15.0 },
+    "Claude Sonnet 4": { "inputPerMTok": 3.0, "outputPerMTok": 15.0 }
+  }
+}

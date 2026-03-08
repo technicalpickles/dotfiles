@@ -78,9 +78,6 @@ else
     . "$HOME/.cargo/env"
   fi
 
-  which rbenv > /dev/null 2>&1 && eval "$(rbenv init -)"
-  which nodenv > /dev/null 2>&1 && eval "$(nodenv init -)"
-
   if which brew > /dev/null 2>&1; then
     BREW_CELLAR=$(brew --cellar)
     BREW_PREFIX=$(brew --prefix)

@@ -1,0 +1,37 @@
+# Exclude fish shell state that contains machine-specific paths
+config/fish/fish_variables
+config/fish/fishd.*
+config/fish/conf.d/*_fig_*.fish
+
+# Exclude fisher-managed files (will be regenerated during install)
+config/fish/completions/fisher.fish
+config/fish/completions/fzf_configure_bindings.fish
+config/fish/completions/nvm.fish
+config/fish/completions/tide.fish
+config/fish/conf.d/_tide_init.fish
+config/fish/conf.d/abbr_tips.fish
+config/fish/conf.d/autopair.fish
+config/fish/conf.d/fzf.fish
+config/fish/conf.d/halostatue_fish_direnv.fish
+config/fish/conf.d/nvm.fish
+config/fish/conf.d/plugin-bang-bang.fish
+config/fish/conf.d/z.fish
+config/fish/functions/fisher.fish
+
+# Exclude local fish plugin state
+config/fish/functions/__z.fish
+config/fish/functions/__z_add.fish
+config/fish/functions/__z_clean.fish
+config/fish/functions/__z_complete.fish
+
+# Exclude git files
+.git
+.gitignore
+.gitattributes
+
+# Exclude build artifacts
+node_modules
+.npm
+
+# Exclude local config
+.claude/settings.local.json

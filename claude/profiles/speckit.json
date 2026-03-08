@@ -1,0 +1,11 @@
+{
+  "name": "local-project",
+  "version": "1.0.0",
+  "description": "Spec-driven development with spec-kit",
+  "dependencies": {
+    "spec-kit": {
+      "git": "https://github.com/github/spec-kit.git",
+      "branch": "main"
+    }
+  }
+}
