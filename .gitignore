@@ -153,4 +153,29 @@ node_modules
 # claude
 home/.claude/*
 !home/.claude/CLAUDE.md
+
+# craftdesk - installed skills (like node_modules)
+.claude/skills/
+.claude/settings.local.json
+
+# permissions-manager skill generated output
+doc/permissions/
+
+# vagrant
+.vagrant
+.vagrant/**/*
+
+# git worktrees
+.worktrees/
+
+# bedrock pricing - saved HTML page for manual pricing updates
+Pricing.html
+
+# mise - config.toml is machine-specific (language versions vary)
+# versioned conf.d/ files provide PATH and dotfiles-managed tools
+config/mise/config.toml
+
+# fisher-managed functions
+config/fish/functions/br.fish
+
 .parkinglot/
