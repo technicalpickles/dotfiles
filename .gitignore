@@ -1,6 +1,9 @@
 # doesn't really track versions, so ignore it
 Brewfile.lock.json
 
+# claude code session data
+.sessions/
+
 .venv
 __pycache__
 home/.wireshark/**/recent
@@ -37,6 +40,8 @@ config/fish/completions/fzf_configure_bindings.fish
 config/fish/completions/nvm.fish
 config/fish/completions/tide.fish
 config/fish/conf.d/_tide_init.fish
+config/fish/conf.d/fish_frozen_key_bindings.fish
+config/fish/conf.d/fish_frozen_theme.fish
 config/fish/conf.d/abbr_tips.fish
 config/fish/conf.d/autopair.fish
 config/fish/conf.d/fzf.fish
@@ -149,8 +154,6 @@ node_modules
 # claude
 home/.claude/*
 !home/.claude/CLAUDE.md
-!home/.claude/skills/
-!home/.claude/commands/
 
 # craftdesk - installed skills (like node_modules)
 .claude/skills/
