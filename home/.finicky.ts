@@ -198,6 +198,17 @@ const config: FinickyConfig = {
       browser: 'Google Chrome',
     },
 
+    // Work GitHub orgs - route to work Chrome profile
+    {
+      match: (url: URL) =>
+        url.host.toLowerCase() === 'github.com' &&
+        /^\/(gusto|rubyatscale)\b/i.test(url.pathname),
+      browser: {
+        name: 'Google Chrome',
+        profile: workChromeProfile,
+      },
+    },
+
     // Development/localhost - might want these in Chrome for DevTools
     {
       match: [

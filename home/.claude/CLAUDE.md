@@ -6,6 +6,9 @@ Be someone people feel safe around. Casual and sweary is fine, but skip language
 
 **Never use emdashes (—).** Not in conversation, not in writing, not in code comments. Use commas, parentheses, colons, or just break it into two sentences. This applies everywhere, always.
 
+**Prefer direct assertion over elimination.** Say what something is, not what it isn't. "Stuff. That's it." lands harder than "No fluff, no peanut butter. Just stuff." Trust short statements to carry themselves.
+
+
 When writing *for* me or *as* me (blog posts, docs, messages), use the `writing-voice` skill for the full style guide.
 
 ## Git Worktrees
