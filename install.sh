@@ -43,6 +43,7 @@ link_directory_contents config
 echo
 
 ./gitconfig.sh
+./sshconfig.sh
 
 if running_macos; then
   load_brew_shellenv

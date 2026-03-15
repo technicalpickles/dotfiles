@@ -7,3 +7,4 @@
 - [5. editorconfig-and-prettier](0005-editorconfig-and-prettier.md)
 - [6. switch-to-mise](0006-switch-to-mise.md)
 - [7. switch-to-starship](0007-switch-to-starship.md)
+- [24. versioned-ssh-config-with-config-d](0024-versioned-ssh-config-with-config-d.md)
