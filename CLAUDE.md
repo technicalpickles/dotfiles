@@ -1,359 +1,56 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This is a personal dotfiles repository managing shell configs, git settings, and macOS preferences. It uses a **role-based configuration system** (personal/work) that adapts settings based on hostname or `DOTPICKLES_ROLE`.
 
-## Overview
-
-This is a personal dotfiles repository that manages shell configurations, git settings, and macOS system preferences. The repository uses a **role-based configuration system** that adapts settings based on whether the environment is "personal" or "work".
-
-**Important**: This repository uses Architecture Decision Records (ADRs) to document why architectural choices were made. See [doc/adr/](doc/adr/) for the full history. When making significant architectural changes, create a new ADR using `bin/adr new "title"`.
-
-## Installation & Setup
-
-```bash
-git clone https://github.com/technicalpickles/dotfiles ~/.pickles
-~/.pickles/install.sh
-```
-
-The installation script:
-
-1. Determines the role (personal/work) based on hostname or `DOTPICKLES_ROLE` env var
-2. Initializes git submodules
-3. Symlinks files from `home/` to `$HOME` and `config/` to `$HOME/.config`
-4. Runs `gitconfig.sh` to build `~/.gitconfig.local` dynamically
-5. On macOS: installs Homebrew, runs `brew bundle`, configures system defaults
-6. Sets up shell environments (fish, bash, tmux)
+See [doc/architecture.md](doc/architecture.md) for how the systems fit together.
 
 ## Development Commands
 
-### Linting & Formatting
-
 ```bash
-npm run typecheck    # Run TypeScript type checking
-npm run format       # Format all files with Prettier
-npm run format:check # Check formatting without modifying
-npm run lint         # Run both typecheck and format:check
-npm run test         # Alias for lint
+npm run lint      # typecheck + format check (the test suite)
+npm run format    # format all files with Prettier
+npm run typecheck # TypeScript type check only
 ```
 
-### Pre-commit Hooks
+Pre-commit hooks via `lefthook`: Prettier formats staged files, TypeScript checks `.ts` files.
 
-Managed by `lefthook`. Install with `lefthook install`. On commit:
+There are no traditional unit tests. "Testing" means `npm run lint` + manual install verification.
 
-- Prettier formats staged files
-- TypeScript type checks if `.ts` files are staged
+## Architecture Decision Records
 
-### Devcontainer Development
-
-This repository uses the [pickled-devcontainer](https://github.com/technicalpickles/pickled-devcontainer) template to provide a consistent Linux development environment with dotfiles pre-configured.
-
-**Using the devcontainer:**
-
-Via VS Code:
-
-1. Install Docker Desktop and the Dev Containers extension
-2. Open this repository in VS Code
-3. Command Palette → "Dev Containers: Reopen in Container"
-
-Via CLI:
+This repo uses ADRs to document why architectural choices were made. Before making significant changes, check [doc/adr/](doc/adr/) for existing decisions.
 
 ```bash
-cd ~/workspace/pickled-devcontainer
-./bin/apply ~/workspace/dotfiles
+bin/adr new "title" # create new ADR
+bin/adr list        # list all ADRs
 ```
 
-**Live editing:** Changes to files in the workspace are immediately visible at `~/.pickles` via symlink. Most changes take effect when you restart the terminal or source configs.
-
-**When to re-run install.sh:** Structural changes that affect symlinks or generated configs may require running `bash ~/.pickles/install.sh`.
-
-See [ADR 0012](doc/adr/0012-extract-devcontainer-as-reusable-template.md) for why we extracted the devcontainer as a reusable template.
-
-### Architecture Decision Records (ADRs)
-
-```bash
-bin/adr new "title" # Create new ADR in doc/adr/
-bin/adr list        # List all ADRs
-```
-
-This repository documents all significant architectural decisions in [doc/adr/](doc/adr/). Before making major changes, review existing ADRs to understand the context and rationale behind current implementations. When making new architectural decisions, create an ADR documenting the context, decision, alternatives considered, and consequences.
-
-### Neovim/LazyVim
-
-This repository uses LazyVim as the Neovim configuration via the **pickled-lazyvim pattern** - a separate repository at `~/workspace/pickled-lazyvim/` that is symlinked to `~/.config/nvim` during installation.
-
-**See the pickled-lazyvim repository for Neovim-specific documentation:**
-
-- **[~/workspace/pickled-lazyvim/CLAUDE.md](../pickled-lazyvim/CLAUDE.md)** - Main guidance for working with this LazyVim config
-- **[~/workspace/pickled-lazyvim/doc/nvim-exploration.md](../pickled-lazyvim/doc/nvim-exploration.md)** - Comprehensive guide for exploring plugins, keybindings, and configuration
-
-**Quick references:**
-
-- LazyVim config: `~/workspace/pickled-lazyvim/` (symlinked from `~/.config/nvim`)
-- Installed plugins: `~/.local/share/nvim/lazy/`
-- Plugin manager: `:Lazy` (inside Neovim)
-- Check keybinding: `:verbose map <key>`
-- Plugin health: `:checkhealth`
-
-## Architecture
-
-### Role-Based Configuration System
-
-The central architectural pattern is **role-based adaptation**. The role is determined once during installation and affects:
-
-- **Git identity & signing**: Different email/name and SSH key selection
-- **Brewfile selection**: `Brewfile` + `Brewfile.$ROLE` are merged during brew bundle
-- **Shell environment**: Various configs conditionally load based on role
-
-Role detection logic is in [install.sh:12-23](install.sh#L12-L23). The role defaults to "work" for hostnames matching `josh-nichols-*`, otherwise "personal".
-
-### Synthetic Workspace Symlink (Work Only)
-
-On **work** machines running **macOS**, the installation automatically creates a `/workspace` symlink pointing to `~/workspace`. This allows using absolute paths like `/workspace/dotfiles` which can be helpful for certain tools and workflows.
-
-**How it works:**
-
-- Uses macOS's synthetic filesystem feature via `/etc/synthetic.conf`
-- The `setup_synthetic_workspace()` function in [functions.sh:172-211](functions.sh#L172-L211) manages the configuration
-- Called during installation only when `DOTPICKLES_ROLE=work` (see [install.sh:71-73](install.sh#L71-L73))
-- Idempotent: safe to run multiple times
-- Attempts to apply without restart using `apfs.util -t`, though a restart may be required in some cases
-
-**Why work-only?** This is specific to work environments where absolute workspace paths are preferred for consistency across tools and documentation.
-
-### Dynamic Git Configuration
-
-Git settings are **generated**, not static. [gitconfig.sh](gitconfig.sh) rebuilds `~/.gitconfig.local` by:
-
-1. Deleting the old version
-2. Enabling git maintenance for all repos in `~/workspace/`
-3. Conditionally including config fragments from `home/.gitconfig.d/` based on:
-   - Available commands (delta, gh, git-duet, fzf, code/code-insiders)
-   - Operating system (macOS)
-   - Role (personal/work)
-   - 1Password availability (for SSH signing on personal)
-
-This means `~/.gitconfig.local` should never be edited manually or committed. The base config at [home/.gitconfig](home/.gitconfig) includes this generated file.
-
-### Symlink-Based File Management
-
-Configuration files live in the repo under `home/` and `config/`, then [symlinks.sh](symlinks.sh) creates symlinks:
-
-- `home/*` → `$HOME/*` (dotfiles like `.bashrc`, `.tmux.conf`)
-- `config/*` → `$HOME/.config/*` (modern XDG config directories)
-- `LaunchAgents/*.plist` → `$HOME/Library/LaunchAgents/*` (macOS only)
-
-The `link_directory_contents()` function in [functions.sh:58-76](functions.sh#L58-L76) handles the symlinking with safety checks.
-
-### Shell Environment Structure
-
-**Fish** is the primary shell. Configuration is modular:
-
-- [config/fish/config.fish](config/fish/config.fish) is the main entry point
-- [config/fish/conf.d/](config/fish/conf.d/) contains autoloaded configs for:
-  - Environment detection ([editor.fish](config/fish/conf.d/editor.fish) uses `envsense`)
-  - Tool initialization (starship, homebrew, bat, git-duet, etc.)
-  - IDE-specific behaviors (cursor_agent.fish, ghostty.fish, obsidian.fish)
-
-**Starship** provides the shell prompt across all shells (fish, bash, zsh) for consistency. See [ADR 0007](doc/adr/0007-switch-to-starship.md) for why we switched from tide.
-
-**Bash** configs in [home/.bash_profile](home/.bash_profile) and [home/.bashrc](home/.bashrc) provide fallback support.
-
-### Environment Detection with envsense
-
-The repo uses [envsense](https://github.com/technicalpickles/envsense) for detecting runtime environments (IDEs, agents, CI, terminals). This allows adaptive behavior like setting the correct `EDITOR` when running inside Cursor vs Claude Code vs a terminal.
-
-Example: [config/fish/conf.d/editor.fish](config/fish/conf.d/editor.fish) checks `envsense info --json` to determine the IDE and sets `EDITOR` accordingly.
-
-**Why envsense?** See [ADR 0009](doc/adr/0009-use-envsense-for-environment-detection.md) - replaces scattered environment variable checks with centralized, priority-based detection that correctly distinguishes similar environments (e.g., Cursor vs VS Code).
-
-### Brewfile Management
-
-Homebrew packages are managed through **merged Brewfiles**:
-
-- [Brewfile](Brewfile): Common packages (fish, git, nvim, fzf, jq, etc.)
-- `Brewfile.$ROLE`: Role-specific additions (personal or work)
-
-The `brew_bundle()` function in [functions.sh:99-103](functions.sh#L99-L103) concatenates these files and pipes to `brew bundle`.
-
-### LaunchAgents for macOS Automation
-
-The [LaunchAgents/](LaunchAgents/) directory contains `.plist` files for macOS launch agents. These are symlinked and can be managed with [launchagents.sh](launchagents.sh).
-
-The LaunchAgent infrastructure is available for automating tasks at login or on schedules. Currently, no launch agents are configured by default.
-
-### Spotlight Exclusion Management
-
-This repository provides tools for managing Spotlight exclusions on macOS. Spotlight is kept enabled system-wide (for Alfred and other tools), but specific directories can be excluded from indexing to reduce resource consumption.
-
-**Pattern-Based Exclusions (Recommended):**
-
-- [config/spotlight-exclusions](config/spotlight-exclusions): Gitignore-style pattern file (symlinked to `~/.config/spotlight-exclusions`)
-- [bin/spotlight-expand-patterns](bin/spotlight-expand-patterns): Expands patterns to concrete directory paths
-- [bin/spotlight-apply-exclusions](bin/spotlight-apply-exclusions): Applies exclusions from pattern file
-
-**Quick Start:**
-
-```bash
-# Preview what would be excluded
-bin/spotlight-apply-exclusions --dry-run ~/.config/spotlight-exclusions
-
-# Apply exclusions from pattern file
-bin/spotlight-apply-exclusions ~/.config/spotlight-exclusions
-```
-
-The pattern file supports:
-
-- **Literal paths**: `~/.cache`, `~/.npm/_cacache`
-- **Single-level globs** (fast): `~/workspace/*/node_modules`
-- **Recursive globstar** (slow): `~/workspace/**/node_modules`
-
-**Manual Exclusions:**
-
-- [bin/spotlight-add-exclusion](bin/spotlight-add-exclusion): Add specific directories via AppleScript UI automation
-- [bin/spotlight-list-exclusions](bin/spotlight-list-exclusions): List current exclusions from VolumeConfiguration.plist
-
-**Documentation:**
-
-- [doc/spotlight-exclusions.md](doc/spotlight-exclusions.md): Comprehensive usage guide
-- [ADR 0011](doc/adr/0011-pattern-based-spotlight-exclusions.md): Architecture decision for pattern-based exclusions
-- [ADR 0010](doc/adr/0010-manage-spotlight-exclusions-with-applescript.md): Architecture decision for AppleScript-based approach
-
-**Note:** Previously (ADR 0008), Spotlight was disabled entirely via LaunchAgent. This was superseded because Alfred requires Spotlight to function.
-
-## Key Utilities & Helper Functions
-
-[functions.sh](functions.sh) provides reusable helpers:
-
-- `running_macos()` / `running_codespaces()`: Platform detection
-- `command_available()`: Check if command exists
-- `brew_available()` / `fzf_available()` / `fish_available()`: Tool checks
-- `load_brew_shellenv()`: Load Homebrew environment in scripts
-- `vscode_command()`: Detect code vs code-insiders
-- `link_directory_contents()` / `link()`: Safe symlink creation with overwrite prompts
-
-## Tool Choices
-
-Key tools and why they were chosen:
-
-- **mise**: Version manager for ruby, node, python, etc. (see [ADR 0006](doc/adr/0006-switch-to-mise.md) for switch from asdf)
-- **starship**: Cross-shell prompt (see [ADR 0007](doc/adr/0007-switch-to-starship.md) for switch from tide)
-- **envsense**: Environment detection (see [ADR 0009](doc/adr/0009-use-envsense-for-environment-detection.md))
-- **prettier**: Code formatting (see [ADR 0005](doc/adr/0005-editorconfig-and-prettier.md))
-- **fzf.fish**: Enhanced fzf integration for Fish with mnemonic key bindings (see [ADR 0004](doc/adr/0004-switch-to-fzf-fish.md) for switch from basic fzf Fish extension)
+When making significant architectural changes, create a new ADR.
 
 ## Important Files Not to Modify Manually
 
 - `~/.gitconfig.local`: Generated by [gitconfig.sh](gitconfig.sh)
 - `~/.gitconfig.d/1password`: Generated during git config setup
-- Any symlinked files (edit the source in `home/` or `config/` instead)
-
-## TypeScript Files
-
-TypeScript is used for:
-
-- [home/.finicky.ts](home/.finicky.ts): Finicky browser routing config
-- Type definitions: [home/finicky.d.ts](home/finicky.d.ts)
-
-These are type-checked but not compiled (configuration files for external tools).
-
-## Code Quality & Formatting
-
-Code formatting and consistency is enforced via EditorConfig and Prettier (see [ADR 0005](doc/adr/0005-editorconfig-and-prettier.md)). EditorConfig provides editor-agnostic settings, while Prettier enforces consistent formatting across supported file types.
-
-There are no traditional unit tests. "Testing" means:
-
-1. Running `npm run lint` (typecheck + format check)
-2. Manually verifying installation in a clean environment (VM, Docker, fresh machine)
-3. Checking shell initialization doesn't error
-
-CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs linting on push/PR.
-
-## Custom Binaries
-
-[bin/](bin/) contains wrapper scripts and utilities:
-
-- `bin/prettier`: Wraps npm prettier with custom ignore and config paths
-- `bin/adr`: Wrapper for adr-tools
-- `bin/shell`: Helper for shell-related operations
-
-**Spotlight Management:**
-
-- `bin/spotlight-expand-patterns`: Expands gitignore-style patterns to directory paths (uses `fd`)
-- `bin/spotlight-apply-exclusions`: Applies Spotlight exclusions from pattern file
-- `bin/spotlight-add-exclusion`: Add directories to Spotlight exclusions via AppleScript
-- `bin/spotlight-list-exclusions`: List current Spotlight exclusions
-- `bin/spotlight-analyze-activity`: Analyze what Spotlight is actively indexing (identifies high-activity directories)
-- `bin/spotlight-monitor-live`: Live monitoring of Spotlight process activity
-
-**Monorepo Management:**
-
-- Skill: `working-in-monorepos` - Helps Claude work in monorepos by ensuring commands use absolute paths
-- Script: `~/.claude/skills/working-in-monorepos/scripts/monorepo-init` - Auto-detect subprojects and generate `.monorepo.json` config
-- Command: `/monorepo-init` - Activates skill and runs init script interactively
-
-When working in repositories with multiple subprojects, use `/monorepo-init` to activate the working-in-monorepos skill and set up configuration. The skill prevents directory confusion by requiring absolute paths for all commands.
-
-These are used by other scripts and hooks.
-
-## Claude Code Configuration
-
-Claude Code settings and permissions are managed via templates in the `claude/` directory. **See [claude/CLAUDE.md](claude/CLAUDE.md) for detailed documentation** on the permission system, ecosystem files, and workflows.
-
-**Quick reference:**
-
-```bash
-# Regenerate ~/.claude/settings.json from templates
-./claudeconfig.sh
-
-# Check permission state across all projects
-claude-permissions
-
-# Clean up project-local duplicates of global permissions
-claude-permissions cleanup --force
-```
-
-**Key files:**
-
-- `claude/settings.base.json` - Core settings
-- `claude/permissions.skills.json` - Skill permissions (add frequently-used skills here)
-- `claude/permissions.*.json` - Ecosystem permissions (node, ruby, github, etc.)
-
-## Claude Code Skills Plugin
-
-Personal Claude Code skills are maintained in a separate plugin repository: [technicalpickles/claude-skills](https://github.com/technicalpickles/claude-skills).
-
-**Installation:** Automatic via `install.sh` - the plugin is cloned to `~/workspace/claude-skills/` and symlinked to `~/.claude/plugins/technicalpickles`.
-
-**Skills included:**
-
-- `technicalpickles:buildkite-status` - Buildkite CI/CD workflow helpers
-- `technicalpickles:scope` - Scope environment management helpers
-- `technicalpickles:working-in-monorepos` - Monorepo navigation helpers
-- `technicalpickles:working-in-scratch-areas` - Scratch area management
-- `technicalpickles:gh-pr` - GitHub pull request workflows
-- `technicalpickles:git-preferences-and-practices` - Git workflow preferences
-- `technicalpickles:mcpproxy-debug` - MCPProxy debugging helpers
-
-**Development:** Skills are edited in `~/workspace/claude-skills/skills/` and changes are immediately available via the symlink.
+- `~/.ssh/config`: Managed by [sshconfig.sh](sshconfig.sh) -- edit `ssh/config.d/` instead
+- `~/.ssh/config.d/colima`: Generated by [sshconfig.sh](sshconfig.sh)
+- Any symlinked files -- edit the source in `home/` or `config/` instead
 
 ## Working with Nerd Fonts / Special Unicode Characters
 
-When editing files that contain Nerd Font glyphs (e.g., tmux status bar configs, starship prompt), Claude often cannot reliably insert these characters directly. The characters may be lost, corrupted, or replaced during the edit process.
-
-**Workaround:** Use placeholder text (e.g., `LEFT`, `RIGHT`, `ICON`) and let the user copy-paste the actual glyphs, or define tmux user options for the glyphs:
+When editing files with Nerd Font glyphs (tmux config, starship prompt), do not insert glyphs directly -- they get corrupted. Use placeholder text and let the user paste the actual glyph, or define tmux user options:
 
 ```bash
-# In .tmux.conf - define glyphs as variables
-set -g @_pill_left "" # User pastes actual glyph here
+set -g @_pill_left "" # user pastes actual glyph
 set -g @_pill_right ""
-
-# Then reference them in format strings
-set -g @_mode_tmux "#[fg=#a6e3a1,bg=#181825]#{@_pill_left}#[fg=#11111b,bg=#a6e3a1] TMUX #[fg=#a6e3a1,bg=#181825]#{@_pill_right}#[default]"
 ```
 
-**Common Nerd Font characters used in this repo:**
+Common glyphs in this repo: (U+E0B6), (U+E0B4), (U+E0B0), (U+E0B2)
 
-- (U+E0B6) - left rounded separator
-- (U+E0B4) - right rounded separator
-- (U+E0B0) - right triangle separator
-- (U+E0B2) - left triangle separator
+## Subsystem Docs
+
+- [doc/architecture.md](doc/architecture.md) -- role system, git config, symlinks, SSH, shell env
+- [doc/spotlight-exclusions.md](doc/spotlight-exclusions.md) -- Spotlight exclusion management
+- [claude/CLAUDE.md](claude/CLAUDE.md) -- Claude Code settings and permissions
+- [ssh/CLAUDE.md](ssh/CLAUDE.md) -- SSH config fragments and per-host TERM overrides
+- [bin/CLAUDE.md](bin/CLAUDE.md) -- custom binaries and spotlight scripts
+- [config/fish/CLAUDE.md](config/fish/CLAUDE.md) -- fish shell config structure
