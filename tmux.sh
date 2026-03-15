@@ -7,9 +7,5 @@ if [[ ! -d "$tpm_destination" ]]; then
   git clone https://github.com/tmux-plugins/tpm "$tpm_destination"
 fi
 
-"$tpm_destination/bin/install_plugins"
-
-if [[ -n "$TMUX" ]]; then
-  echo "🔳 reloading tmux"
-  tmux source-file ~/.tmux.conf
-fi
+echo "🔳 reloading/reinstalling tmux"
+tmux source ~/.tmux.conf
