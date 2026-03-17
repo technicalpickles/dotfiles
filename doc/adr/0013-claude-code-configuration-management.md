@@ -4,7 +4,7 @@ Date: 2025-11-25
 
 ## Status
 
-Accepted
+Accepted (directory symlinking superseded by [ADR 0024](0024-stop-symlinking-claude-directory.md))
 
 ## Context
 
