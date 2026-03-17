@@ -150,9 +150,8 @@ vendor/
 .config/prettier/cache.json
 node_modules
 
-# claude
-home/.claude/*
-!home/.claude/CLAUDE.md
+# claude runtime state (safe to remove after migrate-claude-config.sh)
+home/.claude/
 
 # craftdesk - installed skills (like node_modules)
 .claude/skills/
