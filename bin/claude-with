@@ -1,0 +1,226 @@
+#!/usr/bin/env bash
+# claude-with - Run Claude Code with a named environment
+#
+# Each environment gets its own CLAUDE_CONFIG_DIR at
+# ~/.local/share/claude-env/<name>/, with separate settings,
+# permissions, history, and plugin state.
+#
+# On first use, auth settings (env vars, AWS auth) are copied
+# from ~/.claude/settings.json so Claude Just Works.
+#
+# Usage:
+#   claude-with <name> [claude-args...]   Run claude in named env
+#   claude-with --list                    Show available environments
+#   claude-with <name> --clean            Remove env (next run recreates)
+#   claude-with <name> --path             Print env path and exit
+#   claude-with --help                    Show this help
+
+set -euo pipefail
+
+ENV_BASE="${CLAUDE_ENV_BASE:-$HOME/.local/share/claude-env}"
+GLOBAL_SETTINGS="$HOME/.claude/settings.json"
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+DIM='\033[2m'
+NC='\033[0m'
+
+log()  { echo -e "${GREEN}[claude-with]${NC} $*"; }
+warn() { echo -e "${YELLOW}[claude-with]${NC} $*"; }
+err()  { echo -e "${RED}[claude-with]${NC} $*" >&2; }
+
+usage() {
+    cat << 'EOF'
+Usage: claude-with <name> [-- claude-args...]
+
+Run Claude Code with a named, isolated environment.
+
+Commands:
+  claude-with <name> [-- claude-args]  Start Claude in named env
+  claude-with <name> -- -p "prompt"    Pass args through to Claude
+  claude-with <name> --create          Create a new environment
+  claude-with <name> --clean           Remove the environment
+  claude-with <name> --path            Print environment path
+  claude-with --list                   List available environments
+
+Options:
+  --help, -h    Show this help
+  --            Stop processing claude-with options, pass rest to Claude
+
+Environment variable:
+  CLAUDE_ENV_BASE   Override base directory (default: ~/.local/share/claude-env)
+
+Environments must be explicitly created with --create before use.
+Auth settings are copied from ~/.claude/settings.json during creation.
+EOF
+}
+
+list_envs() {
+    if [[ ! -d "$ENV_BASE" ]]; then
+        echo "No environments yet."
+        echo -e "${DIM}Create one: claude-with <name> --create${NC}"
+        return
+    fi
+
+    local found=0
+    for dir in "$ENV_BASE"/*/; do
+        [[ -d "$dir" ]] || continue
+        local name
+        name=$(basename "$dir")
+        local settings="$dir/settings.json"
+        local detail=""
+        if [[ -f "$settings" ]]; then
+            detail=$(jq -r '
+                [
+                    (if .enabledPlugins then (.enabledPlugins | length | tostring) + " plugins" else empty end),
+                    (if .permissions.allow then (.permissions.allow | length | tostring) + " allows" else empty end)
+                ] | join(", ")
+            ' "$settings" 2>/dev/null || true)
+        fi
+        if [[ -n "$detail" ]]; then
+            echo -e "  ${GREEN}$name${NC}  ${DIM}($detail)${NC}"
+        else
+            echo -e "  ${GREEN}$name${NC}"
+        fi
+        found=1
+    done
+
+    if [[ $found -eq 0 ]]; then
+        echo "No environments yet."
+        echo -e "${DIM}Create one: claude-with <name> --create${NC}"
+    fi
+}
+
+setup_env() {
+    local env_dir="$1"
+    local name="$2"
+
+    log "Creating environment '$name'..."
+    mkdir -p "$env_dir"
+
+    if [[ -f "$GLOBAL_SETTINGS" ]]; then
+        # Extract auth-related settings from global config
+        jq '{
+            env: (.env // {}),
+            awsAuthRefresh: .awsAuthRefresh,
+            statusLine: .statusLine
+        } | with_entries(select(.value != null))' "$GLOBAL_SETTINGS" > "$env_dir/settings.json"
+        log "Copied auth settings from global config."
+    else
+        echo '{}' > "$env_dir/settings.json"
+        warn "No global settings found, created empty config."
+    fi
+
+    # Skip onboarding prompts (theme picker, etc.)
+    cat > "$env_dir/.claude.json" << 'EOF'
+{
+  "hasCompletedOnboarding": true,
+  "hasSeenTasksHint": true,
+  "theme": "dark",
+  "numStartups": 0
+}
+EOF
+
+    log "Environment ready at $env_dir"
+}
+
+clean_env() {
+    local env_dir="$1"
+    local name="$2"
+
+    if [[ ! -d "$env_dir" ]]; then
+        warn "Environment '$name' doesn't exist."
+        return
+    fi
+
+    warn "Removing environment '$name'..."
+    rm -rf "$env_dir"
+    log "Removed. Recreate with: claude-with $name --create"
+}
+
+# Handle no args
+if [[ $# -eq 0 ]]; then
+    usage
+    exit 1
+fi
+
+# Handle top-level flags
+case "$1" in
+    --help|-h)
+        usage
+        exit 0
+        ;;
+    --list)
+        list_envs
+        exit 0
+        ;;
+    --*)
+        err "Unknown option: $1"
+        usage
+        exit 1
+        ;;
+esac
+
+# First arg is the environment name
+ENV_NAME="$1"
+shift
+
+# Validate name (alphanumeric, hyphens, underscores)
+if [[ ! "$ENV_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    err "Invalid environment name: '$ENV_NAME'"
+    err "Use only letters, numbers, hyphens, and underscores."
+    exit 1
+fi
+
+ENV_DIR="$ENV_BASE/$ENV_NAME"
+
+# Parse remaining args: claude-with options come before --, claude args after
+CLAUDE_ARGS=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --create)
+            if [[ -d "$ENV_DIR" ]]; then
+                warn "Environment '$ENV_NAME' already exists."
+                exit 1
+            fi
+            setup_env "$ENV_DIR" "$ENV_NAME"
+            exit 0
+            ;;
+        --clean)
+            clean_env "$ENV_DIR" "$ENV_NAME"
+            exit 0
+            ;;
+        --path)
+            echo "$ENV_DIR"
+            exit 0
+            ;;
+        --)
+            shift
+            CLAUDE_ARGS+=("$@")
+            break
+            ;;
+        *)
+            # No --, so everything from here goes to claude
+            CLAUDE_ARGS+=("$@")
+            break
+            ;;
+    esac
+done
+
+# Environment must exist
+if [[ ! -d "$ENV_DIR" ]]; then
+    err "Environment '$ENV_NAME' does not exist."
+    err ""
+    err "Create it first:"
+    err "  claude-with $ENV_NAME --create"
+    err ""
+    err "Available environments:"
+    list_envs
+    exit 1
+fi
+
+# Run Claude with this environment
+log "Using environment '$ENV_NAME'"
+exec env CLAUDE_CONFIG_DIR="$ENV_DIR" claude "${CLAUDE_ARGS[@]+"${CLAUDE_ARGS[@]}"}"
