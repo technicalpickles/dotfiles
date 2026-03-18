@@ -11,9 +11,28 @@
 # Usage:
 #   claude-with <name> [claude-args...]   Run claude in named env
 #   claude-with --list                    Show available environments
-#   claude-with <name> --clean            Remove env (next run recreates)
+#   claude-with <name> --create           Set up a new environment
+#   claude-with <name> --clean            Remove env
 #   claude-with <name> --path             Print env path and exit
 #   claude-with --help                    Show this help
+#
+# What CLAUDE_CONFIG_DIR isolates (per-env, replaces ~/.claude/):
+#   - settings.json (user-scope permissions, env vars, hooks, enabledPlugins)
+#   - .claude.json (theme, onboarding state, user prefs)
+#   - sessions/ and history
+#   - plugins/ cache (installed marketplaces and plugin files)
+#
+# What still comes from the project working directory (.claude/):
+#   - skills/ and commands/ (project skills always load from cwd)
+#   - CLAUDE.md and rules/
+#   - settings.json and settings.local.json (project-scope config)
+#   - enabledPlugins in project-scope settings (plugins show "failed to
+#     load" if enabled at project scope but not installed in the env)
+#   - First run prompts for project trust (one-time per project per env)
+#
+# To install plugins in an env:
+#   claude-with <name> -- plugin marketplace add <org>/<repo>
+#   claude-with <name> -- plugin install <plugin>@<marketplace>
 
 set -euo pipefail
 
