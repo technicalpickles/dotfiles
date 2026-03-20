@@ -24,3 +24,4 @@
 - [22. use-pickled-lazyvim-for-neovim](0022-use-pickled-lazyvim-for-neovim.md)
 - [23. ccusage-for-spend-tracking](0023-ccusage-for-spend-tracking.md)
 - [24. stop-symlinking-claude-directory](0024-stop-symlinking-claude-directory.md)
+- [25. use-startcalendarinterval-for-launchagents](0025-use-startcalendarinterval-for-launchagents.md)
