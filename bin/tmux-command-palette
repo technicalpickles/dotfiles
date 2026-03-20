@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+#
+# tmux command palette: fuzzy-find keybindings with descriptions
+#
+
+# Colors (catppuccin mocha)
+blue='\033[38;2;137;180;250m'   # #89b4fa
+green='\033[38;2;166;227;161m'  # #a6e3a1
+dim='\033[38;2;108;112;134m'    # #6c7086 (overlay0)
+reset='\033[0m'
+
+# Format: colored key on left, description on right, with consistent alignment
+formatted=$(tmux list-keys -N | awk -v blue="$blue" -v green="$green" -v dim="$dim" -v reset="$reset" '
+{
+    # First field is the table (e.g. "C-Space"), second is the key
+    table = $1
+    key = $2
+    # Rest is the description
+    desc = ""
+    for (i = 3; i <= NF; i++) {
+        desc = desc (i > 3 ? " " : "") $i
+    }
+
+    # Color the key combo, dim the table prefix
+    printf "%s%-8s %s%-4s  %s%s%s\n", dim, table, green, key, reset, desc, reset
+}')
+
+target=$(echo -e "$formatted" | fzf-tmux -p 80%,60% \
+    --ansi \
+    --no-sort \
+    --border-label ' command palette ' \
+    --prompt '  ' \
+    --bind 'tab:down,btab:up')
+
+[[ -z "$target" ]] && exit
+
+# Extract table and key from selection (strip ANSI codes first)
+clean=$(echo "$target" | sed 's/\x1b\[[0-9;]*m//g')
+table=$(echo "$clean" | awk '{ print $1 }')
+key=$(echo "$clean" | awk '{ print $2 }')
+
+# Look up the full command from list-keys
+full=$(tmux list-keys -T prefix | grep -F " ${key} " | head -1)
+
+# If not found in prefix table, try other tables
+if [[ -z "$full" ]]; then
+    full=$(tmux list-keys | grep -F " ${key} " | head -1)
+fi
+
+[[ -z "$full" ]] && exit
+
+# Extract the command (everything after the 4th field)
+cmd=$(echo "$full" | awk '{ $1=$2=$3=$4=""; print $0 }' | sed 's/^ *//')
+
+# Handle copy-mode bindings
+if [[ "$cmd" == *"copy-mode"* ]] && [[ "$full" != *"prefix"* ]]; then
+    tmux copy-mode
+fi
+
+tmux $cmd
