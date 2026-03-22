@@ -20,6 +20,17 @@ if running_macos; then
   fi
 fi
 
+# link_directory_contents symlinks ~/.config/fish → dotfiles/config/fish.
+# Fisher would write into the dotfiles repo through that symlink, so replace
+# it with a real directory before fisher runs, then merge dotfiles conf back in.
+dotfiles_fish="$DIR/config/fish"
+fish_config="$HOME/.config/fish"
+
+if [ -L "$fish_config" ]; then
+  rm "$fish_config"
+  mkdir -p "$fish_config" "$fish_config/conf.d" "$fish_config/functions" "$fish_config/completions"
+fi
+
 if ! fish -c "type fisher >/dev/null 2>/dev/null"; then
   echo "installing fisher"
   fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher"
@@ -53,24 +64,15 @@ for plugin in "${plugins[@]}"; do
   fish -c "fisher install $plugin"
 done
 
-# Fisher creates ~/.config/fish/ as a real directory, which clobbers the
-# dotfiles symlink. Merge dotfiles fish config into the fisher-managed dir.
-dotfiles_fish="$DIR/config/fish"
-fish_config="$HOME/.config/fish"
-
-if [ -d "$fish_config" ] && [ ! -L "$fish_config" ]; then
-  # Remove stale nested symlink if present (config/fish linked inside itself)
+# Merge dotfiles fish config into the fisher-managed directory
+if [ -d "$fish_config" ] && [ -d "$dotfiles_fish/conf.d" ]; then
   rm -f "$fish_config/fish"
 
-  # Symlink conf.d files from dotfiles
   for f in "$dotfiles_fish"/conf.d/*; do
     [ -f "$f" ] && ln -sf "$f" "$fish_config/conf.d/"
   done
 
-  # Symlink config.fish from dotfiles
   [ -f "$dotfiles_fish/config.fish" ] && ln -sf "$dotfiles_fish/config.fish" "$fish_config/config.fish"
-
-  # Symlink fish_plugins from dotfiles
   [ -f "$dotfiles_fish/fish_plugins" ] && ln -sf "$dotfiles_fish/fish_plugins" "$fish_config/fish_plugins"
 fi
 
