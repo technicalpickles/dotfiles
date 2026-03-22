@@ -8,4 +8,4 @@ if [[ ! -d "$tpm_destination" ]]; then
 fi
 
 echo "🔳 reloading/reinstalling tmux"
-tmux source ~/.tmux.conf
+tmux source ~/.tmux.conf 2> /dev/null || true
