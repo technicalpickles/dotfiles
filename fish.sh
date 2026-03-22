@@ -72,6 +72,10 @@ if [ -d "$fish_config" ] && [ -d "$dotfiles_fish/conf.d" ]; then
     [ -f "$f" ] && ln -sf "$f" "$fish_config/conf.d/"
   done
 
+  for f in "$dotfiles_fish"/functions/*; do
+    [ -f "$f" ] && ln -sf "$f" "$fish_config/functions/"
+  done
+
   [ -f "$dotfiles_fish/config.fish" ] && ln -sf "$dotfiles_fish/config.fish" "$fish_config/config.fish"
   [ -f "$dotfiles_fish/fish_plugins" ] && ln -sf "$dotfiles_fish/fish_plugins" "$fish_config/fish_plugins"
 fi
