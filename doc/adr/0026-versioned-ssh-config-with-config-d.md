@@ -1,4 +1,4 @@
-# 24. Versioned SSH Config with config.d/
+# 26. Versioned SSH Config with config.d/
 
 Date: 2026-03-15
 

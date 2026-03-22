@@ -45,6 +45,40 @@ read_json() {
 ROLE="${DOTPICKLES_ROLE:-personal}"
 echo "Configuring Claude Code for role: $ROLE"
 
+# Ensure ~/.claude exists and symlink managed files
+setup_claude_directory() {
+  echo "Setting up ~/.claude directory..."
+
+  mkdir -p "$HOME/.claude"
+  mkdir -p "$HOME/.claude/skills"
+
+  # Symlink CLAUDE.md (user's global instructions)
+  local claude_md="$DIR/claude/CLAUDE.md"
+  local claude_md_target="$HOME/.claude/CLAUDE.md"
+  if [ -L "$claude_md_target" ]; then
+    echo "  ✓ CLAUDE.md already symlinked"
+  elif [ -f "$claude_md_target" ]; then
+    echo "  ⚠ CLAUDE.md exists as regular file, skipping (remove manually to symlink)"
+  else
+    ln -s "$claude_md" "$claude_md_target"
+    echo "  ✓ CLAUDE.md symlinked"
+  fi
+
+  # Symlink permissions-manager skill
+  local pm_skill="$DIR/claude/skills/permissions-manager"
+  local pm_skill_target="$HOME/.claude/skills/permissions-manager"
+  if [ -L "$pm_skill_target" ]; then
+    echo "  ✓ permissions-manager skill already symlinked"
+  elif [ -d "$pm_skill_target" ]; then
+    echo "  ⚠ permissions-manager skill exists as directory, skipping (remove manually to symlink)"
+  else
+    ln -s "$pm_skill" "$pm_skill_target"
+    echo "  ✓ permissions-manager skill symlinked"
+  fi
+}
+
+setup_claude_directory
+
 # Generate settings.json
 generate_settings() {
   echo "Generating settings.json..."

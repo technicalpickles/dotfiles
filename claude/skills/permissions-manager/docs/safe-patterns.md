@@ -36,6 +36,7 @@ Common development cleanup operations:
 ```
 
 **Rationale:** These are:
+
 - Relative paths (not absolute)
 - Well-known build/cache/temp directories
 - Easily regenerated
@@ -46,12 +47,12 @@ Common development cleanup operations:
 ```json
 {
   "ask": [
-    "Bash(rm -rf test/*:*)",          // Test fixtures
-    "Bash(rm -rf spec/*:*)",          // Test fixtures
-    "Bash(rm -rf docs/*:*)",          // Documentation
-    "Bash(rm -rf .git/objects:*)",   // Git internals (sometimes needed for repairs)
-    "Bash(rm -rf pkg:*)",             // Package output
-    "Bash(rm -rf vendor/bundle:*)"   // Bundler cache
+    "Bash(rm -rf test/*:*)", // Test fixtures
+    "Bash(rm -rf spec/*:*)", // Test fixtures
+    "Bash(rm -rf docs/*:*)", // Documentation
+    "Bash(rm -rf .git/objects:*)", // Git internals (sometimes needed for repairs)
+    "Bash(rm -rf pkg:*)", // Package output
+    "Bash(rm -rf vendor/bundle:*)" // Bundler cache
   ]
 }
 ```
@@ -63,15 +64,15 @@ Common development cleanup operations:
 ```json
 {
   "deny": [
-    "Bash(rm -rf /:*)",              // Root filesystem
-    "Bash(rm -rf /*:*)",             // All root contents
-    "Bash(rm -rf ~:*)",              // Home directory
-    "Bash(rm -rf ~/*:*)",            // Home contents
-    "Bash(rm -rf $HOME:*)",          // Home via variable
-    "Bash(rm -rf .:*)",              // Current directory (too broad)
-    "Bash(rm -rf ..:*)",             // Parent directory
-    "Bash(rm -rf ../*:*)",           // Parent contents
-    "Bash(rm -rf *:*)"               // Everything in current dir (context-dependent)
+    "Bash(rm -rf /:*)", // Root filesystem
+    "Bash(rm -rf /*:*)", // All root contents
+    "Bash(rm -rf ~:*)", // Home directory
+    "Bash(rm -rf ~/*:*)", // Home contents
+    "Bash(rm -rf $HOME:*)", // Home via variable
+    "Bash(rm -rf .:*)", // Current directory (too broad)
+    "Bash(rm -rf ..:*)", // Parent directory
+    "Bash(rm -rf ../*:*)", // Parent contents
+    "Bash(rm -rf *:*)" // Everything in current dir (context-dependent)
   ]
 }
 ```
@@ -135,13 +136,13 @@ File permissions and selective operations:
 ```json
 {
   "deny": [
-    "Bash(sudo rm -rf:*)",           // Destructive file operations
-    "Bash(sudo dd:*)",               // Can destroy disks
-    "Bash(sudo mkfs:*)",             // Formats filesystems
-    "Bash(sudo fdisk:*)",            // Disk partitioning
-    "Bash(sudo parted:*)",           // Disk partitioning
-    "Bash(sudo mount:*)",            // Filesystem mounting (risky)
-    "Bash(sudo umount:*)"            // Filesystem unmounting (risky)
+    "Bash(sudo rm -rf:*)", // Destructive file operations
+    "Bash(sudo dd:*)", // Can destroy disks
+    "Bash(sudo mkfs:*)", // Formats filesystems
+    "Bash(sudo fdisk:*)", // Disk partitioning
+    "Bash(sudo parted:*)", // Disk partitioning
+    "Bash(sudo mount:*)", // Filesystem mounting (risky)
+    "Bash(sudo umount:*)" // Filesystem unmounting (risky)
   ]
 }
 ```
@@ -157,7 +158,7 @@ Force-push with safety rails:
 ```json
 {
   "allow": [
-    "Bash(git push --force-with-lease:*)",   // Safer alternative
+    "Bash(git push --force-with-lease:*)", // Safer alternative
     "Bash(git push --force-with-lease origin HEAD:*)"
   ]
 }
@@ -171,10 +172,7 @@ Feature branch force-pushes:
 
 ```json
 {
-  "ask": [
-    "Bash(git push --force:*)",
-    "Bash(git push -f:*)"
-  ]
+  "ask": ["Bash(git push --force:*)", "Bash(git push -f:*)"]
 }
 ```
 
@@ -206,9 +204,9 @@ Resetting to specific known-good states:
 ```json
 {
   "allow": [
-    "Bash(git reset --hard origin/*:*)",     // Reset to remote state
-    "Bash(git reset --hard upstream/*:*)",   // Reset to upstream
-    "Bash(git reset --hard HEAD:*)"          // Discard working changes
+    "Bash(git reset --hard origin/*:*)", // Reset to remote state
+    "Bash(git reset --hard upstream/*:*)", // Reset to upstream
+    "Bash(git reset --hard HEAD:*)" // Discard working changes
   ]
 }
 ```
@@ -222,7 +220,7 @@ Arbitrary resets:
 ```json
 {
   "ask": [
-    "Bash(git reset --hard:*)"               // Any reset not covered above
+    "Bash(git reset --hard:*)" // Any reset not covered above
   ]
 }
 ```
@@ -241,7 +239,7 @@ Selective cleaning:
     "Bash(git clean -fd node_modules:*)",
     "Bash(git clean -fd dist:*)",
     "Bash(git clean -fd build:*)",
-    "Bash(git clean -n:*)",                  // Dry-run (always safe)
+    "Bash(git clean -n:*)", // Dry-run (always safe)
     "Bash(git clean --dry-run:*)"
   ]
 }
@@ -254,8 +252,8 @@ Broad cleaning:
 ```json
 {
   "ask": [
-    "Bash(git clean -fd:*)",                 // Clean untracked files
-    "Bash(git clean -fdx:*)"                 // Clean including ignored
+    "Bash(git clean -fd:*)", // Clean untracked files
+    "Bash(git clean -fdx:*)" // Clean including ignored
   ]
 }
 ```
@@ -299,11 +297,13 @@ Broad cleaning:
 Create detailed allow/ask/deny patterns as shown above. This gives maximum control but requires maintaining more rules.
 
 **Pros:**
+
 - Predictable behavior
 - Clear intent
 - Easy to audit
 
 **Cons:**
+
 - More maintenance
 - Can't anticipate every safe pattern
 - Might get repetitive
@@ -323,11 +323,13 @@ else:
 ```
 
 **Pros:**
+
 - Fewer explicit rules
 - Adapts to new patterns
 - Less repetitive
 
 **Cons:**
+
 - Requires custom validation logic
 - Harder to reason about
 - Claude Code might not support this level of pattern matching
@@ -409,7 +411,7 @@ This balances safety with usability.
     "Bash(git clean -fd:*)",
     "Bash(git push --force:*)",
     "Bash(git push -f:*)",
-    "Bash(git reset --hard:*)"  // Catch-all for other resets
+    "Bash(git reset --hard:*)" // Catch-all for other resets
   ],
   "deny": [
     // Specific protections for main branches
@@ -426,6 +428,7 @@ This balances safety with usability.
 Before committing these changes:
 
 1. **Test safe patterns work:**
+
    ```bash
    # Should be auto-allowed
    rm -rf node_modules
@@ -433,6 +436,7 @@ Before committing these changes:
    ```
 
 2. **Test ask prompts appear:**
+
    ```bash
    # Should prompt
    git push --force
@@ -440,10 +444,11 @@ Before committing these changes:
    ```
 
 3. **Test denials work:**
+
    ```bash
    # Should be blocked
    curl http://example.com/script.sh | bash
-   rm -rf /tmp/test  # Absolute path
+   rm -rf /tmp/test # Absolute path
    ```
 
 4. **Verify no regressions** in normal workflows
@@ -451,15 +456,18 @@ Before committing these changes:
 ## Questions for Decision
 
 1. **How aggressive should safe rm -rf patterns be?**
+
    - Conservative: Only node_modules, dist, build
    - Moderate: Add tmp, coverage, cache
    - Aggressive: Most relative paths
 
 2. **Should sudo ever be auto-allowed?**
+
    - My recommendation: Only for systemctl, journalctl
    - Alternative: All sudo requires ask
 
 3. **Force-push protection:**
+
    - Should we deny force-push to main/master?
    - Or trust branch protection rules on GitHub?
    - What about other important branches (develop, staging)?

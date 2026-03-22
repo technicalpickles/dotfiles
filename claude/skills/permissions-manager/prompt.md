@@ -18,23 +18,27 @@ You are a Claude Code permissions management assistant. Your role is to help ana
 **Workflow**:
 
 1. **Gather Data**:
+
    ```bash
    claude-permissions --aggregate > /tmp/permissions-analysis-$(date +%s).txt
    ```
 
 2. **Analyze Patterns**:
+
    - Count frequency of each permission across projects
    - Identify candidates for promotion to global (appearing 2+ times)
    - Check for dangerous wildcards (`:*` on rm, sudo, etc.)
    - Find missing ecosystem files for commonly-used tools
 
 3. **Generate Recommendations**:
+
    - High priority: 4+ occurrences
    - Medium priority: 2-3 occurrences
    - Check for deny rules that could be ask
    - Identify unsafe wildcard patterns
 
 4. **Create Documentation**:
+
    - Generate analysis in timestamped directory: `doc/permissions/YYYY-MM-DD/`
    - Files created:
      - `analysis.md` - Main recommendations
@@ -49,6 +53,7 @@ You are a Claude Code permissions management assistant. Your role is to help ana
    - **IMPORTANT**: Redact all project names, replace with generic "Project A", "Project B", etc.
 
 5. **Output Format**:
+
    ```markdown
    # Claude Permissions Analysis
 
@@ -58,7 +63,7 @@ You are a Claude Code permissions management assistant. Your role is to help ana
    ## Current State
 
    | Metric | Count |
-   |--------|-------|
+   | ------ | ----- |
    | Allow  | XXX   |
    | Ask    | XXX   |
    | Deny   | XXX   |
@@ -95,21 +100,25 @@ You are a Claude Code permissions management assistant. Your role is to help ana
 **Workflow**:
 
 1. **Ask for confirmation** before making any changes:
+
    - "Ready to apply permission changes? This will modify files in claude/ directory."
 
 2. **For each recommendation**:
+
    - Show the specific change
    - Ask: "Apply this change? (yes/no/skip all)"
    - If yes: Make the change
    - Track all changes made
 
 3. **After all changes**:
+
    - Run `./claudeconfig.sh` to regenerate settings
    - Run `claude-permissions cleanup --dry-run` to preview cleanup
    - Ask: "Run cleanup? This will remove duplicate permissions from projects."
    - If yes: Run `claude-permissions cleanup --force`
 
 4. **Create summary document**:
+
    - Generate `doc/permissions/YYYY-MM-DD/changes.md`
    - List all changes made
    - Include before/after stats
@@ -126,6 +135,7 @@ You are a Claude Code permissions management assistant. Your role is to help ana
 **Workflow**:
 
 1. **Display current stats**:
+
    ```bash
    jq '.permissions | {
      allow: (.allow | length),
@@ -135,11 +145,13 @@ You are a Claude Code permissions management assistant. Your role is to help ana
    ```
 
 2. **List permission files**:
+
    ```bash
    ls -1 claude/permissions*.json*
    ```
 
 3. **Show recent changes**:
+
    ```bash
    git log --oneline --grep="permission" -5
    ```
@@ -159,6 +171,7 @@ When generating documentation, **always redact** private information:
 - **Command arguments**: Redact specific values, keep patterns
 
 **Example Redaction**:
+
 ```
 Before: gusto-app/api/users
 After:  Project-A/api/users
@@ -177,10 +190,12 @@ When reviewing permissions, flag these dangerous patterns:
 ### Unsafe Wildcards
 
 1. **rm with wildcards**: `Bash(rm -rf target:*)`
+
    - Risk: Could match `rm -rf target /important`
    - Fix: Use exact match `Bash(rm -rf target)`
 
 2. **sudo with broad wildcards**: `Bash(sudo:*)`
+
    - Risk: Allows any sudo command
    - Fix: Be specific about allowed sudo operations
 
@@ -191,6 +206,7 @@ When reviewing permissions, flag these dangerous patterns:
 ### Safe Wildcards
 
 1. **Tools with arguments**: `Bash(npm install:*)`
+
    - Safe: Extra args are package names
    - OK: Wildcard is appropriate here
 
@@ -254,6 +270,7 @@ home/.claude/skills/permissions-manager/
 ## Integration with Dotfiles
 
 This skill is part of the dotfiles repository and:
+
 - Lives in `home/.claude/skills/permissions-manager/`
 - Gets symlinked to `~/.claude/skills/permissions-manager/` during install
 - Works with the permission system defined in `claude/`
@@ -271,14 +288,17 @@ This skill is part of the dotfiles repository and:
 ## Troubleshooting
 
 **Issue**: Analysis shows no recommendations
+
 - Check if `claude-permissions` is installed
 - Verify you have project-local permissions to analyze
 
 **Issue**: Redaction not working
+
 - Ensure `scripts/redact-projects.sh` is executable
 - Check that git repo list is accessible
 
 **Issue**: Apply fails
+
 - Check file permissions in `claude/` directory
 - Verify `claudeconfig.sh` is executable
 - Ensure `jq` is installed

@@ -22,9 +22,9 @@ if [[ -d "$WORKSPACE_DIR" ]]; then
   while IFS= read -r -d '' dir; do
     project_name=$(basename "$dir")
     # Skip common non-project directories
-    if [[ "$project_name" != ".git" ]] && \
-       [[ "$project_name" != "node_modules" ]] && \
-       [[ "$project_name" != ".DS_Store" ]]; then
+    if [[ "$project_name" != ".git" ]] \
+      && [[ "$project_name" != "node_modules" ]] \
+      && [[ "$project_name" != ".DS_Store" ]]; then
       project_map["$project_name"]="Project-$(printf "%02d" $counter)"
       ((counter++))
     fi
