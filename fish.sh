@@ -53,4 +53,25 @@ for plugin in "${plugins[@]}"; do
   fish -c "fisher install $plugin"
 done
 
+# Fisher creates ~/.config/fish/ as a real directory, which clobbers the
+# dotfiles symlink. Merge dotfiles fish config into the fisher-managed dir.
+dotfiles_fish="$DIR/config/fish"
+fish_config="$HOME/.config/fish"
+
+if [ -d "$fish_config" ] && [ ! -L "$fish_config" ]; then
+  # Remove stale nested symlink if present (config/fish linked inside itself)
+  rm -f "$fish_config/fish"
+
+  # Symlink conf.d files from dotfiles
+  for f in "$dotfiles_fish"/conf.d/*; do
+    [ -f "$f" ] && ln -sf "$f" "$fish_config/conf.d/"
+  done
+
+  # Symlink config.fish from dotfiles
+  [ -f "$dotfiles_fish/config.fish" ] && ln -sf "$dotfiles_fish/config.fish" "$fish_config/config.fish"
+
+  # Symlink fish_plugins from dotfiles
+  [ -f "$dotfiles_fish/fish_plugins" ] && ln -sf "$dotfiles_fish/fish_plugins" "$fish_config/fish_plugins"
+fi
+
 echo
