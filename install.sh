@@ -10,8 +10,8 @@ if [[ -f .env ]]; then
 fi
 
 if [[ -z "${DOTPICKLES_ROLE}" ]]; then
-  if which hostnamectl > /dev/null 2>&1; then
-    hostname=$(hostnamectl hostname)
+  if hostname=$(hostnamectl hostname 2> /dev/null); then
+    :
   else
     hostname=$(hostname)
   fi
@@ -22,6 +22,7 @@ if [[ -z "${DOTPICKLES_ROLE}" ]]; then
   fi
 fi
 
+export DOTPICKLES_ROLE
 echo "role: $DOTPICKLES_ROLE"
 
 # shellcheck source=./functions.sh
