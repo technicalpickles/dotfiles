@@ -31,43 +31,8 @@ if [ -L "$fish_config" ]; then
   mkdir -p "$fish_config" "$fish_config/conf.d" "$fish_config/functions" "$fish_config/completions"
 fi
 
-if ! fish -c "type fisher >/dev/null 2>/dev/null"; then
-  echo "installing fisher"
-  fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher"
-fi
-
-plugins=(
-  jethrokuan/z
-  jorgebucaran/autopair.fish
-)
-
-if command_available fzf; then
-  plugins+=(PatrickF1/fzf.fish)
-fi
-
-if command_available direnv; then
-  plugins+=(halostatue/fish-direnv)
-fi
-
-echo "previous plugins:"
-if [ -f ~/.config/fish/fish_plugins ]; then
-  cat < ~/.config/fish/fish_plugins
-fi
-
-rm -f ~/.config/fish/fish_plugins
-
-echo
-
-echo "rebuilding list of plugins"
-for plugin in "${plugins[@]}"; do
-  echo "$plugin"
-  fish -c "fisher install $plugin" < /dev/null
-done
-
-# Merge dotfiles fish config into the fisher-managed directory
+# Symlink dotfiles config into the fisher-managed directory
 if [ -d "$fish_config" ] && [ -d "$dotfiles_fish/conf.d" ]; then
-  rm -f "$fish_config/fish"
-
   for f in "$dotfiles_fish"/conf.d/*; do
     [ -f "$f" ] && ln -sf "$f" "$fish_config/conf.d/"
   done
@@ -79,5 +44,15 @@ if [ -d "$fish_config" ] && [ -d "$dotfiles_fish/conf.d" ]; then
   [ -f "$dotfiles_fish/config.fish" ] && ln -sf "$dotfiles_fish/config.fish" "$fish_config/config.fish"
   [ -f "$dotfiles_fish/fish_plugins" ] && ln -sf "$dotfiles_fish/fish_plugins" "$fish_config/fish_plugins"
 fi
+
+# Install fisher if missing, then sync plugins from fish_plugins file
+if ! fish -c "type fisher >/dev/null 2>/dev/null"; then
+  echo "installing fisher"
+  fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher" < /dev/null
+fi
+
+echo "syncing plugins from fish_plugins:"
+cat "$fish_config/fish_plugins"
+fish -c "fisher update" < /dev/null
 
 echo
