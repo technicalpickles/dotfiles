@@ -5,6 +5,12 @@ set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DIR
 
+# Ensure ~/.pickles points to this repo, even if cloned elsewhere (e.g. devcontainers)
+if [[ "$DIR" != "$HOME/.pickles" ]] && [[ ! -e "$HOME/.pickles" ]]; then
+  ln -s "$DIR" "$HOME/.pickles"
+  echo "🔗 Symlinked ~/.pickles -> $DIR"
+fi
+
 if [[ -f .env ]]; then
   source .env
 fi
