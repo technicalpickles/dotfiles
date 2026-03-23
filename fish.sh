@@ -61,7 +61,7 @@ echo
 echo "rebuilding list of plugins"
 for plugin in "${plugins[@]}"; do
   echo "$plugin"
-  fish -c "fisher install $plugin"
+  fish -c "fisher install $plugin" < /dev/null
 done
 
 # Merge dotfiles fish config into the fisher-managed directory
