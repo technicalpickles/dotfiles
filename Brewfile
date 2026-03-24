@@ -49,6 +49,7 @@ brew 'wget'
 brew 'rbspy'
 brew 'shellcheck'
 brew 'mise'
+brew 'starship'
 brew 'specstoryai/tap/specstory'
 
 # benchmarking
