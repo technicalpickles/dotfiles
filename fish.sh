@@ -10,13 +10,29 @@ fi
 
 echo "🐟 configuring fish"
 fish_path=$(which fish)
+
 if test -f /etc/shells && ! grep -q "$fish_path" /etc/shells; then
-  sudo bash -c "which fish >> /etc/shells"
+  echo "  → adding $fish_path to /etc/shells"
+  if echo "$fish_path" | sudo tee -a /etc/shells > /dev/null; then
+    echo "  ✅ added to /etc/shells"
+  else
+    echo "  ❌ failed to add to /etc/shells — run manually: echo $fish_path | sudo tee -a /etc/shells"
+  fi
+else
+  echo "  ✅ $fish_path already in /etc/shells"
 fi
 
 if running_macos; then
-  if ! dscl . -read "$HOME" UserShell | grep -q "$fish_path"; then
-    chsh -s "$fish_path"
+  current_shell=$(dscl . -read "$HOME" UserShell | awk '{print $2}')
+  if [[ "$current_shell" != "$fish_path" ]]; then
+    echo "  → changing login shell from $current_shell to $fish_path"
+    if chsh -s "$fish_path"; then
+      echo "  ✅ login shell changed — open a new terminal to use fish"
+    else
+      echo "  ❌ chsh failed — run manually: chsh -s $fish_path"
+    fi
+  else
+    echo "  ✅ login shell already set to $fish_path"
   fi
 fi
 
