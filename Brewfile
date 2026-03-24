@@ -1,8 +1,4 @@
 # frozen_string_literal: true
-tap 'homebrew/services'
-tap 'homebrew/command-not-found'
-tap  'tophat/bar'
-
 # core shell environment stuff
 brew 'fish'
 brew 'direnv'
@@ -22,9 +18,8 @@ brew 'neovide'
 
 # general utilities
 brew 'bat'
-brew 'cheat'
 brew 'coreutils'
-brew 'dua'
+brew 'dua-cli'
 brew 'dust'
 brew 'eza'
 brew 'fd'
@@ -66,7 +61,7 @@ cask 'bartender'
 cask 'cleanshot'
 cask 'dash'
 cask 'hammerspoon'
-cask 'hookshot'
+# cask 'hookshot'  # removed from homebrew, install manually if needed
 cask 'macbreakz'
 cask 'obsidian'
 cask "hazel"

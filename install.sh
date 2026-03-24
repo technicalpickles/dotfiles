@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -eo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DIR
@@ -39,6 +39,17 @@ if running_macos; then
   caffeinate -s -w $$ &
 fi
 
+if running_macos; then
+  load_brew_shellenv
+
+  if ! brew_available; then
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    load_brew_shellenv
+  fi
+
+  brew_bundle
+fi
+
 git submodule init
 git submodule update
 
@@ -53,15 +64,6 @@ echo
 ./sshconfig.sh
 
 if running_macos; then
-  load_brew_shellenv
-
-  if ! brew_available; then
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    load_brew_shellenv
-  fi
-
-  brew_bundle
-
   echo "🍎 configuring macOS defaults"
   ~/.macos
   echo

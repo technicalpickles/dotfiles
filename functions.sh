@@ -107,7 +107,7 @@ link() {
 
 brew_bundle() {
   echo "🍻 running brew bundle"
-  cat Brewfile "Brewfile.${DOTPICKLES_ROLE}" 2> /dev/null | brew bundle --file=- | sed 's/^/  → /'
+  cat Brewfile "Brewfile.${DOTPICKLES_ROLE}" 2> /dev/null | brew bundle --file=- 2>&1 | sed 's/^/  → /'
   echo
 }
 
