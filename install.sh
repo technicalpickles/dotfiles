@@ -2,6 +2,13 @@
 
 set -eo pipefail
 
+# Parse flags
+for arg in "$@"; do
+  case "$arg" in
+    --yes|-y) export DOTPICKLES_YES=1 ;;
+  esac
+done
+
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DIR
 
@@ -33,6 +40,12 @@ echo "role: $DOTPICKLES_ROLE"
 
 # shellcheck source=./functions.sh
 source ./functions.sh
+
+# Guard: non-interactive without --yes is an error
+if [ "${DOTPICKLES_YES:-}" != "1" ] && [ ! -t 0 ]; then
+  echo "Error: not running interactively. Use --yes/-y for unattended mode." >&2
+  exit 1
+fi
 
 if running_macos; then
   # Prevent sleeping during script execution, as long as the machine is on AC power
