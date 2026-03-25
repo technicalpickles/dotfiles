@@ -1,0 +1,22 @@
+# Default profile - auto-included everywhere
+# Pickled Claude baseline + Anthropic review tools + meta plugins
+
+plugins = [
+  # Pickled Claude plugins
+  "git@pickled-claude-plugins",
+  "ci-cd-tools@pickled-claude-plugins",
+  "dev-tools@pickled-claude-plugins",
+  "second-brain@pickled-claude-plugins",
+  "stay-on-target@pickled-claude-plugins",
+  "agent-meta@pickled-claude-plugins",
+  "tool-routing@pickled-claude-plugins",
+
+  # Anthropic official
+  "pr-review-toolkit@claude-plugins-official",
+  "code-review@claude-plugins-official",
+  "playground@claude-plugins-official",
+
+  # Superpowers meta/docs
+  "superpowers-developing-for-claude-code@superpowers-marketplace",
+  "elements-of-style@superpowers-marketplace",
+]

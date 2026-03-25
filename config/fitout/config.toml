@@ -1,0 +1,7 @@
+# Fettle global config
+# Marketplaces and their sources
+
+[marketplaces]
+pickled-claude-plugins = "https://github.com/technicalpickles/pickled-claude-plugins"
+claude-plugins-official = "https://github.com/anthropics/claude-plugins-official"
+superpowers-marketplace = "obra/superpowers-marketplace"

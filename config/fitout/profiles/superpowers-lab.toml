@@ -1,0 +1,6 @@
+# Lab profile - opt-in for experimental features
+# Contains experimental skills and tools
+
+plugins = [
+  "superpowers-lab@superpowers-marketplace",
+]

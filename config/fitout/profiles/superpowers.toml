@@ -1,0 +1,6 @@
+# Superpowers profile - opt-in for workflow discipline
+# Brainstorming, TDD, systematic debugging, plan execution
+
+plugins = [
+  "superpowers@superpowers-marketplace",
+]

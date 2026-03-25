@@ -1,0 +1,6 @@
+# Rust profile - opt-in for Rust LSP intelligence
+# Type checking, diagnostics via rust-analyzer
+
+plugins = [
+  "rust-analyzer-lsp@claude-plugins-official",
+]

@@ -1,0 +1,6 @@
+# Python profile - opt-in for Python LSP intelligence
+# Type checking, diagnostics via Pyright
+
+plugins = [
+  "pyright-lsp@claude-plugins-official",
+]

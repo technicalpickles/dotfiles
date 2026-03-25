@@ -1,0 +1,6 @@
+# Browsing profile - opt-in for browser automation
+# Use when you need Chrome-based fetching/testing
+
+plugins = [
+  "superpowers-chrome@superpowers-marketplace",
+]
