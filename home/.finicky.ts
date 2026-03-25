@@ -5,9 +5,15 @@
 import type { FinickyConfig } from 'finicky';
 
 // System-specific Chrome profiles
-// Edit these values for each system, or add hostname-based conditionals below
+const hostname = finicky.getSystemInfo().localizedName;
 let personalChromeProfile = 'Profile 3';
 let workChromeProfile = 'Profile 1';
+
+if (hostname === 'josh-nichols-K9DJ2M7WK6') {
+  // New work machine (rehome 2026-03-24): Default=work, Profile 1=personal
+  workChromeProfile = 'Default';
+  personalChromeProfile = 'Profile 1';
+}
 
 // Slack workspace subdomain to team ID mapping
 // Find your team ID: Open Slack in browser, check boot_data.team_id in page source
