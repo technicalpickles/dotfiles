@@ -63,18 +63,6 @@ setup_claude_directory() {
     ln -s "$claude_md" "$claude_md_target"
     echo "  ✓ CLAUDE.md symlinked"
   fi
-
-  # Symlink permissions-manager skill
-  local pm_skill="$DIR/claude/skills/permissions-manager"
-  local pm_skill_target="$HOME/.claude/skills/permissions-manager"
-  if [ -L "$pm_skill_target" ]; then
-    echo "  ✓ permissions-manager skill already symlinked"
-  elif [ -d "$pm_skill_target" ]; then
-    echo "  ⚠ permissions-manager skill exists as directory, skipping (remove manually to symlink)"
-  else
-    ln -s "$pm_skill" "$pm_skill_target"
-    echo "  ✓ permissions-manager skill symlinked"
-  fi
 }
 
 setup_claude_directory

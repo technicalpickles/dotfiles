@@ -153,8 +153,6 @@ node_modules
 # claude runtime state (safe to remove after migrate-claude-config.sh)
 home/.claude/
 
-# craftdesk - installed skills (like node_modules)
-.claude/skills/
 .claude/settings.local.json
 
 # permissions-manager skill generated output
