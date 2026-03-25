@@ -27,3 +27,4 @@
 - [25. use-startcalendarinterval-for-launchagents](0025-use-startcalendarinterval-for-launchagents.md)
 - [26. versioned-ssh-config-with-config-d](0026-versioned-ssh-config-with-config-d.md)
 - [27. tmux-command-palette](0027-tmux-command-palette.md)
+- [28. safe-symlink-function](0028-safe-symlink-function.md)
