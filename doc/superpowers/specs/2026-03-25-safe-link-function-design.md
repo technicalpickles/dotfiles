@@ -16,23 +16,25 @@ There's also a nested symlink bug: if `-F` doesn't behave as expected, `ln -s so
 
 ## Design
 
-### link() case flow
+### Two modes: interactive and auto-yes
 
-Split case 1 into two branches:
+The `link()` function operates in two modes:
+
+- **Interactive (default):** prompts the user before replacing anything that isn't already correct. If stdin is not a terminal (CI, piped input), skips with a warning instead of hanging.
+- **Auto-yes (`--yes` / `-y`):** auto-answers yes to all prompts. Safe for scripts and CI. Real files/dirs get backed up before replacement; wrong symlinks get repointed silently.
+
+Controlled by the `DOTPICKLES_YES` env var (set by script-level `--yes`/`-y` flag).
+
+### link() case flow
 
 ```
 target doesn't exist          -> create symlink
-target is real file/dir       -> backup-and-replace OR prompt (NEW)
-target is symlink, wrong dest -> prompt to overwrite (unchanged)
-target is symlink, correct    -> no-op (unchanged)
+target is real file/dir       -> prompt OR auto-backup-and-replace (NEW)
+target is symlink, wrong dest -> prompt OR auto-replace (UPDATED)
+target is symlink, correct    -> no-op
 ```
 
-### Real file/dir behavior
-
-Controlled by `DOTPICKLES_BACKUP` env var:
-
-- **Not set (default, interactive):** prompt the user. "~/.config/foo exists as directory (not a symlink). Replace with symlink to config/foo? [y/N]". On "y", move target to backup, then symlink.
-- **Set to 1 (`--backup` flag):** automatically move target to backup, then symlink. No prompt.
+All replacements of real files/dirs create a backup first, regardless of mode. Wrong symlinks don't need backups (no user data at risk).
 
 ### Backup naming
 
@@ -50,17 +52,28 @@ The "target doesn't exist" branch should also use plain `ln -s` (no `-Ff`) for t
 
 The "wrong symlink" branch retains `ln -Ff -s` because the target is a known symlink, not a directory. `-F` is safe here (it replaces the symlink itself) and needed to avoid the prompt-then-fail pattern.
 
-### Script-level --backup flag
+### Script-level --yes flag
 
-`symlinks.sh` and `install.sh` parse `--backup` and export `DOTPICKLES_BACKUP=1`. The `link()` function reads this env var. No changes to `link_directory_contents`, `find_targets`, or callers.
-
-### Non-interactive shells
-
-When stdin is not a terminal (piped input, CI), the interactive prompts would hang or fail silently. In non-interactive contexts, `link()` defaults to skipping (no replacement) and prints a warning. Use `--backup` for unattended runs.
+`symlinks.sh` and `install.sh` parse `--yes`/`-y` and export `DOTPICKLES_YES=1`. The `link()` function reads this env var. No changes to `link_directory_contents`, `find_targets`, or callers.
 
 ### Target implementation
 
 ```bash
+# Ask a y/N question. Returns 0 for yes, 1 for no.
+# In auto-yes mode, always returns 0. In non-interactive shells, always returns 1.
+confirm() {
+  local prompt="$1"
+  if [ "${DOTPICKLES_YES:-}" = "1" ]; then
+    return 0
+  elif [ -t 0 ]; then
+    read -p "$prompt " -n 1 -r
+    echo
+    [[ $REPLY =~ ^[Yy]$ ]]
+  else
+    return 1
+  fi
+}
+
 link() {
   local linkable="$1"
   local target="$2"
@@ -71,41 +84,26 @@ link() {
     # Target is a symlink
     if [ "$(readlink "$target")" = "$source" ]; then
       echo "🔗 $display_target -> already linked"
+    elif confirm "🔗 $display_target -> linked to $(readlink "$target"). Repoint to ${linkable}?"; then
+      echo "🔗 $display_target -> linking from $linkable"
+      ln -Ff -s "$source" "$target"
     else
-      echo "🔗 $display_target -> already linked to $(readlink "$target")"
-      read -p "Overwrite it to link to ${source}? " -n 1 -r
-      echo
-      if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "🔗 $display_target -> linking from $linkable"
-        ln -Ff -s "$source" "$target"
-      fi
+      echo "🔗 $display_target -> skipped (wrong symlink)"
     fi
   elif [ -e "$target" ]; then
     # Target exists as real file or directory
     local filetype="file"
     [ -d "$target" ] && filetype="directory"
 
-    if [ "${DOTPICKLES_BACKUP:-}" = "1" ]; then
+    if confirm "🔗 $display_target -> exists as $filetype. Replace with symlink to ${linkable}?"; then
       local backup
       backup="$(backup_path "$target")"
-      echo "🔗 $display_target -> backing up $filetype to ${backup##*/}"
+      echo "🔗 $display_target -> backing up to ${backup##*/}"
       mv "$target" "$backup"
       echo "🔗 $display_target -> linking from $linkable"
       ln -s "$source" "$target"
-    elif [ -t 0 ]; then
-      echo "🔗 $display_target -> exists as $filetype (not a symlink)"
-      read -p "Replace with symlink to ${linkable}? " -n 1 -r
-      echo
-      if [[ $REPLY =~ ^[Yy]$ ]]; then
-        local backup
-        backup="$(backup_path "$target")"
-        echo "🔗 $display_target -> backing up to ${backup##*/}"
-        mv "$target" "$backup"
-        echo "🔗 $display_target -> linking from $linkable"
-        ln -s "$source" "$target"
-      fi
     else
-      echo "⚠ $display_target exists as $filetype, skipping (use --backup for unattended)"
+      echo "🔗 $display_target -> skipped ($filetype exists)"
     fi
   else
     # Target doesn't exist
@@ -130,9 +128,9 @@ backup_path() {
 
 ## Files changed
 
-- `functions.sh`: `link()` function, roughly 10-15 lines of new logic
-- `symlinks.sh`: parse `--backup`, export env var
-- `install.sh`: parse `--backup`, export env var
+- `functions.sh`: `link()` rewritten, new `confirm()` and `backup_path()` helpers
+- `symlinks.sh`: parse `--yes`/`-y`, export `DOTPICKLES_YES=1`
+- `install.sh`: parse `--yes`/`-y`, export `DOTPICKLES_YES=1`
 
 ## Out of scope
 
@@ -142,6 +140,9 @@ backup_path() {
 ## Verification
 
 1. Run `symlinks.sh` with a real directory at a target path, confirm it prompts
-2. Run `symlinks.sh --backup` with a real directory, confirm it backs up and replaces
-3. Run `symlinks.sh` when everything is already correctly symlinked, confirm no-op
-4. Confirm no nested symlinks are created in any scenario
+2. Run `symlinks.sh` with a wrong symlink, confirm it prompts
+3. Run `symlinks.sh --yes` with a real directory, confirm it backs up and replaces
+4. Run `symlinks.sh --yes` with a wrong symlink, confirm it repoints without backup
+5. Run `symlinks.sh` when everything is already correctly symlinked, confirm no-op
+6. Pipe input to `symlinks.sh` (non-interactive), confirm it skips with warning
+7. Confirm no nested symlinks are created in any scenario
