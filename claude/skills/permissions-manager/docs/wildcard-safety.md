@@ -9,6 +9,7 @@
 ```
 
 This matches:
+
 - ✅ `rm -rf node_modules` - Safe
 - ✅ `rm -rf node_modules/` - Safe
 - ⚠️ `rm -rf node_modules --verbose` - Probably safe
@@ -20,6 +21,7 @@ The `:*` wildcard means "with any additional arguments", which could include add
 ### How Permission Matching Works
 
 Claude Code permission format:
+
 ```
 Bash(command args:wildcard)
 ```
@@ -29,6 +31,7 @@ Bash(command args:wildcard)
 - `:*` - Wildcard for additional arguments
 
 Examples:
+
 - `Bash(git status:*)` - Matches `git status` with any extra args
 - `Bash(npm install:*)` - Matches `npm install` plus anything after
 - `Bash(rm -rf node_modules:*)` - Matches `rm -rf node_modules` plus anything after (DANGER!)
@@ -48,10 +51,12 @@ Examples:
 ```
 
 **Pros:**
+
 - Maximum safety - only exact command is allowed
 - No risk of additional paths being deleted
 
 **Cons:**
+
 - Doesn't support useful flags like `-v` (verbose)
 - Might not match if shell expands paths (e.g., `rm -rf ./node_modules`)
 
@@ -73,16 +78,19 @@ Examples:
 ```
 
 **Pros:**
+
 - Covers common path variations
 - Still very safe - no extra arguments
 
 **Cons:**
+
 - More verbose
 - Still doesn't support flags
 
 ### Option 3: Pattern-Based Validation (Ideal but Complex)
 
 What we'd ideally want:
+
 ```
 Allow "rm -rf X" where X matches safe patterns and no additional args
 ```
@@ -93,10 +101,7 @@ This would require custom logic that Claude Code may not support.
 
 ```json
 {
-  "allow": [
-    "Bash(rm -rf node_modules:*)",
-    "Bash(rm -rf dist:*)"
-  ],
+  "allow": ["Bash(rm -rf node_modules:*)", "Bash(rm -rf dist:*)"],
   "deny": [
     "Bash(rm -rf node_modules /:*)",
     "Bash(rm -rf node_modules ~:*)",
@@ -110,9 +115,11 @@ This would require custom logic that Claude Code may not support.
 ```
 
 **Pros:**
+
 - Allows flags and variations
 
 **Cons:**
+
 - Deny rules may not work as expected (allow might take precedence)
 - Hard to enumerate all dangerous patterns
 - Still leaves gaps
@@ -122,10 +129,12 @@ This would require custom logic that Claude Code may not support.
 ### How likely is exploitation?
 
 **Accidental:**
+
 - Low risk - Claude is unlikely to accidentally add dangerous extra paths
 - Most commands are generated as single targets
 
 **Malicious:**
+
 - Could a malicious prompt trick Claude into `rm -rf node_modules /important`?
 - Possible, but would require specific prompt injection
 - Multiple layers of defense (Claude's safety training, permission prompts)
@@ -133,6 +142,7 @@ This would require custom logic that Claude Code may not support.
 ### Comparison with Other Permissions
 
 **Current wildcards that are probably fine:**
+
 ```json
 "Bash(npm install:*)"  // Extra args are package names - safe
 "Bash(git status:*)"   // Extra args are paths/flags - safe
@@ -140,6 +150,7 @@ This would require custom logic that Claude Code may not support.
 ```
 
 **Current wildcards that are concerning:**
+
 ```json
 "Bash(rm -rf node_modules:*)"  // Extra args could be more paths
 "Bash(rm -rf dist:*)"          // Same issue
@@ -185,6 +196,7 @@ Remove the trailing `:*` from rm commands:
 ```
 
 **Rationale:**
+
 - `rm` commands rarely need additional arguments beyond the path
 - The safety benefit outweighs the minor inconvenience
 - If you need verbose output, you can approve it when prompted
@@ -201,9 +213,9 @@ Keep wildcards for commands where extra args are clearly safe:
     "Bash(rm -rf dist)",
 
     // Other commands - wildcards ok
-    "Bash(npm install:*)",    // Extra args are packages
-    "Bash(git status:*)",     // Extra args are paths
-    "Bash(sudo systemctl:*)"  // Extra args are services
+    "Bash(npm install:*)", // Extra args are packages
+    "Bash(git status:*)", // Extra args are paths
+    "Bash(sudo systemctl:*)" // Extra args are services
   ]
 }
 ```
@@ -211,6 +223,7 @@ Keep wildcards for commands where extra args are clearly safe:
 ### What About sudo Commands?
 
 Current patterns:
+
 ```json
 "Bash(sudo systemctl start:*)",
 "Bash(sudo systemctl stop:*)",
@@ -218,6 +231,7 @@ Current patterns:
 ```
 
 **Analysis:**
+
 - `sudo systemctl start:*` - Extra args are service names (safe)
 - `sudo docker:*` - Extra args are docker commands (safe)
 - These wildcards are probably fine
@@ -248,6 +262,7 @@ If it's **blocked**, maybe Claude Code has additional parsing that prevents this
 ### File: `claude/permissions.json`
 
 **Current (potentially unsafe):**
+
 ```json
 {
   "allow": [
@@ -274,6 +289,7 @@ If it's **blocked**, maybe Claude Code has additional parsing that prevents this
 ```
 
 **Proposed (safer):**
+
 ```json
 {
   "allow": [

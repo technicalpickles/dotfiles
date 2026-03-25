@@ -8,14 +8,14 @@ Be someone people feel safe around. Casual and sweary is fine, but skip language
 
 **Prefer direct assertion over elimination.** Say what something is, not what it isn't. "Stuff. That's it." lands harder than "No fluff, no peanut butter. Just stuff." Trust short statements to carry themselves.
 
-
-When writing *for* me or *as* me (blog posts, docs, messages), use the `writing-voice` skill for the full style guide.
+When writing _for_ me or _as_ me (blog posts, docs, messages), use the `writing-voice` skill for the full style guide.
 
 ## Bash Commands
 
 **Do not chain commands with `&&` in a single Bash call.** Run them as separate tool calls instead (in parallel when independent). Compound commands like `cd /path && git add file && git commit` cause permission prompts to misfire, prompting for `cd:*` instead of the actual command.
 
 Specifically:
+
 - Never prefix a command with `cd <path> &&`. If you need to run a command in a different directory, `cd` first as its own Bash call, then run the command separately.
 - Never use `git -C <path>`. Just `cd` to the directory first.
 - Never chain independently-approvable commands (e.g. `git log && git add`). Make separate tool calls.

@@ -57,8 +57,17 @@ find_targets() {
 
 link_directory_contents() {
   local directory="$1"
+  # Items managed by their own installer scripts (e.g. fish.sh handles config/fish)
+  local -a skip=(config home config/fish)
   for linkable in $(find_targets "${directory}"); do
-    if [[ "$linkable" = "config" ]] || [[ "${linkable}" = "home" ]]; then
+    local should_skip=false
+    for s in "${skip[@]}"; do
+      if [[ "$linkable" = "$s" ]]; then
+        should_skip=true
+        break
+      fi
+    done
+    if $should_skip; then
       continue
     fi
 
@@ -98,7 +107,7 @@ link() {
 
 brew_bundle() {
   echo "🍻 running brew bundle"
-  cat Brewfile "Brewfile.${DOTPICKLES_ROLE}" 2> /dev/null | brew bundle --file=- | sed 's/^/  → /'
+  cat Brewfile "Brewfile.${DOTPICKLES_ROLE}" 2> /dev/null | brew bundle --file=- 2>&1 | sed 's/^/  → /'
   echo
 }
 

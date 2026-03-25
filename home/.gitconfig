@@ -36,7 +36,6 @@
 
 [init]
 	defaultBranch = main
-	templatedir = ~/.git-template
 
 [commit]
 	verbose = true

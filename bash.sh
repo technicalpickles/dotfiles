@@ -13,5 +13,5 @@ fi
 
 if [[ ! -d ~/.oh-my-bash/ ]]; then
   echo "installing oh-my-bash"
-  bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" --unattended
 fi

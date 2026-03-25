@@ -1,4 +1,4 @@
-# 26. tmux command palette
+# 27. tmux command palette
 
 Date: 2026-03-20
 

@@ -25,4 +25,5 @@
 - [23. ccusage-for-spend-tracking](0023-ccusage-for-spend-tracking.md)
 - [24. stop-symlinking-claude-directory](0024-stop-symlinking-claude-directory.md)
 - [25. use-startcalendarinterval-for-launchagents](0025-use-startcalendarinterval-for-launchagents.md)
-- [26. tmux-command-palette](0026-tmux-command-palette.md)
+- [26. versioned-ssh-config-with-config-d](0026-versioned-ssh-config-with-config-d.md)
+- [27. tmux-command-palette](0027-tmux-command-palette.md)

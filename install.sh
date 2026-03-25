@@ -1,17 +1,23 @@
 #!/usr/bin/env bash
 
-set -e
+set -eo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DIR
+
+# Ensure ~/.pickles points to this repo, even if cloned elsewhere (e.g. devcontainers)
+if [[ "$DIR" != "$HOME/.pickles" ]] && [[ ! -e "$HOME/.pickles" ]]; then
+  ln -s "$DIR" "$HOME/.pickles"
+  echo "🔗 Symlinked ~/.pickles -> $DIR"
+fi
 
 if [[ -f .env ]]; then
   source .env
 fi
 
 if [[ -z "${DOTPICKLES_ROLE}" ]]; then
-  if which hostnamectl > /dev/null 2>&1; then
-    hostname=$(hostnamectl hostname)
+  if hostname=$(hostnamectl hostname 2> /dev/null); then
+    :
   else
     hostname=$(hostname)
   fi
@@ -22,6 +28,7 @@ if [[ -z "${DOTPICKLES_ROLE}" ]]; then
   fi
 fi
 
+export DOTPICKLES_ROLE
 echo "role: $DOTPICKLES_ROLE"
 
 # shellcheck source=./functions.sh
@@ -30,6 +37,17 @@ source ./functions.sh
 if running_macos; then
   # Prevent sleeping during script execution, as long as the machine is on AC power
   caffeinate -s -w $$ &
+fi
+
+if running_macos; then
+  load_brew_shellenv
+
+  if ! brew_available; then
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    load_brew_shellenv
+  fi
+
+  brew_bundle
 fi
 
 git submodule init
@@ -43,17 +61,9 @@ link_directory_contents config
 echo
 
 ./gitconfig.sh
+./sshconfig.sh
 
 if running_macos; then
-  load_brew_shellenv
-
-  if ! brew_available; then
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    load_brew_shellenv
-  fi
-
-  brew_bundle
-
   echo "🍎 configuring macOS defaults"
   ~/.macos
   echo
@@ -70,5 +80,6 @@ if ! running_codespaces; then
   ./fish.sh
   ./bash.sh
 fi
+
 
 echo "✅ Done"

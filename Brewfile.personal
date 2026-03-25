@@ -6,4 +6,4 @@ cask 'zoom'
 
 cask 'karabiner-elements'
 cask 'spotify'
-cask 'alfred' # there is an App store version, but you can't use powerpack with it
+cask 'raycast'

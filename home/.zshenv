@@ -28,7 +28,12 @@ fi
 # IMPORTANT: Gusto init.sh sources mise via a different method and manipulates PATH
 # We need to run this BEFORE our own mise activation to avoid conflicts
 if [[ -f ~/.gusto/init.sh ]]; then
+  # gusto init uses `basename $SHELL` to pick the mise flavor — override it to zsh
+  # so it doesn't try to eval fish commands when the login shell is fish
+  local _shell_before_gusto="$SHELL"
+  export SHELL="$ZSH_NAME"
   source ~/.gusto/init.sh
+  export SHELL="$_shell_before_gusto"
 
   # Gusto init sources mise, but we want full activation for consistency with fish
   # Re-run mise activation to ensure we have environment variable management

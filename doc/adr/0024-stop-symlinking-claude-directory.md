@@ -27,12 +27,14 @@ Make `~/.claude` a real directory. Symlink only the managed files into it:
 - `claude/skills/permissions-manager/` -> `~/.claude/skills/permissions-manager/`
 
 `claudeconfig.sh` gains a `setup_claude_directory()` function that:
+
 1. Creates `~/.claude/` and `~/.claude/skills/` if missing
 2. Symlinks managed files (with safety checks for existing files/directories)
 
 The `home/.claude/` directory is removed from the repo entirely. Settings generation (`claudeconfig.sh`) continues to write `~/.claude/settings.json` directly, unchanged from ADR 0013.
 
 A one-time migration script (`scripts/migrate-claude-config.sh`) handles the transition:
+
 1. Verifies `~/.claude` is a symlink
 2. Replaces it with a real directory (same-filesystem `mv`, instant)
 3. Cleans up files that get re-symlinked
@@ -47,16 +49,17 @@ A one-time migration script (`scripts/migrate-claude-config.sh`) handles the tra
 
 ### What changes
 
-| Before | After |
-|--------|-------|
-| `~/.claude` = symlink to `home/.claude/` | `~/.claude` = real directory |
-| `home/.claude/CLAUDE.md` tracked in git | `claude/CLAUDE.md` tracked, symlinked in |
+| Before                                             | After                                                      |
+| -------------------------------------------------- | ---------------------------------------------------------- |
+| `~/.claude` = symlink to `home/.claude/`           | `~/.claude` = real directory                               |
+| `home/.claude/CLAUDE.md` tracked in git            | `claude/CLAUDE.md` tracked, symlinked in                   |
 | `home/.claude/skills/permissions-manager/` tracked | `claude/skills/permissions-manager/` tracked, symlinked in |
-| Runtime state in dotfiles worktree | Runtime state in `~/.claude/` (outside repo) |
+| Runtime state in dotfiles worktree                 | Runtime state in `~/.claude/` (outside repo)               |
 
 ### Alternatives Considered
 
 1. **Selective gitignore with more carve-outs**: Keep the symlink, refine ignore rules.
+
    - Rejected: Increasingly fragile as Claude Code adds new runtime artifacts.
 
 2. **Copy instead of symlink for managed files**: `claudeconfig.sh` copies CLAUDE.md instead of symlinking.

@@ -51,7 +51,7 @@ warn() { echo -e "${YELLOW}[claude-with]${NC} $*"; }
 err() { echo -e "${RED}[claude-with]${NC} $*" >&2; }
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: claude-with <name> [-- claude-args...]
 
 Run Claude Code with a named, isolated environment.
@@ -96,7 +96,7 @@ list_envs() {
                     (if .enabledPlugins then (.enabledPlugins | length | tostring) + " plugins" else empty end),
                     (if .permissions.allow then (.permissions.allow | length | tostring) + " allows" else empty end)
                 ] | join(", ")
-            ' "$settings" 2>/dev/null || true)
+            ' "$settings" 2> /dev/null || true)
     fi
     if [[ -n "$detail" ]]; then
       echo -e "  ${GREEN}$name${NC}  ${DIM}($detail)${NC}"
@@ -125,15 +125,15 @@ setup_env() {
             env: (.env // {}),
             awsAuthRefresh: .awsAuthRefresh,
             statusLine: .statusLine
-        } | with_entries(select(.value != null))' "$GLOBAL_SETTINGS" >"$env_dir/settings.json"
+        } | with_entries(select(.value != null))' "$GLOBAL_SETTINGS" > "$env_dir/settings.json"
     log "Copied auth settings from global config."
   else
-    echo '{}' >"$env_dir/settings.json"
+    echo '{}' > "$env_dir/settings.json"
     warn "No global settings found, created empty config."
   fi
 
   # Skip onboarding prompts (theme picker, etc.)
-  cat >"$env_dir/.claude.json" <<'EOF'
+  cat > "$env_dir/.claude.json" << 'EOF'
 {
   "hasCompletedOnboarding": true,
   "hasSeenTasksHint": true,
@@ -167,19 +167,19 @@ fi
 
 # Handle top-level flags
 case "$1" in
---help | -h)
-  usage
-  exit 0
-  ;;
---list)
-  list_envs
-  exit 0
-  ;;
---*)
-  err "Unknown option: $1"
-  usage
-  exit 1
-  ;;
+  --help | -h)
+    usage
+    exit 0
+    ;;
+  --list)
+    list_envs
+    exit 0
+    ;;
+  --*)
+    err "Unknown option: $1"
+    usage
+    exit 1
+    ;;
 esac
 
 # First arg is the environment name
@@ -199,32 +199,32 @@ ENV_DIR="$ENV_BASE/$ENV_NAME"
 CLAUDE_ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
-  --create)
-    if [[ -d "$ENV_DIR" ]]; then
-      warn "Environment '$ENV_NAME' already exists."
-      exit 1
-    fi
-    setup_env "$ENV_DIR" "$ENV_NAME"
-    exit 0
-    ;;
-  --clean)
-    clean_env "$ENV_DIR" "$ENV_NAME"
-    exit 0
-    ;;
-  --path)
-    echo "$ENV_DIR"
-    exit 0
-    ;;
-  --)
-    shift
-    CLAUDE_ARGS+=("$@")
-    break
-    ;;
-  *)
-    # No --, so everything from here goes to claude
-    CLAUDE_ARGS+=("$@")
-    break
-    ;;
+    --create)
+      if [[ -d "$ENV_DIR" ]]; then
+        warn "Environment '$ENV_NAME' already exists."
+        exit 1
+      fi
+      setup_env "$ENV_DIR" "$ENV_NAME"
+      exit 0
+      ;;
+    --clean)
+      clean_env "$ENV_DIR" "$ENV_NAME"
+      exit 0
+      ;;
+    --path)
+      echo "$ENV_DIR"
+      exit 0
+      ;;
+    --)
+      shift
+      CLAUDE_ARGS+=("$@")
+      break
+      ;;
+    *)
+      # No --, so everything from here goes to claude
+      CLAUDE_ARGS+=("$@")
+      break
+      ;;
   esac
 done
 

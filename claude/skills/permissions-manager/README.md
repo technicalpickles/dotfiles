@@ -23,6 +23,7 @@ This skill is part of the dotfiles repository and is automatically installed whe
 Analyzes current permissions and generates a recommendations document.
 
 **What it does:**
+
 1. Runs `claude-permissions --aggregate` to gather data
 2. Analyzes frequency of each permission across projects
 3. Identifies dangerous wildcard patterns
@@ -30,6 +31,7 @@ Analyzes current permissions and generates a recommendations document.
 5. Redacts all project names and private information
 
 **Output:**
+
 - `doc/permissions/YYYY-MM-DD/` directory containing:
   - `analysis.md` - Recommendations (safe to commit after redaction)
   - `aggregate.txt` - Raw aggregated data
@@ -39,6 +41,7 @@ Analyzes current permissions and generates a recommendations document.
 - Provides specific recommendations
 
 **Example:**
+
 ```bash
 /permissions-manager analyze
 ```
@@ -48,6 +51,7 @@ Analyzes current permissions and generates a recommendations document.
 Interactively applies recommended permission changes.
 
 **What it does:**
+
 1. Shows you each recommended change
 2. Asks for confirmation before applying
 3. Updates permission files in `claude/`
@@ -56,6 +60,7 @@ Interactively applies recommended permission changes.
 6. Creates change summary document
 
 **Safety features:**
+
 - Always asks before making changes
 - Shows exactly what will change
 - Can skip individual changes
@@ -63,6 +68,7 @@ Interactively applies recommended permission changes.
 - Suggests commit message
 
 **Example:**
+
 ```bash
 /permissions-manager apply
 ```
@@ -72,12 +78,14 @@ Interactively applies recommended permission changes.
 Quick review of current permission state.
 
 **What it does:**
+
 1. Shows current allow/ask/deny counts
 2. Lists all permission files
 3. Shows recent permission-related commits
 4. Checks for common issues
 
 **Example:**
+
 ```bash
 /permissions-manager review
 ```
@@ -118,6 +126,7 @@ This creates `doc/permissions/2026-01-25/` with analysis files.
 ### Review Recommendations
 
 Open the generated file and review:
+
 - High-frequency patterns (4+ projects)
 - Medium-frequency patterns (2-3 projects)
 - Security improvements needed
@@ -130,6 +139,7 @@ Open the generated file and review:
 ```
 
 You'll be asked about each change:
+
 ```
 Add to permissions.shell.json:
   - Bash(sqlite3:*)
@@ -151,6 +161,7 @@ Check that counts look reasonable and recent commit shows your changes.
 ### Cleanup
 
 The skill will ask:
+
 ```
 Run cleanup to remove 37 duplicate permissions from 16 projects?
 (yes/no): yes
@@ -159,6 +170,7 @@ Run cleanup to remove 37 duplicate permissions from 16 projects?
 ### Commit
 
 The skill suggests a commit message:
+
 ```
 feat(claude): consolidate permissions based on frequency analysis
 
