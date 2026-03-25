@@ -20,10 +20,12 @@ There's also a nested symlink bug: if `-F` doesn't behave as expected, `ln -s so
 
 The `link()` function operates in two modes:
 
-- **Interactive (default):** prompts the user before replacing anything that isn't already correct. If stdin is not a terminal (CI, piped input), skips with a warning instead of hanging.
+- **Interactive (default):** prompts the user before replacing anything that isn't already correct. Requires a terminal on stdin.
 - **Auto-yes (`--yes` / `-y`):** auto-answers yes to all prompts. Safe for scripts and CI. Real files/dirs get backed up before replacement; wrong symlinks get repointed silently.
 
 Controlled by the `DOTPICKLES_YES` env var (set by script-level `--yes`/`-y` flag).
+
+**Non-interactive without `--yes` is an error.** If stdin is not a terminal and `DOTPICKLES_YES` is not set, the script exits immediately with a message like: `"Error: not running interactively. Use --yes/-y for unattended mode."` This prevents silently skipping everything and reporting success.
 
 ### link() case flow
 
@@ -52,26 +54,33 @@ The "target doesn't exist" branch should also use plain `ln -s` (no `-Ff`) for t
 
 The "wrong symlink" branch retains `ln -Ff -s` because the target is a known symlink, not a directory. `-F` is safe here (it replaces the symlink itself) and needed to avoid the prompt-then-fail pattern.
 
-### Script-level --yes flag
+### Script-level --yes flag and interactivity guard
 
-`symlinks.sh` and `install.sh` parse `--yes`/`-y` and export `DOTPICKLES_YES=1`. The `link()` function reads this env var. No changes to `link_directory_contents`, `find_targets`, or callers.
+`symlinks.sh` and `install.sh` parse `--yes`/`-y` and export `DOTPICKLES_YES=1`. After flag parsing, check interactivity:
+
+```bash
+if [ "${DOTPICKLES_YES:-}" != "1" ] && [ ! -t 0 ]; then
+  echo "Error: not running interactively. Use --yes/-y for unattended mode." >&2
+  exit 1
+fi
+```
+
+This guard lives in the scripts, not in `link()` or `confirm()`. The `confirm()` helper doesn't need a non-interactive branch at all since it will never be reached without a tty or `--yes`.
 
 ### Target implementation
 
 ```bash
 # Ask a y/N question. Returns 0 for yes, 1 for no.
-# In auto-yes mode, always returns 0. In non-interactive shells, always returns 1.
+# In auto-yes mode, always returns 0. Scripts guard against
+# non-interactive use at startup, so this always has a tty or --yes.
 confirm() {
   local prompt="$1"
   if [ "${DOTPICKLES_YES:-}" = "1" ]; then
     return 0
-  elif [ -t 0 ]; then
-    read -p "$prompt " -n 1 -r
-    echo
-    [[ $REPLY =~ ^[Yy]$ ]]
-  else
-    return 1
   fi
+  read -p "$prompt " -n 1 -r
+  echo
+  [[ $REPLY =~ ^[Yy]$ ]]
 }
 
 link() {
@@ -144,5 +153,5 @@ backup_path() {
 3. Run `symlinks.sh --yes` with a real directory, confirm it backs up and replaces
 4. Run `symlinks.sh --yes` with a wrong symlink, confirm it repoints without backup
 5. Run `symlinks.sh` when everything is already correctly symlinked, confirm no-op
-6. Pipe input to `symlinks.sh` (non-interactive), confirm it skips with warning
+6. Pipe input to `symlinks.sh` (non-interactive, no `--yes`), confirm it exits with error
 7. Confirm no nested symlinks are created in any scenario
