@@ -57,3 +57,22 @@ hs.hotkey.bind({ 'ctrl', 'alt' }, 'left',  function() cycleWindow('left')  end)
 hs.hotkey.bind({ 'ctrl', 'alt' }, 'right', function() cycleWindow('right') end)
 hs.hotkey.bind({ 'ctrl', 'alt' }, 'up',    function() cycleWindow('up')    end)
 hs.hotkey.bind({ 'ctrl', 'alt' }, 'down',  function() cycleWindow('down')  end)
+
+local savedFrames = {}
+
+hs.hotkey.bind({ 'ctrl', 'alt' }, 'return', function()
+  local win = hs.window.focusedWindow()
+  if not win then return end
+
+  local id = win:id()
+  local screen = win:screen():frame()
+  local current = win:frame()
+
+  if savedFrames[id] then
+    win:setFrame(savedFrames[id])
+    savedFrames[id] = nil
+  else
+    savedFrames[id] = current
+    win:setFrame(screen)
+  end
+end)
