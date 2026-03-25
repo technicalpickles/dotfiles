@@ -58,9 +58,10 @@ brew "hyperfine"
 # container stuff
 brew "container-diff"
 
-cask 'bartender'
+cask 'jordanbaird-ice'
 cask 'cleanshot'
 cask 'dash'
+cask 'finicky'
 cask 'hammerspoon'
 # cask 'hookshot'  # removed from homebrew, install manually if needed
 cask 'macbreakz'
