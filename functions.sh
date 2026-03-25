@@ -84,24 +84,67 @@ link_directory_contents() {
   done
 }
 
+# Ask a y/N question. Returns 0 for yes, 1 for no.
+# In auto-yes mode, always returns 0. Scripts guard against
+# non-interactive use at startup, so this always has a tty or --yes.
+confirm() {
+  local prompt="$1"
+  if [ "${DOTPICKLES_YES:-}" = "1" ]; then
+    return 0
+  fi
+  read -p "$prompt " -n 1 -r
+  echo
+  [[ $REPLY =~ ^[Yy]$ ]]
+}
+
+backup_path() {
+  local target="$1"
+  local timestamp
+  timestamp="$(date +%Y%m%d-%H%M%S)"
+  local backup="${target}.backup.${timestamp}"
+  local counter=2
+  while [ -e "$backup" ]; do
+    backup="${target}.backup.${timestamp}-${counter}"
+    counter=$((counter + 1))
+  done
+  echo "$backup"
+}
+
 link() {
   local linkable="$1"
   local target="$2"
   local display_target="${target/$HOME/~}"
+  local source="${DIR}/${linkable}"
 
-  if [ ! -L "$target" ]; then
-    echo "🔗 $display_target → linking from $linkable"
-    ln -Ff -s "$DIR/$linkable" "$target"
-  elif [ "$(readlink "$target")" != "${DIR}/${linkable}" ]; then
-    echo "🔗 $display_target → already linked to $(readlink "${target}")"
-    read -p "Overwrite it to link to ${DIR}/${linkable}? " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-      echo "🔗 $display_target → linking from $linkable"
-      ln -Ff -s "$DIR/$linkable" "$target"
+  if [ -L "$target" ]; then
+    # Target is a symlink
+    if [ "$(readlink "$target")" = "$source" ]; then
+      echo "🔗 $display_target -> already linked"
+    elif confirm "🔗 $display_target -> linked to $(readlink "$target"). Repoint to ${linkable}? [y/N]"; then
+      echo "🔗 $display_target -> linking from $linkable"
+      ln -Ff -s "$source" "$target"
+    else
+      echo "🔗 $display_target -> skipped (wrong symlink)"
+    fi
+  elif [ -e "$target" ]; then
+    # Target exists as real file or directory
+    local filetype="file"
+    [ -d "$target" ] && filetype="directory"
+
+    if confirm "🔗 $display_target -> exists as $filetype. Replace with symlink to ${linkable}? [y/N]"; then
+      local backup
+      backup="$(backup_path "$target")"
+      echo "🔗 $display_target -> backing up to ${backup##*/}"
+      mv "$target" "$backup"
+      echo "🔗 $display_target -> linking from $linkable"
+      ln -s "$source" "$target"
+    else
+      echo "🔗 $display_target -> skipped ($filetype exists)"
     fi
   else
-    echo "🔗 $display_target → already linked"
+    # Target doesn't exist
+    echo "🔗 $display_target -> linking from $linkable"
+    ln -s "$source" "$target"
   fi
 }
 
