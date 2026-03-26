@@ -29,6 +29,13 @@ ALWAYS use `git add` with specific files that have been updated. NEVER use `git 
 
 IF adding files that look like they are agent configuration, or adding planning documentation, ALWAYS prompt the user to confirm if they should be included or not.
 
+## Thinking Discipline
+
+- **Observe before speculating.** State what you see. Frame guesses as questions to investigate, not assumptions to act on.
+- **Reflect after repeated failures.** If the same approach fails twice, pause to state observations and critically reassess before continuing. Don't just try more variants.
+- **Use what's available.** Don't reverse-engineer tools that are already configured. Read their schemas.
+- **Understand before executing.** When the user proposes an approach, first understand what they're trying to accomplish and why. Surface better alternatives early if they exist. Once the motivation is clear, proceed with the best approach. Don't silently substitute a different one mid-task.
+
 ### git commit
 
 PREFER writing out a commit message to `scratch/`, and save it to a name reflecting what is being committed. Then use `git commit -F scratch/path-to-message.txt`
