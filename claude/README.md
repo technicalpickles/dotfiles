@@ -1,106 +1,149 @@
 # Claude Code Configuration
 
-This directory contains the configuration templates for Claude Code settings and permissions. The configuration uses a **layered merging system** that combines base settings with role-specific and ecosystem-specific permissions.
+This directory contains the configuration templates for Claude Code settings and permissions. The configuration uses a **layered merging system** that combines roles (base settings + safety rules) with stacks (per-topic permissions and sandbox config).
 
 ## Architecture
 
 ```
 claude/
-├── settings.base.json         # Core settings (all roles)
-├── settings.personal.json     # Personal role overrides
-├── settings.work.json         # Work role overrides
-├── permissions.json           # Base permissions (deny rules)
-├── permissions.personal.json  # Personal-specific permissions
-├── permissions.work.json      # Work-specific permissions
-├── permissions.skills.json    # Skill permissions (cross-project)
-├── permissions.node.json      # Node.js ecosystem (npm, yarn, npx)
-├── permissions.ruby.json      # Ruby ecosystem (bundle, rake, rspec)
-├── permissions.python.json    # Python ecosystem (pip, pytest, uv)
-├── permissions.go.json        # Go ecosystem (go build, go test)
-├── permissions.rust.json      # Rust ecosystem (cargo)
-├── permissions.shell.json     # Shell utilities (jq, fd, rg, etc.)
-├── permissions.github.json    # GitHub CLI (gh pr, gh issue, etc.)
-├── permissions.docker.json    # Docker/container commands
-├── permissions.git.jsonc      # Git commands
-├── permissions.mise.json      # mise version manager
-├── permissions.mcp.json       # MCP-related permissions
-└── permissions.web.json       # Web fetching domains
+├── roles/
+│   ├── base.jsonc         # Core settings, base permissions, sandbox scalars
+│   ├── personal.jsonc     # Personal role overrides (empty placeholder)
+│   └── work.jsonc         # Work role: AWS/Bedrock env, work permissions
+├── stacks/
+│   ├── beans.jsonc        # Beans issue tracker
+│   ├── buildkite.jsonc    # Buildkite CI
+│   ├── colima.jsonc       # Colima container runtime
+│   ├── docker.jsonc       # Docker container management
+│   ├── docs.jsonc         # Reference documentation sites
+│   ├── git.jsonc          # Git operations
+│   ├── github.jsonc       # GitHub CLI
+│   ├── go.jsonc           # Go ecosystem
+│   ├── mcp.jsonc          # MCP proxy tools
+│   ├── mise.jsonc         # mise version manager
+│   ├── node.jsonc         # Node.js ecosystem (npm, yarn, pnpm)
+│   ├── python.jsonc       # Python ecosystem (pip, uv, pytest)
+│   ├── ruby.jsonc         # Ruby ecosystem (bundle, rake, rspec)
+│   ├── rust.jsonc         # Rust ecosystem (cargo, rustup)
+│   ├── shell.jsonc        # Shell utilities (jq, fd, grep, etc.)
+│   └── skills.jsonc       # Skill permissions
+├── CLAUDE.md              # Claude Code instructions (symlinked to ~/.claude/)
+└── README.md              # This file
 ```
+
+## Schema
+
+All files use JSONC (`.jsonc`), allowing `//` and `/* */` comments. Use comments to document provenance (e.g. `// source: agent-safehouse`).
+
+### Role files
+
+Role files hold settings, permissions, and sandbox config:
+
+```jsonc
+{
+  // Settings (any Claude Code setting keys)
+  "statusLine": { "..." },
+  "includeCoAuthoredBy": true,
+
+  // Permissions
+  "permissions": {
+    "allow": [],
+    "ask": [],
+    "deny": []
+  },
+
+  // Sandbox (scalars live in roles only)
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "enableWeakerNetworkIsolation": true,
+    "network": {
+      "allowAllUnixSockets": true,
+      "allowedHosts": []
+    }
+  }
+}
+```
+
+### Stack files
+
+Stack files hold per-topic permissions and sandbox arrays (no scalars):
+
+```jsonc
+{
+  "permissions": {
+    "allow": [],
+    "ask": [],
+    "deny": []
+  },
+  "sandbox": {
+    "network": {
+      "allowedHosts": []
+    },
+    "filesystem": {
+      "allowWrite": []
+    }
+  }
+}
+```
+
+All keys are optional. A stack can have only `permissions`, only `sandbox`, or both.
 
 ## How Merging Works
 
 When you run `./claudeconfig.sh`:
 
-1. **Settings**: `settings.base.json` + `settings.$ROLE.json` are deep-merged
-2. **Permissions**: All `permissions.*.json` files are concatenated:
-   - `permissions.json` (base deny rules)
-   - `permissions.$ROLE.json` (role-specific)
-   - All ecosystem files (`permissions.node.json`, `permissions.ruby.json`, etc.)
-3. **Deduplication**: Allow/deny lists are sorted and deduplicated
-4. **Local preservation**: Keys like `awsAuthRefresh` and `env` are preserved from existing `~/.claude/settings.json`
+1. **Base role** (`roles/base.jsonc`): settings, permissions, and sandbox extracted
+2. **Active role** (`roles/$ROLE.jsonc`): settings deep-merged on top of base. Permissions and sandbox arrays concatenated (not deep-merged, which would replace arrays)
+3. **Stacks** (`stacks/*.jsonc`, sorted alphabetically): permissions and sandbox arrays concatenated
+4. **Deduplication**: all arrays sorted and deduplicated
+5. **Local keys**: `model`, `enabledPlugins`, `extraKnownMarketplaces` preserved from existing `~/.claude/settings.json`
+6. **Validation and write**
 
 ## Common Tasks
 
-### Add a frequently-used skill permission
+### Add a new stack
 
-If you keep getting prompted for a skill across multiple projects:
+Create `claude/stacks/foo.jsonc`:
 
-1. Add to `permissions.skills.json`:
-
-   ```json
-   {
-     "allow": ["Skill(existing:skill)", "Skill(new-plugin:new-skill)"]
-   }
-   ```
-
-2. Regenerate global settings:
-
-   ```bash
-   ./claudeconfig.sh
-   ```
-
-3. Clean up project-local duplicates:
-   ```bash
-   claude-permissions cleanup         # Preview changes
-   claude-permissions cleanup --force # Apply changes
-   ```
-
-### Add a new ecosystem permission file
-
-1. Create `claude/permissions.neweco.json`:
-
-   ```json
-   {
-     "allow": ["Bash(newtool:*)", "Bash(newtool build:*)"],
-     "deny": []
-   }
-   ```
-
-2. Regenerate: `./claudeconfig.sh`
-
-The filename pattern `permissions.*.json` is auto-discovered (excluding base, personal, and work files).
-
-### Add an "always ask" rule
-
-Use `ask` for commands that should always prompt for confirmation (useful for destructive but sometimes-needed operations):
-
-```json
+```jsonc
 {
-  "allow": ["Bash(cleanup-tool)"],
-  "ask": ["Bash(cleanup-tool --force)"],
-  "deny": []
+  // Foo tool
+  "permissions": {
+    "allow": [
+      "Bash(foo:*)"
+    ]
+  },
+  // Optional: sandbox config
+  "sandbox": {
+    "network": {
+      "allowedHosts": ["foo.example.com"]
+    },
+    "filesystem": {
+      "allowWrite": ["~/.foo"]
+    }
+  }
 }
 ```
 
-### Add a deny rule
+Then regenerate: `./claudeconfig.sh`
 
-Add to `permissions.json` (applies to all roles):
+### Add a network host
 
-```json
-{
-  "allow": [],
-  "deny": ["Bash(dangerous-command:*)"]
-}
+Find the relevant stack file and add to `sandbox.network.allowedHosts`. For example, to allow a new npm registry:
+
+Edit `claude/stacks/node.jsonc` and add to `allowedHosts`, then `./claudeconfig.sh`.
+
+### Add a filesystem write path
+
+Same pattern: find the relevant stack and add to `sandbox.filesystem.allowWrite`.
+
+### Add a skill permission
+
+Edit `claude/stacks/skills.jsonc` and add to `permissions.allow`:
+
+```jsonc
+"Skill(plugin-name:skill-name)"
 ```
 
 ### Check current permissions state
@@ -121,16 +164,9 @@ claude-permissions --raw
 
 ### Find and clean up duplicates
 
-The `claude-permissions cleanup` command removes project-local permissions that duplicate global settings:
-
 ```bash
 # Preview what would be removed
 claude-permissions cleanup
-
-# Example output:
-#  -12  my-project       3 left
-#   -8  other-project    empty
-# Would remove: 20 entries from 2 files
 
 # Apply the cleanup
 claude-permissions cleanup --force
@@ -140,11 +176,11 @@ claude-permissions cleanup --force
 
 ### Permission Lists
 
-| List    | Behavior                                                            |
-| ------- | ------------------------------------------------------------------- |
-| `allow` | Always permitted without prompting                                  |
+| List    | Behavior                                                           |
+| ------- | ------------------------------------------------------------------ |
+| `allow` | Always permitted without prompting                                 |
 | `ask`   | Always prompts for confirmation (useful for destructive operations) |
-| `deny`  | Always blocked                                                      |
+| `deny`  | Always blocked                                                     |
 
 ### Permission Format
 
@@ -165,37 +201,26 @@ Wildcards:
 
 When you notice you're repeatedly approving the same permission across projects:
 
-1. **Audit current state**:
+1. **Audit**: `claude-permissions --aggregate | grep "2x\|3x\|4x"`
+2. **Add to appropriate stack file**
+3. **Regenerate**: `./claudeconfig.sh`
+4. **Clean up**: `claude-permissions cleanup --force`
+5. **Commit** to dotfiles
 
-   ```bash
-   claude-permissions --aggregate | grep "2x\|3x\|4x"
-   ```
+## Local Keys
 
-2. **Identify candidates**: Permissions appearing 2+ times are good candidates
+These keys in `~/.claude/settings.json` are preserved across regenerations:
 
-3. **Add to appropriate file**:
-
-   - Skills → `permissions.skills.json`
-   - Language tools → `permissions.{lang}.json`
-   - General tools → `permissions.shell.json`
-
-4. **Regenerate and clean up**:
-
-   ```bash
-   ./claudeconfig.sh
-   claude-permissions cleanup --force
-   ```
-
-5. **Commit changes** to dotfiles
+- `model`: machine-specific model preference
+- `enabledPlugins`: plugin activation state (tracked in gt-1bil)
+- `extraKnownMarketplaces`: managed by `configure_marketplaces()` in claudeconfig.sh
 
 ## Files NOT to Edit
 
-- `~/.claude/settings.json` - Generated by `claudeconfig.sh`, will be overwritten
-- Exception: `awsAuthRefresh` and `env` keys are preserved across regenerations
+- `~/.claude/settings.json`: generated by `claudeconfig.sh`, will be overwritten
+- Exception: `model`, `enabledPlugins`, and `extraKnownMarketplaces` are preserved
 
 ## Debugging
-
-If permissions aren't working as expected:
 
 ```bash
 # Check what's actually in global settings
@@ -204,6 +229,15 @@ jq '.permissions' ~/.claude/settings.json
 # Check specific permission type
 jq '.permissions.allow[]' ~/.claude/settings.json | grep -i skill
 
+# Check sandbox config
+jq '.sandbox' ~/.claude/settings.json
+
+# Check network hosts
+jq '.sandbox.network.allowedHosts' ~/.claude/settings.json
+
+# Check filesystem write paths
+jq '.sandbox.filesystem.allowWrite' ~/.claude/settings.json
+
 # Verify claudeconfig.sh output
-./claudeconfig.sh # Watch for "Merging X permissions" messages
+./claudeconfig.sh  # Watch for "Loaded base role", "Merged X stack" messages
 ```
