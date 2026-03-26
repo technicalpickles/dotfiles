@@ -1,0 +1,16 @@
+{
+  // DotSlash tool launcher (Meta)
+  "permissions": {
+    "allow": [
+      "Bash(dotslash:*)"
+    ]
+  },
+
+  "sandbox": {
+    "filesystem": {
+      "allowWrite": [
+        "~/Library/Caches/dotslash"
+      ]
+    }
+  }
+}
