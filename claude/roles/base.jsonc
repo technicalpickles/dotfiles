@@ -92,8 +92,13 @@
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
+    // (macOS only) Allow access to the system TLS trust service
+    // (com.apple.trustd.agent). Required for Go-based tools like gh,
+    // gcloud, and terraform to verify TLS certificates when using
+    // httpProxyPort with a MITM proxy and custom CA.
     "enableWeakerNetworkIsolation": true,
     "network": {
+      // Permits git commit signing, git fsmonitor, Docker socket, etc.
       "allowAllUnixSockets": true,
       "allowedHosts": [
         "api.anthropic.com",
