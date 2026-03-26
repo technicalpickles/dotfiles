@@ -67,15 +67,15 @@ setup_claude_directory() {
 
 setup_claude_directory
 
-# Generate settings.json
+# Generate settings.json from roles/ + stacks/
 generate_settings() {
   echo "Generating settings.json..."
 
   local settings_file="$HOME/.claude/settings.json"
   local temp_file="$(mktemp)"
 
-  # Define local-only keys to preserve
-  local local_keys=("awsAuthRefresh" "env")
+  # Local-only keys preserved from existing settings across regenerations
+  local local_keys=("model" "enabledPlugins" "extraKnownMarketplaces")
 
   # Extract local-only settings from existing file
   local local_settings="{}"
@@ -87,77 +87,105 @@ generate_settings() {
     done
   fi
 
-  # Merge base + role-specific settings
-  local base_settings="$DIR/claude/settings.base.json"
-  local role_settings="$DIR/claude/settings.$ROLE.json"
-
-  if [ ! -f "$base_settings" ]; then
-    echo "Error: $base_settings not found"
+  # --- Load base role ---
+  local base_role="$DIR/claude/roles/base.jsonc"
+  if [ ! -f "$base_role" ]; then
+    echo "Error: $base_role not found"
     exit 1
   fi
 
+  local base_json
+  base_json=$(read_json "$base_role")
+
+  # Extract settings (everything except permissions and sandbox)
   local merged_settings
-  if [ -f "$role_settings" ]; then
-    merged_settings=$(jq -s '.[0] * .[1]' "$base_settings" "$role_settings")
-  else
-    merged_settings=$(cat "$base_settings")
+  merged_settings=$(echo "$base_json" | jq 'del(.permissions, .sandbox)')
+
+  # Extract permissions arrays from base
+  local merged_allow merged_ask merged_deny
+  merged_allow=$(echo "$base_json" | jq '.permissions.allow // []')
+  merged_ask=$(echo "$base_json" | jq '.permissions.ask // []')
+  merged_deny=$(echo "$base_json" | jq '.permissions.deny // []')
+
+  # Extract sandbox from base (scalars + arrays)
+  local sandbox_scalars sandbox_hosts sandbox_write_paths
+  sandbox_scalars=$(echo "$base_json" | jq '.sandbox // {} | del(.network.allowedHosts, .filesystem.allowWrite, .filesystem, .network) + (if .network then {network: (.network | del(.allowedHosts))} else {} end) | del(.network | nulls) | del(.filesystem | nulls)')
+  sandbox_hosts=$(echo "$base_json" | jq '.sandbox.network.allowedHosts // []')
+  sandbox_write_paths=$(echo "$base_json" | jq '.sandbox.filesystem.allowWrite // []')
+
+  echo "  + Loaded base role"
+
+  # --- Load active role (if not base) ---
+  local role_file="$DIR/claude/roles/$ROLE.jsonc"
+  if [ -f "$role_file" ] && [ "$ROLE" != "base" ]; then
+    local role_json
+    role_json=$(read_json "$role_file")
+
+    # Deep merge settings keys (role overrides base)
+    local role_settings
+    role_settings=$(echo "$role_json" | jq 'del(.permissions, .sandbox)')
+    merged_settings=$(echo "$merged_settings" | jq --argjson role "$role_settings" '. * $role')
+
+    # Concat permissions arrays (not deep merge, which would replace)
+    merged_allow=$(echo "$merged_allow" | jq --argjson r "$(echo "$role_json" | jq '.permissions.allow // []')" '. + $r')
+    merged_ask=$(echo "$merged_ask" | jq --argjson r "$(echo "$role_json" | jq '.permissions.ask // []')" '. + $r')
+    merged_deny=$(echo "$merged_deny" | jq --argjson r "$(echo "$role_json" | jq '.permissions.deny // []')" '. + $r')
+
+    # Merge sandbox scalars from role (role overrides base)
+    local role_sandbox_scalars
+    role_sandbox_scalars=$(echo "$role_json" | jq '.sandbox // {} | del(.network.allowedHosts, .filesystem.allowWrite, .filesystem, .network) + (if .network then {network: (.network | del(.allowedHosts))} else {} end) | del(.network | nulls) | del(.filesystem | nulls)')
+    sandbox_scalars=$(echo "$sandbox_scalars" | jq --argjson r "$role_sandbox_scalars" '. * $r')
+
+    # Concat sandbox arrays
+    sandbox_hosts=$(echo "$sandbox_hosts" | jq --argjson r "$(echo "$role_json" | jq '.sandbox.network.allowedHosts // []')" '. + $r')
+    sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --argjson r "$(echo "$role_json" | jq '.sandbox.filesystem.allowWrite // []')" '. + $r')
+
+    echo "  + Loaded $ROLE role"
   fi
 
-  # Merge permissions (allow, ask, and deny lists)
-  local base_permissions="$DIR/claude/permissions.json"
-  local role_permissions="$DIR/claude/permissions.$ROLE.json"
+  # --- Load stacks (sorted for determinism) ---
+  for stack_file in "$DIR"/claude/stacks/*.jsonc; do
+    [ -f "$stack_file" ] || continue
+    local stack_name
+    stack_name=$(basename "$stack_file" .jsonc)
+    local stack_json
+    stack_json=$(read_json "$stack_file")
 
-  if [ ! -f "$base_permissions" ]; then
-    echo "Error: $base_permissions not found"
-    exit 1
-  fi
+    # Concat permissions
+    merged_allow=$(echo "$merged_allow" | jq --argjson s "$(echo "$stack_json" | jq '.permissions.allow // []')" '. + $s')
+    merged_ask=$(echo "$merged_ask" | jq --argjson s "$(echo "$stack_json" | jq '.permissions.ask // []')" '. + $s')
+    merged_deny=$(echo "$merged_deny" | jq --argjson s "$(echo "$stack_json" | jq '.permissions.deny // []')" '. + $s')
 
-  # Start with base permissions
-  local merged_allow
-  local merged_ask
-  local merged_deny
-  merged_allow=$(read_json "$base_permissions" | jq '.allow // []')
-  merged_ask=$(read_json "$base_permissions" | jq '.ask // []')
-  merged_deny=$(read_json "$base_permissions" | jq '.deny // []')
+    # Concat sandbox arrays
+    sandbox_hosts=$(echo "$sandbox_hosts" | jq --argjson s "$(echo "$stack_json" | jq '.sandbox.network.allowedHosts // []')" '. + $s')
+    sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --argjson s "$(echo "$stack_json" | jq '.sandbox.filesystem.allowWrite // []')" '. + $s')
 
-  # Merge role-specific permissions
-  if [ -f "$role_permissions" ]; then
-    merged_allow=$(echo "$merged_allow" | jq --argjson role "$(read_json "$role_permissions" | jq '.allow // []')" '. + $role')
-    merged_ask=$(echo "$merged_ask" | jq --argjson role "$(read_json "$role_permissions" | jq '.ask // []')" '. + $role')
-    merged_deny=$(echo "$merged_deny" | jq --argjson role "$(read_json "$role_permissions" | jq '.deny // []')" '. + $role')
-  fi
-
-  # Merge ecosystem permissions (node, ruby, go, rust, python, etc.)
-  # Supports both .json and .jsonc files
-  for ecosystem_file in "$DIR"/claude/permissions.*.json "$DIR"/claude/permissions.*.jsonc; do
-    [ -f "$ecosystem_file" ] || continue
-    local filename=$(basename "$ecosystem_file")
-    # Skip base, role-specific, and the main permissions file
-    case "$filename" in
-      permissions.json | permissions.jsonc | permissions.personal.json | permissions.personal.jsonc | permissions.work.json | permissions.work.jsonc)
-        continue
-        ;;
-    esac
-    local ecosystem_name="${filename#permissions.}"
-    ecosystem_name="${ecosystem_name%.jsonc}"
-    ecosystem_name="${ecosystem_name%.json}"
-    echo "  + Merging $ecosystem_name permissions"
-    merged_allow=$(echo "$merged_allow" | jq --argjson eco "$(read_json "$ecosystem_file" | jq '.allow // []')" '. + $eco')
-    merged_ask=$(echo "$merged_ask" | jq --argjson eco "$(read_json "$ecosystem_file" | jq '.ask // []')" '. + $eco')
-    merged_deny=$(echo "$merged_deny" | jq --argjson eco "$(read_json "$ecosystem_file" | jq '.deny // []')" '. + $eco')
+    echo "  + Merged $stack_name stack"
   done
 
-  # Deduplicate and sort
+  # Deduplicate and sort all arrays
   merged_allow=$(echo "$merged_allow" | jq 'unique | sort')
   merged_ask=$(echo "$merged_ask" | jq 'unique | sort')
   merged_deny=$(echo "$merged_deny" | jq 'unique | sort')
+  sandbox_hosts=$(echo "$sandbox_hosts" | jq 'unique | sort')
+  sandbox_write_paths=$(echo "$sandbox_write_paths" | jq 'unique | sort')
 
-  # Combine settings + permissions (with allow, ask, and deny)
-  local final_settings=$(echo "$merged_settings" | jq \
+  # Assemble final JSON: settings + permissions + sandbox
+  local final_settings
+  final_settings=$(echo "$merged_settings" | jq \
     --argjson allow "$merged_allow" \
     --argjson ask "$merged_ask" \
     --argjson deny "$merged_deny" \
-    '. + {permissions: {allow: $allow, ask: $ask, deny: $deny}}')
+    --argjson sandbox_scalars "$sandbox_scalars" \
+    --argjson hosts "$sandbox_hosts" \
+    --argjson write_paths "$sandbox_write_paths" \
+    '. + {
+      permissions: {allow: $allow, ask: $ask, deny: $deny},
+      sandbox: ($sandbox_scalars + {
+        network: ($sandbox_scalars.network // {} | . + {allowedHosts: $hosts}),
+        filesystem: {allowWrite: $write_paths}
+      })
+    }')
 
   # Merge in local-only settings
   final_settings=$(echo "$final_settings" | jq --argjson local "$local_settings" '. * $local')
