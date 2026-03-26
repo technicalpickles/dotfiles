@@ -1,0 +1,15 @@
+{
+  // Buildkite CI (source: agent-safehouse)
+  "sandbox": {
+    "network": {
+      "allowedHosts": [
+        "buildkite.com"
+      ]
+    },
+    "filesystem": {
+      "allowWrite": [
+        "~/.local/state/bktide"
+      ]
+    }
+  }
+}

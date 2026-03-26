@@ -1,0 +1,18 @@
+{
+  // Reference documentation sites
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:karafka.io)",
+      "WebFetch(domain:lima-vm.io)"
+    ]
+  },
+  // source: agent-safehouse
+  "sandbox": {
+    "network": {
+      "allowedHosts": [
+        "karafka.io",
+        "lima-vm.io"
+      ]
+    }
+  }
+}

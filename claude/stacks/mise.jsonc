@@ -1,0 +1,44 @@
+{
+  // Mise version manager
+  "permissions": {
+    "allow": [
+      "Bash(mise --version:*)",
+      "Bash(mise activate:*)",
+      "Bash(mise current:*)",
+      "Bash(mise doctor:*)",
+      "Bash(mise exec:*)",
+      "Bash(mise install:*)",
+      "Bash(mise list:*)",
+      "Bash(mise ls-remote:*)",
+      "Bash(mise ls:*)",
+      "Bash(mise plugins:*)",
+      "Bash(mise run:*)",
+      "Bash(mise settings:*)",
+      "Bash(mise tasks:*)",
+      "Bash(mise trust:*)",
+      "Bash(mise use:*)",
+      "Bash(mise which:*)",
+      // From old web.json
+      "WebFetch(domain:mise.jdx.dev)"
+    ]
+  },
+
+  // source: agent-safehouse
+  "sandbox": {
+    "network": {
+      "allowedHosts": [
+        "mise.jdx.dev",
+        "mise-versions.jdx.dev"
+      ]
+    },
+    "filesystem": {
+      "allowWrite": [
+        "~/.local/share/mise",
+        "~/.config/mise",
+        "~/.local/state/mise",
+        "~/.cache/mise",
+        "~/Library/Caches/mise"
+      ]
+    }
+  }
+}

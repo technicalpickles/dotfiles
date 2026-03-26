@@ -1,0 +1,47 @@
+{
+  // Go ecosystem
+  "permissions": {
+    "allow": [
+      "Bash(go build:*)",
+      "Bash(go clean:*)",
+      "Bash(go doc:*)",
+      "Bash(go env:*)",
+      "Bash(go fmt:*)",
+      "Bash(go generate:*)",
+      "Bash(go get:*)",
+      "Bash(go install:*)",
+      "Bash(go list:*)",
+      "Bash(go mod download:*)",
+      "Bash(go mod init:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(go mod:*)",
+      "Bash(go run:*)",
+      "Bash(go test:*)",
+      "Bash(go version:*)",
+      "Bash(go vet:*)",
+      "Bash(go:*)",
+      "Bash(gofmt:*)",
+      "Bash(golangci-lint run:*)",
+      "Bash(golangci-lint:*)",
+      "Bash(goreleaser build:*)",
+      "Bash(goreleaser check:*)",
+      "Bash(goreleaser release:*)",
+      "Bash(goreleaser:*)"
+    ]
+  },
+
+  // source: agent-safehouse
+  "sandbox": {
+    "filesystem": {
+      "allowWrite": [
+        "~/go",
+        "~/.cache/go-build",
+        "~/Library/Caches/go-build",
+        "~/.config/go",
+        "~/.cache/golangci-lint",
+        "~/Library/Caches/golangci-lint",
+        "~/.local/share/go"
+      ]
+    }
+  }
+}
