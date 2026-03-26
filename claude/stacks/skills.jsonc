@@ -1,7 +1,9 @@
 {
-  // Skill permissions
+  // Skill and plugin permissions
   "permissions": {
     "allow": [
+      // Plugin cache read access (reduces per-skill permission prompts)
+      "Read(~/.claude/plugins/cache/**)",
       "Skill(buildkite-status)",
       "Skill(checkout-pr)",
       "Skill(ci-cd-tools:buildkite-status)",

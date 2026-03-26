@@ -47,8 +47,6 @@
       "Bash(sudo systemctl start:*)",
       "Bash(sudo systemctl status:*)",
       "Bash(sudo systemctl stop:*)",
-      // Plugin cache read access (reduces per-skill permission prompts)
-      "Read(~/.claude/plugins/cache/**)",
       // Claude docs (from old web.json)
       "WebFetch(domain:code.claude.com)"
     ],
