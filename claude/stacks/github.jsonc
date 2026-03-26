@@ -1,0 +1,60 @@
+{
+  // GitHub CLI
+  "permissions": {
+    "allow": [
+      "Bash(gh api graphql:*)",
+      "Bash(gh api:*)",
+      "Bash(gh auth status:*)",
+      "Bash(gh browse:*)",
+      "Bash(gh gist:*)",
+      "Bash(gh issue create:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr close:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr review:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh release list:*)",
+      "Bash(gh release view:*)",
+      "Bash(gh repo clone:*)",
+      "Bash(gh repo fork:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh run watch:*)",
+      "Bash(gh search:*)",
+      "Bash(gh workflow list:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(gh workflow view:*)",
+      // From old web.json
+      "WebFetch(domain:docs.github.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
+    ]
+  },
+
+  // source: agent-safehouse
+  "sandbox": {
+    "network": {
+      "allowedHosts": [
+        "api.github.com",
+        "docs.github.com",
+        "github.com",
+        "raw.githubusercontent.com"
+      ]
+    },
+    "filesystem": {
+      "allowWrite": [
+        "~/.config/gh",
+        "~/.cache/gh",
+        "~/.local/share/gh",
+        "~/.local/state/gh"
+      ]
+    }
+  }
+}

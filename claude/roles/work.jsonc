@@ -1,0 +1,37 @@
+{
+  // Work role settings (values from live settings, not stale source files)
+  "awsAuthRefresh": "aws sso login --profile $AWS_PROFILE",
+  "env": {
+    "AWS_REGION": "us-west-2",
+    "AWS_PROFILE": "bedrock-users",
+    "CLAUDE_CODE_USE_BEDROCK": "true",
+    "ANTHROPIC_MODEL": "us.anthropic.claude-opus-4-6-v1[1m]",
+    "ANTHROPIC_SMALL_FAST_MODEL": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "us.anthropic.claude-sonnet-4-6",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "anthropic.claude-haiku-4-5-20251001-v1:0",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "us.anthropic.claude-opus-4-6-v1[1m]"
+  },
+
+  // Work-specific permissions
+  "permissions": {
+    "allow": [
+      "Bash(bin/rspec:*)",
+      "Bash(bin/rubocop:*)",
+      "Bash(bundle exec rspec:*)",
+      "Bash(bundle exec rubocop:*)",
+      "Bash(bundle install)",
+      "Bash(npx bktide build:*)",
+      "Bash(npx bktide)",
+      "Bash(npx bktide:*)"
+    ]
+  },
+
+  // Work-specific sandbox (source: agent-safehouse)
+  "sandbox": {
+    "network": {
+      "allowedHosts": [
+        "portal.sso.us-west-2.amazonaws.com"
+      ]
+    }
+  }
+}

@@ -1,0 +1,79 @@
+{
+  // Node.js ecosystem
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(npm ci)",
+      "Bash(npm exec:*)",
+      "Bash(npm info:*)",
+      "Bash(npm install:*)",
+      "Bash(npm list:*)",
+      "Bash(npm outdated:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run format:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run:*)",
+      "Bash(npm search:*)",
+      "Bash(npm test:*)",
+      "Bash(npm version:*)",
+      "Bash(npx prettier:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx:*)",
+      "Bash(yarn add:*)",
+      "Bash(yarn build:*)",
+      "Bash(yarn install:*)",
+      "Bash(yarn lint:*)",
+      "Bash(yarn run:*)",
+      "Bash(yarn test:*)",
+      "Bash(yarn tsc:*)",
+      "Bash(yarn:*)"
+    ]
+  },
+
+  // source: agent-safehouse
+  "sandbox": {
+    "network": {
+      "allowedHosts": [
+        "registry.npmjs.org"
+      ]
+    },
+    "filesystem": {
+      "allowWrite": [
+        // npm
+        "~/.npm",
+        "~/.config/npm",
+        "~/.cache/npm",
+        "~/.cache/node",
+        "~/.node-gyp",
+        "~/.cache/node-gyp",
+        "~/.config/configstore",
+        "~/Library/Caches/npm",
+        // pnpm
+        "~/.config/pnpm",
+        "~/.pnpm-state",
+        "~/.pnpm-store",
+        "~/.local/share/pnpm",
+        "~/.local/state/pnpm",
+        "~/Library/pnpm",
+        "~/Library/Caches/pnpm",
+        "~/Library/Preferences/pnpm",
+        // yarn
+        "~/.yarn",
+        "~/.yarnrc",
+        "~/.yarnrc.yml",
+        "~/.config/yarn",
+        "~/.cache/yarn",
+        "~/Library/Caches/Yarn",
+        // corepack
+        "~/.cache/node/corepack",
+        "~/Library/Caches/node/corepack",
+        // test browsers
+        "~/Library/Caches/ms-playwright",
+        "~/Library/Caches/Cypress",
+        "~/.cache/puppeteer"
+      ]
+    }
+  }
+}
