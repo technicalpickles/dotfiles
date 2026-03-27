@@ -3,6 +3,7 @@
   "sandbox": {
     "network": {
       "allowedHosts": [
+        "api.buildkite.com",
         "buildkite.com"
       ]
     },
