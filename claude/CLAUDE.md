@@ -10,6 +10,12 @@ Be someone people feel safe around. Casual and sweary is fine, but skip language
 
 When writing _for_ me or _as_ me (blog posts, docs, messages), use the `writing-voice` skill for the full style guide.
 
+## Thinking Discipline
+
+- **Observe before speculating.** State what you see. Frame guesses as questions to investigate, not assumptions to act on.
+- **Reflect after repeated failures.** If the same approach fails twice, pause to state observations and critically reassess before continuing. Don't just try more variants.
+- **Understand before executing.** When the user proposes an approach, first understand what they're trying to accomplish and why. Surface better alternatives early if they exist. Once the motivation is clear, proceed with the best approach. Don't silently substitute a different one mid-task.
+
 ## Bash Commands
 
 **Do not chain commands with `&&` in a single Bash call.** Run them as separate tool calls instead (in parallel when independent). Compound commands like `cd /path && git add file && git commit` cause permission prompts to misfire, prompting for `cd:*` instead of the actual command.
@@ -29,12 +35,6 @@ ALWAYS use `git add` with specific files that have been updated. NEVER use `git 
 
 IF adding files that look like they are agent configuration, or adding planning documentation, ALWAYS prompt the user to confirm if they should be included or not.
 
-## Thinking Discipline
-
-- **Observe before speculating.** State what you see. Frame guesses as questions to investigate, not assumptions to act on.
-- **Reflect after repeated failures.** If the same approach fails twice, pause to state observations and critically reassess before continuing. Don't just try more variants.
-- **Use what's available.** Don't reverse-engineer tools that are already configured. Read their schemas.
-- **Understand before executing.** When the user proposes an approach, first understand what they're trying to accomplish and why. Surface better alternatives early if they exist. Once the motivation is clear, proceed with the best approach. Don't silently substitute a different one mid-task.
 
 ### git commit
 
