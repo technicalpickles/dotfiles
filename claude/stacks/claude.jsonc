@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(~/.claude/settings.json)",
+      // Claude docs (from old web.json)
+      "WebFetch(domain:code.claude.com)",
+
+    ]
+  }
+}
+

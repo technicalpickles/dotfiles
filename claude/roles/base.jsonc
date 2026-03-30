@@ -48,8 +48,6 @@
       "Bash(sudo systemctl start:*)",
       "Bash(sudo systemctl status:*)",
       "Bash(sudo systemctl stop:*)",
-      // Claude docs (from old web.json)
-      "WebFetch(domain:code.claude.com)",
     ],
     "ask": [
       "Bash(sudo chmod:*)",
