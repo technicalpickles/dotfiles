@@ -4,6 +4,8 @@
     "allow": [
       // Plugin cache read access (reduces per-skill permission prompts)
       "Read(~/.claude/plugins/cache/**)",
+      // superpowers-chrome puts stuff here
+      "Read(~/Library/Caches/superpowers/**)",
       "Skill(buildkite-status)",
       "Skill(checkout-pr)",
       "Skill(ci-cd-tools:buildkite-status)",
@@ -27,7 +29,7 @@
       "Skill(superpowers:writing-skills)",
       "Skill(working-in-monorepos)",
       "Skill(working-in-monorepos:working-in-monorepos)",
-      "Skill(working-in-scratch-areas)"
-    ]
-  }
+      "Skill(working-in-scratch-areas)",
+    ],
+  },
 }
