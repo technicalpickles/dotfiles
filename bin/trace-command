@@ -1,0 +1,193 @@
+#!/bin/bash
+#
+# trace-command: trace filesystem and network activity of a command
+#
+# Usage: sudo trace-command <command> [args...]
+#
+# Strategy: ktrace dump captures a raw system trace to a file (reliably
+# records short-lived processes). fs_usage -R replays that file with
+# human-readable paths and network info. We filter by command name.
+
+set -euo pipefail
+
+if [[ $# -lt 1 ]]; then
+  echo "Usage: sudo $0 <command> [args...]"
+  exit 1
+fi
+
+if [[ $EUID -ne 0 ]]; then
+  echo "Error: must run with sudo (ktrace requires root)"
+  echo "Usage: sudo $0 <command> [args...]"
+  exit 1
+fi
+
+if [[ -z "${SUDO_USER:-}" ]]; then
+  echo "Error: SUDO_USER not set. Run with sudo, not as root directly."
+  exit 1
+fi
+
+# Build output directory
+cmd_basename="$(basename "$1")"
+timestamp="$(date +%Y%m%d-%H%M%S)"
+outdir="${TMPDIR:-/tmp}/trace-${cmd_basename}-${timestamp}"
+mkdir -p "$outdir"
+chown "$SUDO_USER" "$outdir"
+
+raw_trace="$outdir/trace.ktrace"
+dns_pcap="$outdir/dns.pcap"
+dns_log="$outdir/dns.log"
+raw_log="$outdir/raw.log"
+filtered_log="$outdir/filtered.log"
+summary_log="$outdir/summary.log"
+
+echo "Tracing: $*"
+echo "Output:  $outdir/"
+echo ""
+
+# Step 1: Start system-wide ktrace dump in background
+ktrace dump "$raw_trace" &
+ktrace_pid=$!
+
+# Also capture DNS queries via packet capture. This is the only reliable
+# way to get hostnames on macOS with SIP enabled.
+tcpdump -i any -w "$dns_pcap" 'port 53' > /dev/null 2>&1 &
+tcpdump_pid=$!
+
+# Give ktrace and tcpdump time to initialize
+sleep 1
+
+# Step 2: Run the command as the original user
+sudo -u "$SUDO_USER" -- "$@"
+cmd_exit=$?
+
+# Step 3: Stop ktrace and tcpdump
+sleep 1
+kill "$ktrace_pid" 2> /dev/null
+kill "$tcpdump_pid" 2> /dev/null
+wait "$ktrace_pid" 2> /dev/null || true
+wait "$tcpdump_pid" 2> /dev/null || true
+
+# Decode DNS queries from the pcap
+tcpdump -r "$dns_pcap" -nn 'port 53' 2> /dev/null > "$dns_log" || true
+
+echo ""
+echo "Command exited with status: $cmd_exit"
+
+# Step 4: Replay the raw trace through fs_usage to get resolved paths
+echo "Processing trace..."
+fs_usage -w -R "$raw_trace" > "$raw_log" 2>&1 || true
+
+# Step 5: Filter to just our command
+grep -i "$cmd_basename" "$raw_log" > "$filtered_log" || true
+
+echo ""
+
+# Patterns for system read-only paths and relative path noise from fs_usage
+sys_pattern='^/(usr|System|Library|dev|var|private/(var|etc)|etc|Applications|AppleInternal)'
+noise_pattern='^/(\.\.|\.\./|Cellar|C\.|/)'
+# PATH search: any path ending in /<cmd_basename> is bash looking for the binary
+path_search_pattern="/${cmd_basename}$"
+
+# Generate summary
+{
+  echo "=== Trace Summary ==="
+  echo "Command: $*"
+  echo "Exit status: $cmd_exit"
+  echo "Timestamp: $(date)"
+  echo "Raw events: $(wc -l < "$raw_log"), $(wc -l < "$filtered_log") for $cmd_basename"
+  echo ""
+
+  echo "=== DNS Lookups (review: may include background noise) ==="
+  if [[ -s "$dns_log" ]]; then
+    grep -oE '[A-Z]+\? [^ ]+' "$dns_log" \
+      | sed 's/^.*? //' \
+      | sed 's/\.$//' \
+      | sort -u \
+      || echo "(none)"
+  else
+    echo "(none)"
+  fi
+  echo ""
+
+  # Extract unique paths, filtering out:
+  # - Relative path artifacts from fs_usage (../, /Cellar/, /C.UTF-8/, //)
+  # - PATH search: any path ending in /<cmd_basename> (shell looking for binary)
+  # - Our own trace artifacts (output dir, previous trace dirs)
+  trace_dir_pattern="trace-${cmd_basename}-"
+
+  all_paths=$(grep -oE '/[^ ]+' "$filtered_log" \
+    | grep -vE "$noise_pattern" \
+    | grep -vE "$path_search_pattern" \
+    | grep -v "$trace_dir_pattern" \
+    | sort -u \
+    | grep -v '^\.$' \
+    || true)
+
+  # Split into user/app paths vs system read-only
+  writable_paths=$(echo "$all_paths" | grep -vE "$sys_pattern" || true)
+  system_paths=$(echo "$all_paths" | grep -E "$sys_pattern" || true)
+
+  echo "=== Paths Accessed (user/app, review for sandbox allowWrite) ==="
+  if [[ -n "$writable_paths" ]]; then
+    echo "$writable_paths"
+  else
+    echo "(none)"
+  fi
+  echo ""
+
+  echo "=== Paths Accessed (system, read-only, likely no config needed) ==="
+  if [[ -n "$system_paths" ]]; then
+    echo "$system_paths"
+  else
+    echo "(none)"
+  fi
+  echo ""
+
+  echo "=== Network Activity ==="
+  net_lines=$(grep -iE '^.*\s(socket|connect|socketpair)\s' "$filtered_log" || true)
+  if [[ -n "$net_lines" ]]; then
+    echo "$net_lines" | while read -r line; do
+      op=$(echo "$line" | awk '{print $2}')
+      case "$op" in
+        socket)
+          desc=$(echo "$line" | grep -oE '<[^>]+>' || true)
+          case "$desc" in
+            *AF_INET*SOCK_STREAM*) echo "  socket: TCP (IPv4)" ;;
+            *AF_INET6*SOCK_STREAM*) echo "  socket: TCP (IPv6)" ;;
+            *AF_INET*SOCK_DGRAM*) echo "  socket: UDP (IPv4)" ;;
+            *AF_INET6*SOCK_DGRAM*) echo "  socket: UDP (IPv6)" ;;
+            *AF_UNIX*) echo "  socket: Unix domain" ;;
+            *SOCK_DGRAM*) echo "  socket: datagram (likely UDP)" ;;
+            *SOCK_STREAM*) echo "  socket: stream (likely TCP)" ;;
+            *) echo "  socket: $desc" ;;
+          esac
+          ;;
+        connect)
+          if echo "$line" | grep -q 'mDNSResponder'; then
+            echo "  connect: /var/run/mDNSResponder (DNS resolution)"
+          elif echo "$line" | grep -qE '\[ *[0-9]+\]'; then
+            # [errno] means in-progress (non-blocking) or failed
+            errno=$(echo "$line" | grep -oE '\[ *[0-9]+\]')
+            echo "  connect: TCP to remote host (see DNS lookups) $errno"
+          elif echo "$line" | grep -qE 'F=[0-9]+\s*$'; then
+            echo "  connect: completed"
+          else
+            echo "  connect: (unknown target)"
+          fi
+          ;;
+        socketpair)
+          echo "  socketpair: internal pipe between threads"
+          ;;
+      esac
+    done
+  else
+    echo "  (none)"
+  fi
+
+} > "$summary_log"
+
+echo "Raw log:     $raw_log ($(wc -l < "$raw_log") lines)"
+echo "Filtered:    $filtered_log ($(wc -l < "$filtered_log") lines)"
+echo "Summary:     $summary_log"
+echo ""
+cat "$summary_log"
