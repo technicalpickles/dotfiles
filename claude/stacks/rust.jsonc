@@ -29,8 +29,15 @@
     ]
   },
 
-  // source: agent-safehouse
   "sandbox": {
+    "network": {
+      "allowedHosts": [
+        "index.crates.io",
+        "static.crates.io",
+      ]
+    },
+
+    // source: agent-safehouse
     "filesystem": {
       "allowWrite": [
         "~/.cargo",

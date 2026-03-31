@@ -38,7 +38,6 @@
       "Bash(rm -rf target)",
       "Bash(rm -rf temp)",
       "Bash(rm -rf tmp)",
-      "Bash(rm -rf vendor)",
       "Bash(sudo docker:*)",
       "Bash(sudo journalctl:*)",
       "Bash(sudo systemctl disable:*)",
