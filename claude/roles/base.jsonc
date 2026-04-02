@@ -99,6 +99,16 @@
       // Permits git commit signing, git fsmonitor, Docker socket, etc.
       "allowAllUnixSockets": true,
       "allowedHosts": ["api.anthropic.com", "code.claude.com"],
+      // local dev servers, and other things that are weird and listen (clippy
+      // --fix for some reason??)
+      "allowLocalBinding": true
     },
+    "filesystem": {
+      "allowWrite": [
+        // interactive terminals for things like lefthook interactive
+        "/dev/ptmx",
+        "/dev/ttys*"
+      ]
+    }
   },
 }

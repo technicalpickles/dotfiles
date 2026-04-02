@@ -2,6 +2,7 @@
   // Rust ecosystem
   "permissions": {
     "allow": [
+      "Read(~/.cargo/registry/)",
       "Bash(cargo bench:*)",
       "Bash(cargo build:*)",
       "Bash(cargo check:*)",
@@ -32,8 +33,10 @@
   "sandbox": {
     "network": {
       "allowedHosts": [
+        "crates.io",
         "index.crates.io",
         "static.crates.io",
+        "docs.rs"
       ]
     },
 
