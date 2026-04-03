@@ -28,3 +28,4 @@
 - [26. versioned-ssh-config-with-config-d](0026-versioned-ssh-config-with-config-d.md)
 - [27. tmux-command-palette](0027-tmux-command-palette.md)
 - [28. safe-symlink-function](0028-safe-symlink-function.md)
+- [29. tmux-local-config-overrides](0029-tmux-local-config-overrides.md)

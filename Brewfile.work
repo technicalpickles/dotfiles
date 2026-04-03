@@ -1,2 +1,3 @@
 cask 'granola'
 cask 'wispr-flow'
+brew 'ical-buddy'

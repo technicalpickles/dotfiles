@@ -3,5 +3,6 @@ _.path = [
   "~/bin",
   "~/.local/bin",
   "~/.cargo/bin",
-  "~/.bun/bin",   # bun global packages (qmd, etc.)
+  "~/.bun/bin",       # bun global packages (qmd, etc.)
+  "~/.pickles/bin",   # pickletown scripts (bk wrapper, etc.)
 ]

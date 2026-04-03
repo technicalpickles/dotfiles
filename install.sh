@@ -92,6 +92,7 @@ if ! running_codespaces; then
   ./tmux.sh
   ./fish.sh
   ./bash.sh
+  ./skills.sh
 fi
 
 

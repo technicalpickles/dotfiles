@@ -9,7 +9,8 @@
     },
     "filesystem": {
       "allowWrite": [
-        "~/.local/state/bktide"
+        "~/.local/state/bktide",
+        "~/.cache/bktide"
       ]
     }
   }

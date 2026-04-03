@@ -1,0 +1,32 @@
+{
+  "version": 3,
+  "skills": {
+    "dg": {
+      "source": "v1r3n/dinesh-gilfoyle",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/v1r3n/dinesh-gilfoyle.git",
+      "skillPath": "dg/SKILL.md",
+      "skillFolderHash": "fcbfa793d2e40c0a84fef9cb97b84919f1c51442",
+      "installedAt": "2026-04-03T13:22:15.516Z",
+      "updatedAt": "2026-04-03T13:22:15.516Z"
+    }
+  },
+  "dismissed": {
+    "findSkillsPrompt": true
+  },
+  "lastSelectedAgents": [
+    "amp",
+    "antigravity",
+    "cline",
+    "codex",
+    "cursor",
+    "deepagents",
+    "firebender",
+    "gemini-cli",
+    "github-copilot",
+    "kimi-cli",
+    "opencode",
+    "warp",
+    "claude-code"
+  ]
+}
