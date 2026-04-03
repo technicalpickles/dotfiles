@@ -11,19 +11,16 @@ else
       fish_add_path --global --prepend "$HOME/.cargo/bin"
   end
 
-  if [ (uname) = Darwin ]
-    # setup version manager
-    if [ -x "$HOMEBREW_PREFIX/bin/mise" ]
-      # don't try to auto-install, so we things like the tide prompt don't trigger installations
-      set -gx MISE_NOT_FOUND_AUTO_INSTALL false
+  if command -q mise
+    # don't try to auto-install, so we things like the tide prompt don't trigger installations
+    set -gx MISE_NOT_FOUND_AUTO_INSTALL false
 
-      # show the ruby installation happening, since it can take awhile
-      set -gx MISE_RUBY_VERBOSE_INSTALL true
+    # show the ruby installation happening, since it can take awhile
+    set -gx MISE_RUBY_VERBOSE_INSTALL true
 
-      set -gx MISE_NODE_COREPACK true
+    set -gx MISE_NODE_COREPACK true
 
-      mise activate fish | source
-    end
+    mise activate fish | source
   end
 end
 
