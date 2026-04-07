@@ -1,0 +1,14 @@
+# markdownlint-cli2 configuration
+# Symlinked to ~/.markdownlint.yaml via dotfiles
+
+# Line length: nobody hard-wraps prose at 80 anymore
+MD013: false
+
+# Inline HTML: common in GitHub markdown (details, summary, br, etc)
+MD033: false
+
+# First line should be a heading: breaks with frontmatter, metadata blocks
+MD041: false
+
+# Table column style: cosmetic pipe spacing, let formatters handle it
+MD060: false
