@@ -107,7 +107,9 @@
       "allowWrite": [
         // interactive terminals for things like lefthook interactive
         "/dev/ptmx",
-        "/dev/ttys*"
+        "/dev/ttys*",
+        // plugin hooks use uv run which needs to create .venv in cache
+        "~/.claude/plugins/cache"
       ]
     }
   },
