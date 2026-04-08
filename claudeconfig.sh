@@ -75,7 +75,7 @@ generate_settings() {
   local temp_file="$(mktemp)"
 
   # Local-only keys preserved from existing settings across regenerations
-  local local_keys=("model" "enabledPlugins" "extraKnownMarketplaces")
+  local local_keys=("enabledPlugins" "extraKnownMarketplaces")
 
   # Extract local-only settings from existing file
   local local_settings="{}"
@@ -286,5 +286,4 @@ echo "✓ Claude Code configuration complete"
 echo "  Settings: $HOME/.claude/settings.json"
 echo "  Role: $ROLE"
 echo ""
-echo "Note: Skills are now installed per-project via craftdesk."
-echo "  Run 'craftdesk-setup' in a project to configure skills."
+echo "Note: Global skills are restored from ~/.agents/.skill-lock.json via skills.sh"

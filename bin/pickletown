@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+#
+# Wrapper for pickletown CLI
+#
+# Resolves pt_root from ~/.config/pickletown/config.yml and execs
+# the real binary. Supports a special "root" subcommand that prints
+# the resolved pt_root path (exits non-zero if unavailable).
+
+config="$HOME/.config/pickletown/config.yml"
+
+if [[ ! -f "$config" ]]; then
+  echo "pickletown: config not found at $config" >&2
+  exit 1
+fi
+
+# Extract pt_root from config.yml (simple grep, no yq dependency)
+pt_root=$(grep '^pt_root:' "$config" | awk '{print $2}')
+pt_root="${pt_root/#\~/$HOME}"
+
+if [[ -z "$pt_root" ]]; then
+  echo "pickletown: pt_root not set in $config" >&2
+  exit 1
+fi
+
+# "root" subcommand: print pt_root and exit
+if [[ "$1" == "root" ]]; then
+  if [[ -d "$pt_root" ]]; then
+    echo "$pt_root"
+    exit 0
+  else
+    echo "pickletown: pt_root directory not found: $pt_root" >&2
+    exit 1
+  fi
+fi
+
+# Pass through to real binary
+exec "$pt_root/cli/bin/pickletown" "$@"

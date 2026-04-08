@@ -8,7 +8,25 @@
       "skillPath": "dg/SKILL.md",
       "skillFolderHash": "fcbfa793d2e40c0a84fef9cb97b84919f1c51442",
       "installedAt": "2026-04-03T13:22:15.516Z",
-      "updatedAt": "2026-04-03T13:22:15.516Z"
+      "updatedAt": "2026-04-03T15:23:45.081Z"
+    },
+    "diataxis": {
+      "source": "alpha/dotfiles",
+      "sourceType": "git",
+      "sourceUrl": "https://git.kejadlen.dev/alpha/dotfiles.git",
+      "skillPath": "ai/skills/diataxis/SKILL.md",
+      "skillFolderHash": "",
+      "installedAt": "2026-04-06T15:37:40.760Z",
+      "updatedAt": "2026-04-06T15:37:40.760Z"
+    },
+    "technical-writing": {
+      "source": "alpha/dotfiles",
+      "sourceType": "git",
+      "sourceUrl": "https://git.kejadlen.dev/alpha/dotfiles.git",
+      "skillPath": "ai/skills/technical-writing/SKILL.md",
+      "skillFolderHash": "",
+      "installedAt": "2026-04-06T15:37:40.762Z",
+      "updatedAt": "2026-04-06T15:37:40.762Z"
     }
   },
   "dismissed": {
