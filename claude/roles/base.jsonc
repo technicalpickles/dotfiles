@@ -1,5 +1,6 @@
 {
   // Base settings
+  "model": "opus[1m]",
   "defaultMode": "acceptEdits",
   "statusLine": {
     "type": "command",
@@ -10,6 +11,7 @@
 
   // Permissions: base safety rules
   "permissions": {
+    "defaultMode": "acceptEdits"
     "allow": [
       "Bash(rm -rf .DS_Store)",
       "Bash(rm -rf .cache)",
