@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Skill(second-brain:distill-conversation)",
-      "Read(~/.claude/second-brain.md)"
-    ]
-  }
+      "Read(~/.claude/second-brain.md)",
+      "Read(/Users/technicalpickles/Documents/pickled-knowledge/**/*.md)",
+      "Write(/Users/technicalpickles/Documents/pickled-knowledge/**/*.md)",
+      "Edit(/Users/technicalpickles/Documents/pickled-knowledge/**/*.md)",
+    ],
+  },
 }
