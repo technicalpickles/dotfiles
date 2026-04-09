@@ -11,7 +11,7 @@
 
   // Permissions: base safety rules
   "permissions": {
-    "defaultMode": "acceptEdits"
+    "defaultMode": "acceptEdits",
     "allow": [
       "Bash(rm -rf .DS_Store)",
       "Bash(rm -rf .cache)",
@@ -103,7 +103,7 @@
       "allowedHosts": ["api.anthropic.com", "code.claude.com"],
       // local dev servers, and other things that are weird and listen (clippy
       // --fix for some reason??)
-      "allowLocalBinding": true
+      "allowLocalBinding": true,
     },
     "filesystem": {
       "allowWrite": [
@@ -111,8 +111,8 @@
         "/dev/ptmx",
         "/dev/ttys*",
         // plugin hooks use uv run which needs to create .venv in cache
-        "~/.claude/plugins/cache"
-      ]
-    }
+        "~/.claude/plugins/cache",
+      ],
+    },
   },
 }
