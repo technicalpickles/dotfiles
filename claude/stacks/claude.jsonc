@@ -4,8 +4,16 @@
       "Read(~/.claude/settings.json)",
       // Claude docs (from old web.json)
       "WebFetch(domain:code.claude.com)",
-
-    ]
-  }
+      // plugins will sometimes check here for settings
+      "Search(~/.claude/CLAUDE.md)",
+    ],
+  },
+  "sandbox": {
+    "filesystem": {
+      "allowWrite": [
+        // plugin hooks use uv run which needs to create .venv in cache
+        "~/.claude/plugins/cache",
+      ],
+    },
+  },
 }
-
