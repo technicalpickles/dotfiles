@@ -9,6 +9,10 @@
   },
   "includeCoAuthoredBy": true,
 
+  // without this, thinking isn't displayed in interactive mode or persisted to
+  // session logs
+  "showThinkingSummaries": true,
+
   // Permissions: base safety rules
   "permissions": {
     "defaultMode": "acceptEdits",
