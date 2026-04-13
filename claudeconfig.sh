@@ -23,13 +23,19 @@ read_json() {
     # Node handles JSONC natively with JSON5-like parsing
     node -e "
       const fs = require('fs');
-      const content = fs.readFileSync('$file', 'utf8');
+      const file = '$file';
+      const content = fs.readFileSync(file, 'utf8');
       // Strip comments and trailing commas
       const stripped = content
         .replace(/\/\/.*$/gm, '')           // Remove // comments
         .replace(/\/\*[\s\S]*?\*\//g, '')   // Remove /* */ comments
         .replace(/,(\s*[}\]])/g, '\$1');    // Remove trailing commas
-      console.log(JSON.stringify(JSON.parse(stripped)));
+      try {
+        console.log(JSON.stringify(JSON.parse(stripped)));
+      } catch (e) {
+        process.stderr.write('Error parsing ' + file + ': ' + e.message + '\n');
+        process.exit(1);
+      }
     "
   else
     # Fallback: simple sed-based stripping (less robust)
