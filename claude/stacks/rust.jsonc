@@ -36,7 +36,8 @@
         "crates.io",
         "index.crates.io",
         "static.crates.io",
-        "docs.rs"
+        "docs.rs",
+        "static.rust-lang.org"
       ]
     },
 
