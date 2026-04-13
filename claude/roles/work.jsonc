@@ -33,5 +33,32 @@
         "portal.sso.us-west-2.amazonaws.com"
       ]
     }
+  },
+
+  // Pickleton session tracking hooks (global so they fire in all directories,
+  // not just when Claude starts in ~/pickleton itself)
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/josh.nichols/pickleton/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/josh.nichols/pickleton/.claude/hooks/skill-session-tracking.sh"
+          }
+        ]
+      }
+    ]
   }
 }
