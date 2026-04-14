@@ -6,6 +6,13 @@
       "WebFetch(domain:code.claude.com)",
 
     ]
+  },
+  "sandbox": {
+    "network": {
+      "allowedHosts": [
+        "docs.anthropic.com"
+      ]
+    }
   }
 }
 

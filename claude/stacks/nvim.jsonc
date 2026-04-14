@@ -1,0 +1,21 @@
+
+{
+  "permissions": {
+    "allow": [
+      "Read(~/.local/share/nvim)"
+    ]
+  },
+
+  "sandbox": {
+    "network": {
+      "allowedHosts": [
+      ]
+    },
+    "filesystem": {
+      "allowWrite": [
+        // npm
+        "~/.cache/nvim/"
+      ]
+    }
+  }
+}
