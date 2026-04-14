@@ -1,7 +1,6 @@
 {
   // Base settings
   "model": "opus[1m]",
-  "defaultMode": "acceptEdits",
   "statusLine": {
     "type": "command",
     "command": "npx -y ccstatusline@latest",

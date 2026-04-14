@@ -113,6 +113,10 @@ generate_settings() {
   merged_ask=$(echo "$base_json" | jq '.permissions.ask // []')
   merged_deny=$(echo "$base_json" | jq '.permissions.deny // []')
 
+  # Extract permissions scalars (e.g. defaultMode) from base
+  local permissions_scalars
+  permissions_scalars=$(echo "$base_json" | jq '.permissions // {} | del(.allow, .ask, .deny)')
+
   # Extract sandbox from base (scalars + arrays)
   local sandbox_scalars sandbox_hosts sandbox_write_paths
   sandbox_scalars=$(echo "$base_json" | jq '.sandbox // {} | del(.network.allowedHosts, .filesystem.allowWrite, .filesystem, .network) + (if .network then {network: (.network | del(.allowedHosts))} else {} end) | del(.network | nulls) | del(.filesystem | nulls)')
@@ -136,6 +140,11 @@ generate_settings() {
     merged_allow=$(echo "$merged_allow" | jq --argjson r "$(echo "$role_json" | jq '.permissions.allow // []')" '. + $r')
     merged_ask=$(echo "$merged_ask" | jq --argjson r "$(echo "$role_json" | jq '.permissions.ask // []')" '. + $r')
     merged_deny=$(echo "$merged_deny" | jq --argjson r "$(echo "$role_json" | jq '.permissions.deny // []')" '. + $r')
+
+    # Merge permissions scalars from role (role overrides base)
+    local role_permissions_scalars
+    role_permissions_scalars=$(echo "$role_json" | jq '.permissions // {} | del(.allow, .ask, .deny)')
+    permissions_scalars=$(echo "$permissions_scalars" | jq --argjson r "$role_permissions_scalars" '. * $r')
 
     # Merge sandbox scalars from role (role overrides base)
     local role_sandbox_scalars
@@ -182,11 +191,12 @@ generate_settings() {
     --argjson allow "$merged_allow" \
     --argjson ask "$merged_ask" \
     --argjson deny "$merged_deny" \
+    --argjson perm_scalars "$permissions_scalars" \
     --argjson sandbox_scalars "$sandbox_scalars" \
     --argjson hosts "$sandbox_hosts" \
     --argjson write_paths "$sandbox_write_paths" \
     '. + {
-      permissions: {allow: $allow, ask: $ask, deny: $deny},
+      permissions: ($perm_scalars + {allow: $allow, ask: $ask, deny: $deny}),
       sandbox: ($sandbox_scalars + {
         network: ($sandbox_scalars.network // {} | . + {allowedHosts: $hosts}),
         filesystem: {allowWrite: $write_paths}
