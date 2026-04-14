@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/josh.nichols/.pickles/bin/pickletown claude-hook session-start"
+            "command": "~/.pickles/bin/pickletown claude-hook session-start"
           }
         ]
       }
@@ -47,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/josh.nichols/.pickles/bin/pickletown claude-hook skill-session-tracking"
+            "command": "~/.pickles/bin/pickletown claude-hook skill-session-tracking"
           }
         ]
       }
