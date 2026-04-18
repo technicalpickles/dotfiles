@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# setup-agent-ssh-key <role>
+#
+# Generate a dedicated SSH key for a Claude Code agent identity scoped to a
+# dotfiles role (personal, work). See ADR 0031 for background.
+#
+# Creates ~/.ssh/agents/<role>/id_ed25519, stores the passphrase in macOS
+# Keychain, then prints a checklist of manual GitHub-side steps (add as
+# verified email, upload key as auth + signing key).
+#
+# Re-run safe: if the key already exists, skip generation and reprint the
+# checklist so you can resume enrollment without clobbering the key.
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+info() { echo -e "${BLUE}$*${NC}"; }
+success() { echo -e "${GREEN}✓ $*${NC}"; }
+warn() { echo -e "${YELLOW}⚠ $*${NC}"; }
+error() { echo -e "${RED}✗ $*${NC}" >&2; }
+die() {
+  error "$*"
+  exit 1
+}
+
+usage() {
+  cat << EOF
+Usage: setup-agent-ssh-key <role>
+
+Generate a dedicated SSH key for a Claude Code agent identity.
+
+Arguments:
+  role    Dotfiles role the identity belongs to (e.g. personal, work)
+
+The key lives at ~/.ssh/agents/<role>/id_ed25519 with its passphrase in
+macOS Keychain. After generation, follow the printed checklist to finish
+enrollment on GitHub.
+EOF
+}
+
+if [[ $# -eq 1 ]] && { [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; }; then
+  usage
+  exit 0
+fi
+
+if [[ $# -ne 1 ]]; then
+  usage
+  exit 1
+fi
+
+ROLE="$1"
+if [[ ! "$ROLE" =~ ^[a-z][a-z0-9_-]*$ ]]; then
+  die "Invalid role name: '$ROLE' (lowercase letters, digits, hyphens, underscores)"
+fi
+
+KEY_DIR="$HOME/.ssh/agents/$ROLE"
+KEY_PATH="$KEY_DIR/id_ed25519"
+PUB_PATH="$KEY_PATH.pub"
+EMAIL="joshua.nichols+${ROLE}-agent@gmail.com"
+COMMENT="${ROLE}-agent@$(hostname -s)"
+
+if [[ "$(uname)" != "Darwin" ]]; then
+  die "This script uses macOS Keychain (ssh-add --apple-use-keychain). Not macOS."
+fi
+
+command -v ssh-keygen > /dev/null || die "ssh-keygen not found"
+command -v ssh-add > /dev/null || die "ssh-add not found"
+
+if [[ ! -d "$KEY_DIR" ]]; then
+  info "Creating $KEY_DIR"
+  mkdir -p "$KEY_DIR"
+  chmod 700 "$KEY_DIR"
+  success "Created $KEY_DIR (mode 700)"
+else
+  success "$KEY_DIR already exists"
+fi
+
+if [[ -f "$KEY_PATH" ]]; then
+  # Idempotent: skip regeneration but continue so the checklist prints again.
+  # Regenerating would invalidate the GitHub-side registration and the stored
+  # Keychain passphrase. Delete the key manually if you really want a fresh one.
+  warn "Key already exists at $KEY_PATH, skipping generation"
+else
+  info "Generating ed25519 key at $KEY_PATH"
+  info "You'll be prompted for a passphrase (stored in Keychain in the next step)"
+  ssh-keygen -t ed25519 -f "$KEY_PATH" -C "$COMMENT"
+  chmod 600 "$KEY_PATH"
+  chmod 644 "$PUB_PATH"
+  success "Generated $KEY_PATH"
+fi
+
+info "Adding key to macOS Keychain (idempotent)"
+ssh-add --apple-use-keychain "$KEY_PATH"
+success "Passphrase in Keychain. Future shells auto-load via conf.d/ssh-keychain.fish"
+
+echo
+echo -e "${BOLD}Next steps (manual, on github.com):${NC}"
+echo
+echo -e "  ${BOLD}1.${NC} Add ${GREEN}$EMAIL${NC} as a verified email on your GitHub account"
+echo "     https://github.com/settings/emails"
+echo
+echo -e "  ${BOLD}2.${NC} Upload this public key as an ${BOLD}authentication key${NC}:"
+echo "     https://github.com/settings/ssh/new"
+echo
+echo -e "  ${BOLD}3.${NC} Upload the ${BOLD}same${NC} public key as a ${BOLD}signing key${NC}:"
+echo "     https://github.com/settings/ssh/new (Key type: Signing Key)"
+echo
+echo -e "  ${BOLD}4.${NC} Re-run ${GREEN}./claudeconfig.sh${NC} so role env vars land in ~/.claude/settings.json"
+echo
+echo -e "  ${BOLD}5.${NC} Start a Claude session under ${GREEN}DOTPICKLES_ROLE=$ROLE${NC}, make a"
+echo "     signed commit, push, and confirm the Verified badge on github.com"
+echo
+echo -e "${BOLD}Public key to paste in steps 2 and 3:${NC}"
+echo
+cat "$PUB_PATH"
+echo

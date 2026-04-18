@@ -1,0 +1,237 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# check-agent-ssh-key <role>
+#
+# Validate that the manual enrollment steps for an agent SSH identity were
+# completed correctly. Complements bin/setup-agent-ssh-key.
+#
+# Checks:
+#   1. Local key files exist with correct perms
+#   2. Key is loaded in ssh-agent (via Keychain on macOS)
+#   3. Agent email is verified on GitHub
+#   4. Public key registered on GitHub as authentication key
+#   5. Public key registered on GitHub as signing key
+#   6. ~/.claude/settings.json has the role's env vars (i.e. claudeconfig.sh ran)
+#   7. SSH can authenticate to github.com using this key
+#
+# Exits 0 on all-pass, 1 if anything failed.
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+info() { echo -e "${BLUE}$*${NC}"; }
+success() { echo -e "${GREEN}✓${NC} $*"; }
+warn() { echo -e "${YELLOW}⚠${NC} $*"; }
+error() { echo -e "${RED}✗${NC} $*" >&2; }
+die() {
+  error "$*"
+  exit 2
+}
+
+PASS=0
+FAIL=0
+
+check_pass() {
+  success "$1"
+  PASS=$((PASS + 1))
+}
+
+check_fail() {
+  error "$1"
+  [[ $# -gt 1 ]] && echo -e "  ${YELLOW}$2${NC}" >&2
+  FAIL=$((FAIL + 1))
+}
+
+usage() {
+  cat << EOF
+Usage: check-agent-ssh-key <role>
+
+Validate an agent SSH identity setup. Reports pass/fail for each step of
+the enrollment checklist (local files, Keychain, GitHub registration,
+Claude settings). Exits 0 if all pass, 1 if any fail.
+EOF
+}
+
+if [[ $# -eq 1 ]] && { [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; }; then
+  usage
+  exit 0
+fi
+
+if [[ $# -ne 1 ]]; then
+  usage
+  exit 2
+fi
+
+ROLE="$1"
+if [[ ! "$ROLE" =~ ^[a-z][a-z0-9_-]*$ ]]; then
+  die "Invalid role name: '$ROLE'"
+fi
+
+KEY_DIR="$HOME/.ssh/agents/$ROLE"
+KEY_PATH="$KEY_DIR/id_ed25519"
+PUB_PATH="$KEY_PATH.pub"
+EMAIL="joshua.nichols+${ROLE}-agent@gmail.com"
+SETTINGS="$HOME/.claude/settings.json"
+REQUIRED_SCOPES=("user:email" "read:public_key" "read:ssh_signing_key")
+
+if [[ "$(uname)" != "Darwin" ]]; then
+  die "This script assumes macOS (Keychain, BSD stat). Not macOS."
+fi
+
+command -v ssh-keygen > /dev/null || die "ssh-keygen not found"
+command -v ssh-add > /dev/null || die "ssh-add not found"
+command -v gh > /dev/null || die "gh not found (install with: brew install gh)"
+command -v jq > /dev/null || die "jq not found"
+
+# Force BSD stat; coreutils can shadow /usr/bin/stat with GNU dialect
+STAT=/usr/bin/stat
+
+echo -e "${BOLD}Checking agent SSH identity: ${ROLE}${NC}"
+echo
+
+# --- 1. Local key files ---
+if [[ -f "$KEY_PATH" && -f "$PUB_PATH" ]]; then
+  key_mode=$("$STAT" -f '%Lp' "$KEY_PATH")
+  pub_mode=$("$STAT" -f '%Lp' "$PUB_PATH")
+  if [[ "$key_mode" == "600" && "$pub_mode" == "644" ]]; then
+    check_pass "Key files exist with correct perms ($KEY_PATH)"
+  else
+    check_fail "Key file perms wrong" "private=$key_mode (want 600), public=$pub_mode (want 644)"
+  fi
+else
+  check_fail "Key files missing" "Run: bin/setup-agent-ssh-key $ROLE"
+fi
+
+# Everything below needs the pub key to compute fingerprint
+if [[ ! -f "$PUB_PATH" ]]; then
+  echo
+  error "Cannot continue without $PUB_PATH"
+  exit 1
+fi
+
+LOCAL_FP=$(ssh-keygen -lf "$PUB_PATH" | awk '{print $2}')
+
+# --- 2. Key loaded in ssh-agent ---
+if ssh-add -l 2> /dev/null | awk '{print $2}' | grep -Fxq "$LOCAL_FP"; then
+  check_pass "Key loaded in ssh-agent (fingerprint: $LOCAL_FP)"
+else
+  check_fail "Key not loaded in ssh-agent" "Run: ssh-add --apple-use-keychain $KEY_PATH"
+fi
+
+# --- gh auth scope check (needed for GitHub checks) ---
+if ! gh auth status > /dev/null 2>&1; then
+  check_fail "gh is not authenticated" "Run: gh auth login"
+  gh_ok=false
+else
+  gh_ok=true
+  token_scopes=$(gh auth status 2>&1 | grep -i 'Token scopes:' | sed "s/.*Token scopes: //" | tr -d "'" | tr ',' '\n' | sed 's/^ *//;s/ *$//')
+  missing=()
+  for s in "${REQUIRED_SCOPES[@]}"; do
+    if ! echo "$token_scopes" | grep -Fxq "$s"; then
+      missing+=("$s")
+    fi
+  done
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    check_fail "gh token missing scopes: ${missing[*]}" \
+      "Run: gh auth refresh -h github.com -s $(
+        IFS=,
+        echo "${missing[*]}"
+      )"
+    gh_ok=false
+  else
+    check_pass "gh token has required scopes"
+  fi
+fi
+
+# --- 3. Email verified on GitHub ---
+if $gh_ok; then
+  email_row=$(gh api user/emails 2> /dev/null | jq -r --arg e "$EMAIL" '.[] | select(.email == $e)')
+  if [[ -z "$email_row" ]]; then
+    check_fail "$EMAIL not registered on GitHub account" "Add at: https://github.com/settings/emails"
+  elif [[ "$(echo "$email_row" | jq -r '.verified')" != "true" ]]; then
+    check_fail "$EMAIL registered but not verified" "Check your inbox for the verification link"
+  else
+    check_pass "$EMAIL verified on GitHub"
+  fi
+fi
+
+# --- 4 + 5. GitHub keys ---
+# Normalize keys via fingerprint comparison
+compare_fp() {
+  local endpoint="$1"
+  local label="$2"
+  local settings_url="$3"
+  local remote_fps
+  remote_fps=$(gh api "$endpoint" --jq '.[].key' 2> /dev/null | while IFS= read -r key; do
+    [[ -n "$key" ]] && echo "$key" | ssh-keygen -lf - 2> /dev/null | awk '{print $2}'
+  done)
+  if echo "$remote_fps" | grep -Fxq "$LOCAL_FP"; then
+    check_pass "$label registered on GitHub"
+  else
+    check_fail "$label not registered on GitHub" "Upload pub key at: $settings_url"
+  fi
+}
+
+if $gh_ok; then
+  compare_fp "user/keys" "Authentication key" "https://github.com/settings/ssh/new"
+  compare_fp "user/ssh_signing_keys" "Signing key" "https://github.com/settings/ssh/new (Key type: Signing Key)"
+fi
+
+# --- 6. ~/.claude/settings.json env vars ---
+# Verify author email is set and that the GIT_CONFIG_* block overrides the
+# keys that matter: gpg.ssh.program in particular must be reset or git will
+# try to sign via 1Password's op-ssh-sign and fail.
+if [[ -f "$SETTINGS" ]]; then
+  settings_email=$(jq -r '.env.GIT_AUTHOR_EMAIL // empty' "$SETTINGS")
+  gpg_program_set=$(jq -r '
+    .env as $e
+    | [$e | keys[] | select(startswith("GIT_CONFIG_KEY_"))]
+    | map(sub("GIT_CONFIG_KEY_"; "GIT_CONFIG_VALUE_") as $v
+        | {key: $e[.], value: $e[$v]})
+    | map(select(.key == "gpg.ssh.program" and .value == "ssh-keygen"))
+    | length > 0
+  ' "$SETTINGS")
+
+  if [[ "$settings_email" != "$EMAIL" ]]; then
+    check_fail "~/.claude/settings.json missing agent email" \
+      "Run: DOTPICKLES_ROLE=$ROLE ./claudeconfig.sh"
+  elif [[ "$gpg_program_set" != "true" ]]; then
+    check_fail "~/.claude/settings.json missing gpg.ssh.program override" \
+      "Pull latest personal.jsonc and re-run: DOTPICKLES_ROLE=$ROLE ./claudeconfig.sh"
+  else
+    check_pass "~/.claude/settings.json has agent env vars"
+  fi
+else
+  check_fail "~/.claude/settings.json not found" "Run: DOTPICKLES_ROLE=$ROLE ./claudeconfig.sh"
+fi
+
+# --- 7. SSH auth to github.com ---
+# GitHub returns "Hi <user>!" on success, exit code 1 (expected, no shell).
+info "Testing SSH auth to github.com (this may take a second)..."
+ssh_out=$(ssh -i "$KEY_PATH" \
+  -o IdentitiesOnly=yes \
+  -o IdentityAgent=SSH_AUTH_SOCK \
+  -o StrictHostKeyChecking=accept-new \
+  -o ConnectTimeout=10 \
+  -T git@github.com 2>&1 || true)
+if echo "$ssh_out" | grep -q "successfully authenticated"; then
+  gh_user=$(echo "$ssh_out" | sed -n 's/^Hi \([^!]*\)!.*/\1/p')
+  check_pass "SSH auth to github.com works (as: $gh_user)"
+else
+  check_fail "SSH auth to github.com failed" "$(echo "$ssh_out" | head -3)"
+fi
+
+# --- Summary ---
+echo
+if [[ $FAIL -eq 0 ]]; then
+  echo -e "${GREEN}${BOLD}All $PASS checks passed.${NC}"
+  exit 0
+else
+  echo -e "${RED}${BOLD}$FAIL failed${NC}, ${GREEN}$PASS passed${NC}"
+  exit 1
+fi
