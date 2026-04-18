@@ -12,7 +12,8 @@ set -uo pipefail
 #   3. Agent email is verified on GitHub
 #   4. Public key registered on GitHub as authentication key
 #   5. Public key registered on GitHub as signing key
-#   6. ~/.claude/settings.json has the role's env vars (i.e. claudeconfig.sh ran)
+#   6. ~/.claude/settings.json wires GIT_CONFIG_GLOBAL to a gitconfig include
+#      file that overrides user.email, core.sshCommand, and gpg.ssh.program
 #   7. SSH can authenticate to github.com using this key
 #
 # Exits 0 on all-pass, 1 if anything failed.
@@ -182,29 +183,43 @@ if $gh_ok; then
   compare_fp "user/ssh_signing_keys" "Signing key" "https://github.com/settings/ssh/new (Key type: Signing Key)"
 fi
 
-# --- 6. ~/.claude/settings.json env vars ---
-# Verify author email is set and that the GIT_CONFIG_* block overrides the
-# keys that matter: gpg.ssh.program in particular must be reset or git will
-# try to sign via 1Password's op-ssh-sign and fail.
+# --- 6. ~/.claude/settings.json + gitconfig include ---
+# Verify GIT_CONFIG_GLOBAL is wired to a gitconfig include file, the file
+# exists, and it overrides the settings that matter: user.email (or git
+# won't attribute to the agent), core.sshCommand (or ssh will use
+# 1Password's IdentityAgent), and gpg.ssh.program=ssh-keygen (or signing
+# falls through to 1Password's op-ssh-sign and fails).
 if [[ -f "$SETTINGS" ]]; then
-  settings_email=$(jq -r '.env.GIT_AUTHOR_EMAIL // empty' "$SETTINGS")
-  gpg_program_set=$(jq -r '
-    .env as $e
-    | [$e | keys[] | select(startswith("GIT_CONFIG_KEY_"))]
-    | map(sub("GIT_CONFIG_KEY_"; "GIT_CONFIG_VALUE_") as $v
-        | {key: $e[.], value: $e[$v]})
-    | map(select(.key == "gpg.ssh.program" and .value == "ssh-keygen"))
-    | length > 0
-  ' "$SETTINGS")
+  git_config_global=$(jq -r '.env.GIT_CONFIG_GLOBAL // empty' "$SETTINGS")
+  # Expand leading ~/ for the check (claudeconfig.sh writes absolute paths,
+  # but tolerate either shape).
+  expanded_path="${git_config_global/#\~\//$HOME/}"
 
-  if [[ "$settings_email" != "$EMAIL" ]]; then
-    check_fail "~/.claude/settings.json missing agent email" \
+  if [[ -z "$git_config_global" ]]; then
+    check_fail "~/.claude/settings.json missing GIT_CONFIG_GLOBAL" \
       "Run: DOTPICKLES_ROLE=$ROLE ./claudeconfig.sh"
-  elif [[ "$gpg_program_set" != "true" ]]; then
-    check_fail "~/.claude/settings.json missing gpg.ssh.program override" \
-      "Pull latest personal.jsonc and re-run: DOTPICKLES_ROLE=$ROLE ./claudeconfig.sh"
+  elif [[ ! -f "$expanded_path" ]]; then
+    check_fail "GIT_CONFIG_GLOBAL points at missing file: $expanded_path" \
+      "Expected file at home/.gitconfig.d/claude-agent-$ROLE in the dotfiles repo"
   else
-    check_pass "~/.claude/settings.json has agent env vars"
+    cfg_email=$(git config --file "$expanded_path" user.email 2> /dev/null || true)
+    cfg_ssh=$(git config --file "$expanded_path" core.sshCommand 2> /dev/null || true)
+    cfg_gpg=$(git config --file "$expanded_path" gpg.ssh.program 2> /dev/null || true)
+    # Normalize ~/ in the sshCommand value so the check accepts either form.
+    cfg_ssh_expanded="${cfg_ssh//\~\//$HOME/}"
+
+    if [[ "$cfg_email" != "$EMAIL" ]]; then
+      check_fail "$expanded_path missing user.email=$EMAIL" \
+        "got: '$cfg_email'"
+    elif [[ "$cfg_ssh_expanded" != *"$KEY_PATH"* ]]; then
+      check_fail "$expanded_path missing core.sshCommand using $KEY_PATH" \
+        "got: '$cfg_ssh'"
+    elif [[ "$cfg_gpg" != "ssh-keygen" ]]; then
+      check_fail "$expanded_path missing gpg.ssh.program=ssh-keygen" \
+        "got: '$cfg_gpg' (1Password's op-ssh-sign will block agent signing)"
+    else
+      check_pass "Agent gitconfig include wired up ($expanded_path)"
+    fi
   fi
 else
   check_fail "~/.claude/settings.json not found" "Run: DOTPICKLES_ROLE=$ROLE ./claudeconfig.sh"

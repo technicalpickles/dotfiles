@@ -80,39 +80,57 @@ The `+<role>-agent` plus-addressed email is added as a verified email on the
 same GitHub account. Plus-addressing keeps it tied to one inbox while giving
 GitHub a distinct email to attribute commits to.
 
-**3. Per-role env injection.** `claude/roles/personal.jsonc` gets an `env`
-block that overrides the identity Claude-spawned shells use:
+**3. Per-role env injection.** `claude/roles/personal.jsonc` sets a single
+env var pointing at an agent-specific gitconfig file:
 
 ```jsonc
 "env": {
-  "GIT_AUTHOR_EMAIL": "joshua.nichols+personal-agent@gmail.com",
-  "GIT_COMMITTER_EMAIL": "joshua.nichols+personal-agent@gmail.com",
-  "GIT_SSH_COMMAND": "ssh -i ~/.ssh/agents/personal/id_ed25519 -o IdentitiesOnly=yes -o IdentityAgent=SSH_AUTH_SOCK",
-  "GIT_CONFIG_COUNT": "4",
-  "GIT_CONFIG_KEY_0": "user.signingkey",    "GIT_CONFIG_VALUE_0": "~/.ssh/agents/personal/id_ed25519.pub",
-  "GIT_CONFIG_KEY_1": "gpg.format",         "GIT_CONFIG_VALUE_1": "ssh",
-  "GIT_CONFIG_KEY_2": "commit.gpgsign",     "GIT_CONFIG_VALUE_2": "true",
-  "GIT_CONFIG_KEY_3": "gpg.ssh.program",    "GIT_CONFIG_VALUE_3": "ssh-keygen"
+  "GIT_CONFIG_GLOBAL": "~/.gitconfig.d/claude-agent-personal"
 }
 ```
 
+`GIT_CONFIG_GLOBAL` tells git to read the pointed-at file instead of
+`~/.gitconfig` for every git command in the session. The target is a
+symlinked dotfiles-managed file (`home/.gitconfig.d/claude-agent-personal`
+in the repo, surfaced via `link_directory_contents home`):
+
+```ini
+[include]
+    path = ~/.gitconfig
+[user]
+    email = joshua.nichols+personal-agent@gmail.com
+    signingkey = ~/.ssh/agents/personal/id_ed25519.pub
+[core]
+    sshCommand = ssh -i ~/.ssh/agents/personal/id_ed25519 -o IdentitiesOnly=yes -o IdentityAgent=SSH_AUTH_SOCK
+[commit]
+    gpgsign = true
+[gpg]
+    format = ssh
+[gpg "ssh"]
+    program = ssh-keygen
+```
+
+The `[include]` pulls in the real global gitconfig first (transitively
+including `~/.gitconfig.d/1password` and its `op-ssh-sign`). Sections
+below then override via last-write-wins, so `gpg.ssh.program = ssh-keygen`
+still defeats 1Password's default.
+
 Three subtleties worth noting:
 
-- `IdentityAgent=SSH_AUTH_SOCK` is required. Without it, ssh still talks to
-  1Password's agent socket (from `Host *` in `ssh/config.d/auth`), which
-  doesn't know about the agent key. The literal string `SSH_AUTH_SOCK` is
-  specially recognized by ssh and resolved to the env variable's value,
-  pointing back at fish-ssh-agent.
-- `gpg.ssh.program=ssh-keygen` is required. The global gitconfig sets
+- `IdentityAgent=SSH_AUTH_SOCK` is required in `core.sshCommand`. Without
+  it, ssh still talks to 1Password's agent socket (from `Host *` in
+  `ssh/config.d/auth`), which doesn't know about the agent key. The
+  literal string `SSH_AUTH_SOCK` is specially recognized by ssh and
+  resolved to the env variable's value, pointing back at fish-ssh-agent.
+- `gpg.ssh.program = ssh-keygen` is required. The global gitconfig sets
   this to `op-ssh-sign` (1Password's signing helper), which only knows
   about keys in the 1Password vault. Without this override, signing a
   commit with the agent key fails with `failed to fill whole buffer`.
   Resetting it to `ssh-keygen` uses OpenSSH's native signing, which reads
   the signing key via the running ssh-agent.
-- `GIT_CONFIG_COUNT/KEY/VALUE` is git's mechanism for ephemeral config
-  overrides. It avoids writing anything to `~/.gitconfig`, which means
-  regular shells (no Claude) keep their 1Password GPG setup exactly as it
-  was.
+- `GIT_CONFIG_GLOBAL` does not expand `~/`, so `claudeconfig.sh` expands
+  leading `~/` in `.env` string values to `$HOME/...` before writing
+  `settings.json`. JSONC stays portable; the resolved path is absolute.
 
 **4. Setup helper.** `bin/setup-agent-ssh-key <role>` generates the key,
 stores the passphrase in Keychain, and prints a numbered checklist of
@@ -121,8 +139,10 @@ GitHub-side steps with the public key ready to paste.
 **5. Validator.** `bin/check-agent-ssh-key <role>` verifies each step of the
 setup: local key files and perms, Keychain load, GitHub email verification,
 auth key and signing key registration (via fingerprint comparison against
-`gh api user/keys` and `gh api user/ssh_signing_keys`), presence of the env
-block in `~/.claude/settings.json`, and end-to-end SSH auth to github.com.
+`gh api user/keys` and `gh api user/ssh_signing_keys`), that
+`~/.claude/settings.json` wires `GIT_CONFIG_GLOBAL` to an include file with
+the required overrides (`user.email`, `core.sshCommand`,
+`gpg.ssh.program=ssh-keygen`), and end-to-end SSH auth to github.com.
 It exits non-zero if anything is missing so it works as a health check.
 
 ### Why role-scoped, not claude-with-scoped
@@ -197,6 +217,7 @@ agent under a given role. Keeping identity on the role axis means:
 - Two identities in `git log` for work done on the same machine. Easy to
   filter, but reviewers unfamiliar with the setup might be confused about
   which commits are "really" from Josh
-- `GIT_CONFIG_COUNT` magic is slightly obscure if you haven't seen it before;
-  the `env` block in `personal.jsonc` has a comment pointing here but it's
-  still an extra hop to understand the override mechanism
+- Two files to understand (the role's env block and the
+  `home/.gitconfig.d/claude-agent-<role>` include file) rather than one env
+  block. The trade is a more readable gitconfig vs. the opaque
+  `GIT_CONFIG_COUNT/KEY/VALUE` scheme it replaced

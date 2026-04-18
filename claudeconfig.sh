@@ -206,6 +206,20 @@ generate_settings() {
   # Merge in local-only settings
   final_settings=$(echo "$final_settings" | jq --argjson local "$local_settings" '. * $local')
 
+  # Expand leading ~/ in .env string values. GIT_CONFIG_GLOBAL and similar
+  # don't expand ~, so JSONC stays portable and we resolve to absolute paths
+  # here before writing settings.json.
+  final_settings=$(echo "$final_settings" | jq --arg home "$HOME" '
+    if .env then
+      .env |= with_entries(
+        if (.value | type) == "string" and (.value | startswith("~/"))
+        then .value = ($home + (.value | ltrimstr("~")))
+        else .
+        end
+      )
+    else . end
+  ')
+
   # Write to temp file and validate
   echo "$final_settings" > "$temp_file"
   if ! jq empty "$temp_file" 2> /dev/null; then
