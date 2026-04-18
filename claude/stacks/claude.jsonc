@@ -5,7 +5,11 @@
       // Claude docs (from old web.json)
       "WebFetch(domain:code.claude.com)",
       // plugins will sometimes check here for settings
-      "Search(~/.claude/CLAUDE.md)",
+      "Read(~/.claude/CLAUDE.md)",
+      "Search(path:~/.claude/CLAUDE.md)",
+
+      // plugins often need ot read their own files
+      "Read(~/.claude/plugins/marketplaces/)",
     ],
   },
   "sandbox": {

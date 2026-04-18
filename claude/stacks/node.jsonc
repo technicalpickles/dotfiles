@@ -29,7 +29,7 @@
       "Bash(yarn test:*)",
       "Bash(yarn tsc:*)",
       "Bash(yarn:*)",
-      "WebFetch(registry.npmjs.org)",
+      "WebFetch(domain:registry.npmjs.org)",
     ],
   },
 

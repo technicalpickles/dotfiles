@@ -23,16 +23,17 @@
       "Bash(docker pull:*)",
       "Bash(docker run:*)",
       "Bash(docker stop:*)",
-      "Bash(docker volume:*)"
-    ]
+      "Bash(docker volume:*)",
+    ],
   },
 
   // source: agent-safehouse
   "sandbox": {
     "filesystem": {
-      "allowWrite": [
-        "~/.docker"
-      ]
-    }
-  }
+      "allowWrite": ["~/.docker"],
+    },
+    "network": {
+      "allowedHosts": ["auth.docker.io"],
+    },
+  },
 }
