@@ -11,9 +11,11 @@
 # Usage:
 #   claude-with <name> [claude-args...]   Run claude in named env
 #   claude-with --list                    Show available environments
-#   claude-with <name> --create           Set up a new environment
+#   claude-with <name> --create [--bare]  Set up a new environment
 #   claude-with <name> --clean            Remove env
 #   claude-with <name> --path             Print env path and exit
+#   claude-with <name> --settings         Dump env settings.json
+#   claude-with <name> --merge-settings <json|file>  Deep merge into settings
 #   claude-with --help                    Show this help
 #
 # What CLAUDE_CONFIG_DIR isolates (per-env, replaces ~/.claude/):
@@ -60,8 +62,12 @@ Commands:
   claude-with <name> [-- claude-args]  Start Claude in named env
   claude-with <name> -- -p "prompt"    Pass args through to Claude
   claude-with <name> --create          Create a new environment
+  claude-with <name> --create --bare   Create without copying auth settings
   claude-with <name> --clean           Remove the environment
   claude-with <name> --path            Print environment path
+  claude-with <name> --settings        Dump current settings.json
+  claude-with <name> --merge-settings <json|file>
+                                       Deep merge into settings.json
   claude-with --list                   List available environments
 
 Options:
@@ -72,7 +78,8 @@ Environment variable:
   CLAUDE_ENV_BASE   Override base directory (default: ~/.local/share/claude-env)
 
 Environments must be explicitly created with --create before use.
-Auth settings are copied from ~/.claude/settings.json during creation.
+Auth settings are copied from ~/.claude/settings.json during creation
+(use --bare to skip).
 EOF
 }
 
@@ -115,11 +122,15 @@ list_envs() {
 setup_env() {
   local env_dir="$1"
   local name="$2"
+  local bare="$3"
 
   log "Creating environment '$name'..."
   mkdir -p "$env_dir"
 
-  if [[ -f "$GLOBAL_SETTINGS" ]]; then
+  if [[ "$bare" == "true" ]]; then
+    echo '{}' > "$env_dir/settings.json"
+    log "Created bare environment (no auth settings)."
+  elif [[ -f "$GLOBAL_SETTINGS" ]]; then
     # Extract auth-related settings from global config
     jq '{
             env: (.env // {}),
@@ -143,6 +154,77 @@ setup_env() {
 EOF
 
   log "Environment ready at $env_dir"
+}
+
+dump_settings() {
+  local env_dir="$1"
+  local name="$2"
+  local settings="$env_dir/settings.json"
+
+  if [[ ! -f "$settings" ]]; then
+    err "No settings.json in environment '$name'."
+    exit 1
+  fi
+
+  cat "$settings"
+}
+
+merge_settings() {
+  local env_dir="$1"
+  local name="$2"
+  local arg="$3"
+  local settings="$env_dir/settings.json"
+
+  if [[ ! -f "$settings" ]]; then
+    err "No settings.json in environment '$name'."
+    exit 1
+  fi
+
+  # Detect JSON vs file path: if first non-whitespace char is { or [, it's JSON
+  local trimmed
+  trimmed=$(echo "$arg" | sed 's/^[[:space:]]*//')
+  local first_char="${trimmed:0:1}"
+
+  local overlay
+  if [[ "$first_char" == "{" || "$first_char" == "[" ]]; then
+    overlay="$arg"
+  elif [[ -f "$arg" ]]; then
+    overlay=$(cat "$arg")
+  else
+    err "Argument is neither JSON nor a valid file path: $arg"
+    exit 1
+  fi
+
+  # Validate the overlay is valid JSON
+  if ! echo "$overlay" | jq empty 2> /dev/null; then
+    err "Invalid JSON in merge-settings argument."
+    exit 1
+  fi
+
+  # Deep merge: overlay wins for scalar values, objects are recursively merged
+  local merged
+  merged=$(jq -s '
+    def deep_merge(a; b):
+      a as $a | b as $b |
+      if ($a | type) == "object" and ($b | type) == "object" then
+        ($a | keys_unsorted) + ($b | keys_unsorted) | unique |
+        map(. as $k |
+          if ($a | has($k)) and ($b | has($k)) then
+            { ($k): deep_merge($a[$k]; $b[$k]) }
+          elif ($b | has($k)) then
+            { ($k): $b[$k] }
+          else
+            { ($k): $a[$k] }
+          end
+        ) | add // {}
+      else
+        $b
+      end;
+    deep_merge(.[0]; .[1])
+  ' "$settings" <(echo "$overlay"))
+
+  echo "$merged" > "$settings"
+  log "Merged settings into '$name'."
 }
 
 clean_env() {
@@ -204,7 +286,11 @@ while [[ $# -gt 0 ]]; do
         warn "Environment '$ENV_NAME' already exists."
         exit 1
       fi
-      setup_env "$ENV_DIR" "$ENV_NAME"
+      CREATE_BARE="false"
+      if [[ "${2:-}" == "--bare" ]]; then
+        CREATE_BARE="true"
+      fi
+      setup_env "$ENV_DIR" "$ENV_NAME" "$CREATE_BARE"
       exit 0
       ;;
     --clean)
@@ -213,6 +299,26 @@ while [[ $# -gt 0 ]]; do
       ;;
     --path)
       echo "$ENV_DIR"
+      exit 0
+      ;;
+    --settings)
+      if [[ ! -d "$ENV_DIR" ]]; then
+        err "Environment '$ENV_NAME' does not exist."
+        exit 1
+      fi
+      dump_settings "$ENV_DIR" "$ENV_NAME"
+      exit 0
+      ;;
+    --merge-settings)
+      if [[ -z "${2:-}" ]]; then
+        err "Usage: claude-with $ENV_NAME --merge-settings <json|file>"
+        exit 1
+      fi
+      if [[ ! -d "$ENV_DIR" ]]; then
+        err "Environment '$ENV_NAME' does not exist."
+        exit 1
+      fi
+      merge_settings "$ENV_DIR" "$ENV_NAME" "$2"
       exit 0
       ;;
     --)

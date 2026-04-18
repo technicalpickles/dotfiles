@@ -13,7 +13,7 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
 # This file is gitignored - it contains machine-specific tool versions.
 #
 # Versioned configuration lives in conf.d/:
-#   - path.toml:     PATH additions (~/.bun/bin, ~/.cargo/bin, etc.)
+#   - path.toml:     PATH additions (~/.cargo/bin, etc.)
 #   - dotfiles.toml: Tools managed by dotfiles (fnox, goss, hk, pkl)
 #
 # Add your language runtimes below. Example:

@@ -19,5 +19,8 @@
         "~/.claude/plugins/cache",
       ],
     },
+    "network": {
+      "allowedHosts": ["docs.anthropic.com"],
+    },
   },
 }

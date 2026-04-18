@@ -10,9 +10,9 @@ let personalChromeProfile = 'Profile 3';
 let workChromeProfile = 'Profile 1';
 
 if (hostname === 'josh-nichols-K9DJ2M7WK6') {
-  // New work machine (rehome 2026-03-24): Default=work, Profile 1=personal
-  workChromeProfile = 'Default';
-  personalChromeProfile = 'Profile 1';
+  // New work machine (rehome 2026-03-24): Work profile is default, Josh is personal
+  workChromeProfile = 'Work';
+  personalChromeProfile = 'Josh';
 }
 
 // Slack workspace subdomain to team ID mapping

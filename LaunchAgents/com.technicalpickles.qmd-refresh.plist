@@ -8,7 +8,7 @@
     <array>
         <string>/bin/bash</string>
         <string>-c</string>
-        <string>$HOME/.local/share/mise/shims/qmd update &amp;&amp; $HOME/.local/share/mise/shims/qmd embed</string>
+        <string>$HOME/.local/share/mise/shims/npx @tobilu/qmd update &amp;&amp; $HOME/.local/share/mise/shims/npx @tobilu/qmd embed</string>
     </array>
     <key>StartCalendarInterval</key>
     <array>
@@ -17,6 +17,11 @@
         <dict><key>Minute</key><integer>30</integer></dict>
         <dict><key>Minute</key><integer>45</integer></dict>
     </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>BREW_PREFIX</key>
+        <string>/opt/homebrew</string>
+    </dict>
     <key>RunAtLoad</key>
     <true/>
     <key>StandardOutPath</key>

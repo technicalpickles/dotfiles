@@ -29,3 +29,4 @@
 - [27. tmux-command-palette](0027-tmux-command-palette.md)
 - [28. safe-symlink-function](0028-safe-symlink-function.md)
 - [29. tmux-local-config-overrides](0029-tmux-local-config-overrides.md)
+- [30. ssh-keychain-loading-at-login](0030-ssh-keychain-loading-at-login.md)

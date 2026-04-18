@@ -37,7 +37,7 @@ Refreshes QMD semantic search index for the Obsidian vault.
 
 **Prerequisites:**
 
-- QMD installed: `bun install -g https://github.com/tobi/qmd`
+- QMD available via: `npx @tobilu/qmd`
 - Collection configured: `qmd collection add ~/Vaults/pickled-knowledge/pickled-knowledge --name second-brain`
 
 ## Setup

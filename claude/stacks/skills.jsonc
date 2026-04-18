@@ -4,6 +4,7 @@
     "allow": [
       // Plugin cache read access (reduces per-skill permission prompts)
       "Read(~/.claude/plugins/cache/**)",
+      "Read(~/.claude/plugins/marketplaces/pickled-claude-plugins)",
       // superpowers-chrome puts stuff here
       "Read(~/Library/Caches/superpowers/**)",
       "Skill(buildkite-status)",

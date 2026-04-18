@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+DIR="${DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+
 # shellcheck source=./functions.sh
-source ./functions.sh
+source "$DIR/functions.sh"
 
 if ! which fish > /dev/null 2> /dev/null; then
   echo "missing fish :("
@@ -47,16 +49,8 @@ if [ -L "$fish_config" ]; then
   mkdir -p "$fish_config" "$fish_config/conf.d" "$fish_config/functions" "$fish_config/completions"
 fi
 
-# Symlink dotfiles config into the fisher-managed directory
-if [ -d "$fish_config" ] && [ -d "$dotfiles_fish/conf.d" ]; then
-  for f in "$dotfiles_fish"/conf.d/*; do
-    [ -f "$f" ] && ln -sf "$f" "$fish_config/conf.d/"
-  done
-
-  for f in "$dotfiles_fish"/functions/*; do
-    [ -f "$f" ] && ln -sf "$f" "$fish_config/functions/"
-  done
-
+# Symlink config.fish and fish_plugins first (fisher needs fish_plugins to know what to install)
+if [ -d "$fish_config" ]; then
   [ -f "$dotfiles_fish/config.fish" ] && ln -sf "$dotfiles_fish/config.fish" "$fish_config/config.fish"
   [ -f "$dotfiles_fish/fish_plugins" ] && ln -sf "$dotfiles_fish/fish_plugins" "$fish_config/fish_plugins"
 fi
@@ -70,5 +64,16 @@ fi
 echo "syncing plugins from fish_plugins:"
 cat "$fish_config/fish_plugins"
 fish -c "fisher update" < /dev/null
+
+# Symlink conf.d and functions AFTER fisher update, so fisher doesn't overwrite them
+if [ -d "$fish_config" ] && [ -d "$dotfiles_fish/conf.d" ]; then
+  for f in "$dotfiles_fish"/conf.d/*; do
+    [ -f "$f" ] && ln -sf "$f" "$fish_config/conf.d/"
+  done
+
+  for f in "$dotfiles_fish"/functions/*; do
+    [ -f "$f" ] && ln -sf "$f" "$fish_config/functions/"
+  done
+fi
 
 echo
