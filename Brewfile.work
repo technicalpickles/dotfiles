@@ -1,3 +1,5 @@
 cask 'granola'
 cask 'wispr-flow'
 brew 'ical-buddy'
+tap 'buildkite/buildkite'
+brew 'buildkite/buildkite/bk@3'
