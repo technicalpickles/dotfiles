@@ -44,7 +44,10 @@
       "allowedHosts": [
         "api.github.com",
         "docs.github.com",
+        "ghcr.io",
+        "gist.githubusercontent.com",
         "github.com",
+        "pkg-containers.githubusercontent.com",
         "raw.githubusercontent.com"
       ]
     },

@@ -4,7 +4,9 @@
     "network": {
       "allowedHosts": [
         "api.buildkite.com",
-        "buildkite.com"
+        "buildkite.com",
+        "buildkiteartifacts.com"
+
       ]
     },
     "filesystem": {

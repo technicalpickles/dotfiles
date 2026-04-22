@@ -8,4 +8,12 @@
       "Edit(/Users/technicalpickles/Documents/pickled-knowledge/**/*.md)",
     ],
   },
+
+  "sandbox": {
+    "filesystem": {
+      "allowWrite": [
+        "~/.cache/qmd/"
+      ]
+    }
+  }
 }

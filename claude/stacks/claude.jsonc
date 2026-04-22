@@ -12,6 +12,11 @@
       "allowedHosts": [
         "docs.anthropic.com"
       ]
+    },
+    "filesystem": {
+      "allowWrite": [
+         "~/.local/share/claude-env/"
+      ]
     }
   }
 }
