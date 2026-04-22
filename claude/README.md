@@ -211,7 +211,7 @@ When you notice you're repeatedly approving the same permission across projects:
 
 These keys in `~/.claude/settings.json` are preserved across regenerations:
 
-- `enabledPlugins`: plugin activation state (tracked in gt-1bil)
+- `enabledPlugins`: plugin activation state
 - `extraKnownMarketplaces`: managed by `configure_marketplaces()` in claudeconfig.sh
 
 ## Files NOT to Edit

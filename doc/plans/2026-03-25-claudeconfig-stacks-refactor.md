@@ -20,7 +20,7 @@ Additionally, several settings accumulated during agent-safehouse work need to b
 
 ## Non-Goals
 
-- Changing how `enabledPlugins` is managed (tracked separately in gt-1bil)
+- Changing how `enabledPlugins` is managed (tracked separately)
 - Changing the role system (personal/work) itself
 - Adding new permissions not already in the live settings (exception: `Read(~/.claude/plugins/cache/**)` added to reduce per-skill permission prompts)
 
@@ -284,7 +284,7 @@ WebFetch permissions: `WebFetch(domain:karafka.io)`, `WebFetch(domain:lima-vm.io
 Preserved from the existing `~/.claude/settings.json` across regenerations:
 
 - `model` (machine-specific model preference)
-- `enabledPlugins` (until gt-1bil is resolved)
+- `enabledPlugins` (tracked separately)
 - `extraKnownMarketplaces` (managed by `configure_marketplaces()` in claudeconfig.sh)
 
 These are NOT in any source file. They survive because `claudeconfig.sh` reads them from the existing output before overwriting.
