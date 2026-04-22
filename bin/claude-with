@@ -196,7 +196,7 @@ merge_settings() {
   fi
 
   # Validate the overlay is valid JSON
-  if ! echo "$overlay" | jq empty 2>/dev/null; then
+  if ! echo "$overlay" | jq empty 2> /dev/null; then
     err "Invalid JSON in merge-settings argument."
     exit 1
   fi

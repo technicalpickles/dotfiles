@@ -1,8 +1,7 @@
 {
   // Work role settings (values from live settings, not stale source files)
   "awsAuthRefresh": "aws sso login --profile $AWS_PROFILE",
-  "env": {
-  },
+  "env": {},
 
   // Work-specific permissions
   "permissions": {
@@ -14,17 +13,15 @@
       "Bash(bundle install)",
       "Bash(npx bktide build:*)",
       "Bash(npx bktide)",
-      "Bash(npx bktide:*)"
-    ]
+      "Bash(npx bktide:*)",
+    ],
   },
 
   // Work-specific sandbox (source: agent-safehouse)
   "sandbox": {
     "network": {
-      "allowedHosts": [
-        "portal.sso.us-west-2.amazonaws.com"
-      ]
-    }
+      "allowedHosts": ["portal.sso.us-west-2.amazonaws.com"],
+    },
   },
 
   // Pickleton session tracking hooks (global so they fire in all directories,
@@ -36,10 +33,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.pickles/bin/pickletown claude-hook session-start"
-          }
-        ]
-      }
+            "command": "~/.pickles/bin/pickletown claude-hook session-start",
+          },
+        ],
+      },
     ],
     "PreToolUse": [
       {
@@ -47,10 +44,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.pickles/bin/pickletown claude-hook skill-session-tracking"
-          }
-        ]
-      }
-    ]
-  }
+            "command": "~/.pickles/bin/pickletown claude-hook skill-session-tracking",
+          },
+        ],
+      },
+    ],
+  },
 }

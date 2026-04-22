@@ -3,5 +3,5 @@ _.path = [
   "~/bin",
   "~/.local/bin",
   "~/.cargo/bin",
-  "~/.pickles/bin",   # pickletown scripts (bk wrapper, etc.)
+  "~/.pickles/bin", # pickletown scripts (bk wrapper, etc.)
 ]

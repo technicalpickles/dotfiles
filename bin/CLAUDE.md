@@ -25,3 +25,5 @@ Spotlight is kept enabled (Alfred requires it) but specific directories are excl
 - `bin/ccusage-refresh`: Refresh ccusage cache (run by LaunchAgent every 5 min)
 - `bin/tmux-smart-open`: Open URLs/files on double-click in tmux
 - `bin/tmux-auto-rename-session`: Auto-name sessions after their directory
+- `bin/setup-agent-ssh-key`: Generate a per-role agent SSH identity (see [ADR 0031](../doc/adr/0031-role-scoped-agent-git-identity.md))
+- `bin/check-agent-ssh-key`: Validate an agent SSH identity setup (local files, Keychain, GitHub registration, Claude settings)

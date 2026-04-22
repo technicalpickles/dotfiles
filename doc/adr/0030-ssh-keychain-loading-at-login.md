@@ -70,7 +70,7 @@ While implementing this, we discovered two bugs in `fish.sh`:
 
 1. **Missing `DIR` fallback:** `fish.sh` relied on `$DIR` being exported from `install.sh`. Running `./fish.sh` standalone left `DIR` empty, so the conf.d symlink loop resolved to `/config/fish/conf.d/*` and matched nothing. Fixed by adding `DIR="${DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"`.
 
-2. **Symlink/Fisher race:** The conf.d symlink loop ran *before* `fisher update`. Fisher's install phase recreates its managed files in conf.d, which could blow away freshly-created symlinks. Fixed by splitting the symlink block: `config.fish` and `fish_plugins` are symlinked before fisher (it needs them), while conf.d and functions are symlinked after.
+2. **Symlink/Fisher race:** The conf.d symlink loop ran _before_ `fisher update`. Fisher's install phase recreates its managed files in conf.d, which could blow away freshly-created symlinks. Fixed by splitting the symlink block: `config.fish` and `fish_plugins` are symlinked before fisher (it needs them), while conf.d and functions are symlinked after.
 
 ### Alternatives Considered
 

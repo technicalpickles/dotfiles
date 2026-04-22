@@ -1,4 +1,26 @@
 {
-  // Personal role: no overrides currently
-  // Add personal-specific settings, permissions, or sandbox config here
+  // Personal role agent identity (see ADR 0031).
+  // Every Claude Code session under DOTPICKLES_ROLE=personal commits and
+  // pushes as a dedicated agent identity instead of the user's 1Password
+  // GPG flow, which requires interactive approval.
+  //
+  // Prerequisite: run `bin/setup-agent-ssh-key personal` once and complete
+  // the printed GitHub enrollment steps.
+  // GIT_CONFIG_GLOBAL swaps in an agent-specific gitconfig for Claude-spawned
+  // shells. The target file [include]s ~/.gitconfig then overrides user.email,
+  // core.sshCommand, and gpg.ssh.program (resets 1Password's op-ssh-sign to
+  // ssh-keygen). Leading ~/ is expanded by claudeconfig.sh before writing
+  // settings.json (GIT_CONFIG_GLOBAL itself does not expand ~).
+  "env": {
+    "GIT_CONFIG_GLOBAL": "~/.gitconfig.d/claude-agent-personal",
+  },
+
+  "sandbox": {
+    "network": {
+      "allowedHosts": ["brineworks.tail2023b7.ts.net"],
+    },
+    "filesystem": {
+      "allowWrite": ["~/Library/Caches/f3d"],
+    },
+  },
 }

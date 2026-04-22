@@ -26,8 +26,8 @@
       "Bash(rustup override:*)",
       "Bash(rustup show:*)",
       "Bash(rustup update:*)",
-      "Bash(rustup:*)"
-    ]
+      "Bash(rustup:*)",
+    ],
   },
 
   "sandbox": {
@@ -37,8 +37,8 @@
         "index.crates.io",
         "static.crates.io",
         "docs.rs",
-        "static.rust-lang.org"
-      ]
+        "static.rust-lang.org",
+      ],
     },
 
     // source: agent-safehouse
@@ -47,8 +47,8 @@
         "~/.cargo",
         "~/.rustup",
         "~/.cache/cargo",
-        "~/Library/Caches/cargo"
-      ]
-    }
-  }
+        "~/Library/Caches/cargo",
+      ],
+    },
+  },
 }

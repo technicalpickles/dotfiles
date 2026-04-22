@@ -4,20 +4,24 @@
       "Read(~/.claude/settings.json)",
       // Claude docs (from old web.json)
       "WebFetch(domain:code.claude.com)",
+      // plugins will sometimes check here for settings
+      "Read(~/.claude/CLAUDE.md)",
+      "Search(path:~/.claude/CLAUDE.md)",
 
-    ]
+      // plugins often need ot read their own files
+      "Read(~/.claude/plugins/marketplaces/)",
+    ],
   },
   "sandbox": {
-    "network": {
-      "allowedHosts": [
-        "docs.anthropic.com"
-      ]
-    },
     "filesystem": {
       "allowWrite": [
-         "~/.local/share/claude-env/"
-      ]
-    }
-  }
+        // plugin hooks use uv run which needs to create .venv in cache
+        "~/.claude/plugins/cache",
+        "~/.local/share/claude-env/",
+      ],
+    },
+    "network": {
+      "allowedHosts": ["docs.anthropic.com"],
+    },
+  },
 }
-

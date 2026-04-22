@@ -1,4 +1,7 @@
 {
+  "permissions": {
+    "allow": ["Bash(task:*)"],
+  },
   "sandbox": {
     "filesystem": {
       "allowWrite": ["~/.task"],

@@ -28,16 +28,15 @@
       "Bash(yarn run:*)",
       "Bash(yarn test:*)",
       "Bash(yarn tsc:*)",
-      "Bash(yarn:*)"
-    ]
+      "Bash(yarn:*)",
+      "WebFetch(domain:registry.npmjs.org)",
+    ],
   },
 
   // source: agent-safehouse
   "sandbox": {
     "network": {
-      "allowedHosts": [
-        "registry.npmjs.org"
-      ]
+      "allowedHosts": ["registry.npmjs.org"],
     },
     "filesystem": {
       "allowWrite": [
@@ -72,8 +71,8 @@
         // test browsers
         "~/Library/Caches/ms-playwright",
         "~/Library/Caches/Cypress",
-        "~/.cache/puppeteer"
-      ]
-    }
-  }
+        "~/.cache/puppeteer",
+      ],
+    },
+  },
 }

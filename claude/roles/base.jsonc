@@ -108,14 +108,5 @@
       // --fix for some reason??)
       "allowLocalBinding": true,
     },
-    "filesystem": {
-      "allowWrite": [
-        // interactive terminals for things like lefthook interactive
-        "/dev/ptmx",
-        "/dev/ttys*",
-        // plugin hooks use uv run which needs to create .venv in cache
-        "~/.claude/plugins/cache",
-      ],
-    },
   },
 }
