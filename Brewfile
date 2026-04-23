@@ -5,6 +5,7 @@ brew 'direnv'
 brew 'thefuck'
 brew 'tmux'
 brew 'reattach-to-user-namespace'
+brew 'sesh'
 
 # git
 brew 'git-lfs'
@@ -38,6 +39,7 @@ brew 'the_silver_searcher'
 brew 'tree'
 brew 'watch'
 brew 'yq'
+brew 'zoxide'
 brew 'dysk'
 brew 'choose-rust'
 
