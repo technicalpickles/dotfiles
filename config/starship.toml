@@ -2,9 +2,11 @@
 
 # https://starship.rs/config/#prompt
 palette = "tide_rainbow"
+command_timeout = 2000
 
 format = """
 $hostname\
+${env_var.STARSHIP_CTX}\
 $directory\
 $git_branch$git_status\
 $git_commit\
@@ -166,6 +168,11 @@ version_format = "${raw}"
 format = "[](fg:#44883E bg:none)[$symbol$version]($style)[](fg:#44883E bg:none)"
 style = "bold fg:#E4E4E4 bg:#44883E"
 detect_folders = ["node_modules"]
+
+[env_var.STARSHIP_CTX]
+format = "[](fg:purple bg:none)[$env_value]($style)[](fg:purple bg:none)"
+style = "fg:#E4E4E4 bg:purple bold"
+default = "personal"
 
 ## RAINBOW PALETTE (Inspired by Tide's Rainbow Theme)
 
