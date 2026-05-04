@@ -1,7 +1,10 @@
 {
   // Work role settings (values from live settings, not stale source files)
   "awsAuthRefresh": "aws sso login --profile $AWS_PROFILE",
-  "env": {},
+  "env": {
+    // too many
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false"
+  },
 
   // Work-specific permissions
   "permissions": {
