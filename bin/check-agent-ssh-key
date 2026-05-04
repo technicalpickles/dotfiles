@@ -50,25 +50,58 @@ check_fail() {
 
 usage() {
   cat << EOF
-Usage: check-agent-ssh-key <role>
+Usage: check-agent-ssh-key <role> [--email <email>]
 
 Validate an agent SSH identity setup. Reports pass/fail for each step of
 the enrollment checklist (local files, Keychain, GitHub registration,
 Claude settings). Exits 0 if all pass, 1 if any fail.
+
+Arguments:
+  role             Dotfiles role the identity belongs to (e.g. personal, work)
+
+Options:
+  --email <email>  Override the agent email address. Must match what was
+                   passed to setup-agent-ssh-key. Defaults to
+                   joshua.nichols+<role>-agent@gmail.com.
 EOF
 }
 
-if [[ $# -eq 1 ]] && { [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; }; then
-  usage
-  exit 0
-fi
+ROLE=""
+EMAIL_OVERRIDE=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --help | -h)
+      usage
+      exit 0
+      ;;
+    --email)
+      [[ $# -lt 2 ]] && die "--email requires a value"
+      EMAIL_OVERRIDE="$2"
+      shift 2
+      ;;
+    --email=*)
+      EMAIL_OVERRIDE="${1#--email=}"
+      shift
+      ;;
+    --*)
+      die "Unknown flag: $1"
+      ;;
+    *)
+      if [[ -z "$ROLE" ]]; then
+        ROLE="$1"
+        shift
+      else
+        die "Unexpected argument: $1"
+      fi
+      ;;
+  esac
+done
 
-if [[ $# -ne 1 ]]; then
+if [[ -z "$ROLE" ]]; then
   usage
   exit 2
 fi
 
-ROLE="$1"
 if [[ ! "$ROLE" =~ ^[a-z][a-z0-9_-]*$ ]]; then
   die "Invalid role name: '$ROLE'"
 fi
@@ -76,7 +109,7 @@ fi
 KEY_DIR="$HOME/.ssh/agents/$ROLE"
 KEY_PATH="$KEY_DIR/id_ed25519"
 PUB_PATH="$KEY_PATH.pub"
-EMAIL="joshua.nichols+${ROLE}-agent@gmail.com"
+EMAIL="${EMAIL_OVERRIDE:-joshua.nichols+${ROLE}-agent@gmail.com}"
 SETTINGS="$HOME/.claude/settings.json"
 REQUIRED_SCOPES=("user:email" "read:public_key" "read:ssh_signing_key")
 
@@ -125,6 +158,24 @@ else
 fi
 
 # --- gh auth scope check (needed for GitHub checks) ---
+# GitHub OAuth scopes form a hierarchy: admin:X implies write:X implies
+# read:X. A token with admin:public_key satisfies a read:public_key
+# requirement. has_scope encodes that so we don't fail on stronger scopes.
+has_scope() {
+  local required="$1"
+  local scopes="$2"
+  echo "$scopes" | grep -Fxq "$required" && return 0
+  if [[ "$required" == read:* ]]; then
+    local suffix="${required#read:}"
+    echo "$scopes" | grep -Fxq "write:$suffix" && return 0
+    echo "$scopes" | grep -Fxq "admin:$suffix" && return 0
+  elif [[ "$required" == write:* ]]; then
+    local suffix="${required#write:}"
+    echo "$scopes" | grep -Fxq "admin:$suffix" && return 0
+  fi
+  return 1
+}
+
 if ! gh auth status > /dev/null 2>&1; then
   check_fail "gh is not authenticated" "Run: gh auth login"
   gh_ok=false
@@ -133,7 +184,7 @@ else
   token_scopes=$(gh auth status 2>&1 | grep -i 'Token scopes:' | sed "s/.*Token scopes: //" | tr -d "'" | tr ',' '\n' | sed 's/^ *//;s/ *$//')
   missing=()
   for s in "${REQUIRED_SCOPES[@]}"; do
-    if ! echo "$token_scopes" | grep -Fxq "$s"; then
+    if ! has_scope "$s" "$token_scopes"; then
       missing+=("$s")
     fi
   done

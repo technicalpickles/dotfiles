@@ -31,12 +31,17 @@ die() {
 
 usage() {
   cat << EOF
-Usage: setup-agent-ssh-key <role>
+Usage: setup-agent-ssh-key <role> [--email <email>]
 
 Generate a dedicated SSH key for a Claude Code agent identity.
 
 Arguments:
-  role    Dotfiles role the identity belongs to (e.g. personal, work)
+  role             Dotfiles role the identity belongs to (e.g. personal, work)
+
+Options:
+  --email <email>  Override the agent email address. Defaults to
+                   joshua.nichols+<role>-agent@gmail.com. Pass the same
+                   value to check-agent-ssh-key when verifying.
 
 The key lives at ~/.ssh/agents/<role>/id_ed25519 with its passphrase in
 macOS Keychain. After generation, follow the printed checklist to finish
@@ -44,17 +49,42 @@ enrollment on GitHub.
 EOF
 }
 
-if [[ $# -eq 1 ]] && { [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; }; then
-  usage
-  exit 0
-fi
+ROLE=""
+EMAIL_OVERRIDE=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --help | -h)
+      usage
+      exit 0
+      ;;
+    --email)
+      [[ $# -lt 2 ]] && die "--email requires a value"
+      EMAIL_OVERRIDE="$2"
+      shift 2
+      ;;
+    --email=*)
+      EMAIL_OVERRIDE="${1#--email=}"
+      shift
+      ;;
+    --*)
+      die "Unknown flag: $1"
+      ;;
+    *)
+      if [[ -z "$ROLE" ]]; then
+        ROLE="$1"
+        shift
+      else
+        die "Unexpected argument: $1"
+      fi
+      ;;
+  esac
+done
 
-if [[ $# -ne 1 ]]; then
+if [[ -z "$ROLE" ]]; then
   usage
   exit 1
 fi
 
-ROLE="$1"
 if [[ ! "$ROLE" =~ ^[a-z][a-z0-9_-]*$ ]]; then
   die "Invalid role name: '$ROLE' (lowercase letters, digits, hyphens, underscores)"
 fi
@@ -62,7 +92,7 @@ fi
 KEY_DIR="$HOME/.ssh/agents/$ROLE"
 KEY_PATH="$KEY_DIR/id_ed25519"
 PUB_PATH="$KEY_PATH.pub"
-EMAIL="joshua.nichols+${ROLE}-agent@gmail.com"
+EMAIL="${EMAIL_OVERRIDE:-joshua.nichols+${ROLE}-agent@gmail.com}"
 COMMENT="${ROLE}-agent@$(hostname -s)"
 
 if [[ "$(uname)" != "Darwin" ]]; then
