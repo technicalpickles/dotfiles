@@ -32,3 +32,4 @@
 - [30. ssh-keychain-loading-at-login](0030-ssh-keychain-loading-at-login.md)
 - [31. role-scoped-agent-git-identity](0031-role-scoped-agent-git-identity.md)
 - [32. use-fnox-for-secrets](0032-use-fnox-for-secrets.md)
+- [33. 1password-ssh-agent-allowlist](0033-1password-ssh-agent-allowlist.md)

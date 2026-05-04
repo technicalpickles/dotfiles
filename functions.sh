@@ -57,8 +57,9 @@ find_targets() {
 
 link_directory_contents() {
   local directory="$1"
-  # Items managed by their own installer scripts (e.g. fish.sh handles config/fish)
-  local -a skip=(config home config/fish)
+  # Items managed by their own installer scripts (e.g. fish.sh handles config/fish,
+  # sshconfig.sh handles config/1password's role-aware agent.toml symlink)
+  local -a skip=(config home config/fish config/1password)
   for linkable in $(find_targets "${directory}"); do
     local should_skip=false
     for s in "${skip[@]}"; do

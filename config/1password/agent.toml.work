@@ -1,0 +1,23 @@
+# 1Password SSH agent allowlist for the work role.
+#
+# 1Password's SSH agent offers every key in the unlocked vault by default.
+# Listing items here makes it an allowlist: only these keys are exposed to
+# ssh, regardless of what else lives in the vault.
+#
+# Personal keys (including the personal-agent key from ADR 0031) stay in
+# the vault for backup/reference but are never offered on the work laptop.
+#
+# Symlinked into ~/.config/1Password/ssh/agent.toml by sshconfig.sh based
+# on $DOTPICKLES_ROLE. See ADR 0033.
+#
+# Item names below are matched against the 1Password item title, not the
+# SSH key comment.
+
+[[ssh-keys]]
+item = "Gusto Laptop id_ed25519"
+
+[[ssh-keys]]
+item = "Gusto Signing Key"
+
+[[ssh-keys]]
+item = "homebrew-gusto_deploy_key"
