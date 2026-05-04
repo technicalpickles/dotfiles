@@ -25,14 +25,16 @@ Disables Spotlight indexing on all volumes at startup.
 
 **Note:** This requires sudo privileges. You may need to configure passwordless sudo for mdutil, or Spotlight will re-enable on reboot.
 
-### `com.technicalpickles.qmd-refresh.plist`
+### `arm64-macos/com.technicalpickles.qmd-refresh.plist`
 
 Refreshes QMD semantic search index for the Obsidian vault.
+
+**Platform:** arm64 macOS only (gated by `running_arm64_macos`; see "Platform-gated agents" below).
 
 **What it does:**
 
 - Runs `qmd update && qmd embed` to refresh text and vector indexes
-- Runs hourly at minute 0
+- Runs every 15 minutes (at :00, :15, :30, :45)
 - Logs to `/tmp/com.technicalpickles.qmd-refresh.{out,err}`
 
 **Prerequisites:**
@@ -42,7 +44,17 @@ Refreshes QMD semantic search index for the Obsidian vault.
 
 ## Setup
 
-The `install.sh` script automatically symlinks all `.plist` files from this directory to `~/Library/LaunchAgents/`.
+The `install.sh` script automatically symlinks all `.plist` files from this directory to `~/Library/LaunchAgents/`. Plists in platform-gated subdirectories (e.g. `arm64-macos/`) are linked only when the host matches.
+
+## Platform-gated agents
+
+Agents that only make sense on a specific platform live in a subdirectory whose name matches a predicate in `functions.sh`:
+
+| Subdirectory   | Predicate             | Linked when                    |
+| -------------- | --------------------- | ------------------------------ |
+| `arm64-macos/` | `running_arm64_macos` | host is macOS on Apple Silicon |
+
+To add a new gate, add a predicate to `functions.sh` and a matching loop in `symlinks.sh`. Drop plists in the corresponding subdirectory; nothing else changes.
 
 Manual installation:
 

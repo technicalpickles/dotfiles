@@ -8,7 +8,7 @@ export DIR
 # Parse flags
 for arg in "$@"; do
   case "$arg" in
-    --yes|-y) export DOTPICKLES_YES=1 ;;
+    --yes | -y) export DOTPICKLES_YES=1 ;;
   esac
 done
 
@@ -35,6 +35,17 @@ if running_macos; then
   mkdir -p "$HOME/Library/LaunchAgents"
   echo "🚀 linking LaunchAgents"
   for agent in LaunchAgents/*.plist; do
+    if [ -f "$agent" ]; then
+      target="$HOME/Library/LaunchAgents/$(basename "$agent")"
+      link "$agent" "$target"
+    fi
+  done
+fi
+
+# Link arm64-only LaunchAgents (e.g. agents that hard-code /opt/homebrew)
+if running_arm64_macos; then
+  echo "🚀 linking arm64-macos LaunchAgents"
+  for agent in LaunchAgents/arm64-macos/*.plist; do
     if [ -f "$agent" ]; then
       target="$HOME/Library/LaunchAgents/$(basename "$agent")"
       link "$agent" "$target"
