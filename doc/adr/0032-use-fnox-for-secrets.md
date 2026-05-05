@@ -44,16 +44,19 @@ fnox configs currently live per-project (one at `~/pickleton/fnox.toml`). `RUNLA
 ### Alternatives Considered
 
 1. **`op run --env-file=...`**
+
    - Pros: Resolves op:// paths at command-launch time
    - Cons: Touch ID per run, doesn't fit the "env var that's always set" shape
    - Rejected: the prompting cadence
 
 2. **direnv + `op read`**
+
    - Pros: Per-directory env, good ecosystem
    - Cons: Same Touch ID problem, plus direnv reloads are frequent
    - Rejected: same reason
 
 3. **Raw `op://` strings in fish (the old way)**
+
    - Pros: No moving parts
    - Cons: Nothing actually resolves them; tools see literal strings
    - Rejected: this is what got us here

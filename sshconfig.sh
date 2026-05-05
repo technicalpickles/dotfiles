@@ -29,7 +29,7 @@ fi
 # allowlist, every key in the unlocked vault is offered to ssh on every
 # connection. config/1password/agent.toml.<role> defines which items are
 # offered. See ADR 0033.
-op_role="${DOTPICKLES_ROLE:-personal}"
+op_role="${DOTPICKLES_ROLE:-home}"
 op_source="config/1password/agent.toml.${op_role}"
 op_target="$HOME/.config/1Password/ssh/agent.toml"
 op_socket="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"

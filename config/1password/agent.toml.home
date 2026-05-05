@@ -1,0 +1,24 @@
+# 1Password SSH agent allowlist for the personal role.
+#
+# 1Password's SSH agent offers every key in the unlocked vault by default.
+# Listing items here makes it an allowlist: only these keys are exposed to
+# ssh, regardless of what else lives in the vault.
+#
+# ~/.ssh/agents/personal/id_ed25519 is stored in the vault for backup only
+# (see ADR 0031) and is intentionally excluded -- the on-disk + Keychain path
+# is what claude-agent uses, not the 1Password agent.
+#
+# Symlinked into ~/.config/1Password/ssh/agent.toml by sshconfig.sh based
+# on $DOTPICKLES_ROLE. See ADR 0033.
+#
+# Item names below are matched against the 1Password item title, not the
+# SSH key comment.
+
+[[ssh-keys]]
+item = "SSH Key (ed25519)"
+
+[[ssh-keys]]
+item = "Personal SSH (rsa)"
+
+[[ssh-keys]]
+item = "unifi ssh key"

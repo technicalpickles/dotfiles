@@ -5,15 +5,11 @@
       "allowedHosts": [
         "api.buildkite.com",
         "buildkite.com",
-        "buildkiteartifacts.com"
-
-      ]
+        "buildkiteartifacts.com",
+      ],
     },
     "filesystem": {
-      "allowWrite": [
-        "~/.local/state/bktide",
-        "~/.cache/bktide"
-      ]
-    }
-  }
+      "allowWrite": ["~/.local/state/bktide", "~/.cache/bktide"],
+    },
+  },
 }

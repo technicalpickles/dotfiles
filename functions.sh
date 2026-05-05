@@ -5,6 +5,10 @@ running_macos() {
   return $?
 }
 
+running_arm64_macos() {
+  running_macos && [ "$(uname -m)" = "arm64" ]
+}
+
 running_codespaces() {
   [ "$CODESPACES" = true ]
   return $?
