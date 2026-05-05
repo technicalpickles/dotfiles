@@ -108,5 +108,11 @@
       // --fix for some reason??)
       "allowLocalBinding": true,
     },
+    "filesystem": {
+      "allowWrite": [
+        // rtk (CLI proxy) needs to write its state/config here
+        "~/Library/Application Support/rtk",
+      ],
+    },
   },
 }
