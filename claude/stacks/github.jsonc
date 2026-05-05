@@ -34,8 +34,8 @@
       // From old web.json
       "WebFetch(domain:docs.github.com)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
-    ]
+      "WebFetch(domain:raw.githubusercontent.com)",
+    ],
   },
 
   // source: agent-safehouse
@@ -44,17 +44,20 @@
       "allowedHosts": [
         "api.github.com",
         "docs.github.com",
+        "ghcr.io",
+        "gist.githubusercontent.com",
         "github.com",
-        "raw.githubusercontent.com"
-      ]
+        "pkg-containers.githubusercontent.com",
+        "raw.githubusercontent.com",
+      ],
     },
     "filesystem": {
       "allowWrite": [
         "~/.config/gh",
         "~/.cache/gh",
         "~/.local/share/gh",
-        "~/.local/state/gh"
-      ]
-    }
-  }
+        "~/.local/state/gh",
+      ],
+    },
+  },
 }

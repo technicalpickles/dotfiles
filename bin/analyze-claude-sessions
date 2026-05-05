@@ -2,124 +2,32 @@
 """Analyze Claude Code sessions to identify projects and skill usage.
 
 Outputs project usage statistics to help prioritize craftdesk migration.
+Uses cq (https://github.com/technicalpickles/cq) for session data.
 """
 
 import json
-import os
+import subprocess
 import sys
-from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 
-def parse_project_path(dir_name: str) -> str:
-    """Convert directory name back to original path."""
-    # Directory names use - instead of /
-    # e.g., -Users-josh-nichols-workspace-dotfiles -> /Users/josh.nichols/workspace/dotfiles
-    return dir_name.replace("-", "/").replace("/josh/nichols", "/josh.nichols")
+def fetch_projects(limit: int = 50, project: Optional[str] = None) -> list[dict]:
+    """Fetch project data from cq."""
+    cmd = ["cq", "--json", "projects", "--skills", "--limit", str(limit)]
+    if project:
+        cmd = ["cq", "--json", "-p", project, "projects", "--skills", "--limit", str(limit)]
 
-
-def extract_sessions(project_dir: Path) -> list[dict]:
-    """Extract session metadata from a project directory."""
-    sessions = []
-
-    for jsonl_file in project_dir.glob("*.jsonl"):
-        # Skip agent files
-        if jsonl_file.name.startswith("agent-"):
-            continue
-
-        session_id = jsonl_file.stem
-        skills_used = set()
-        first_timestamp = None
-        last_timestamp = None
-        message_count = 0
-
-        try:
-            with open(jsonl_file, "r") as f:
-                for line in f:
-                    try:
-                        entry = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-
-                    # Track timestamps
-                    if "timestamp" in entry:
-                        ts = entry["timestamp"]
-                        if first_timestamp is None or ts < first_timestamp:
-                            first_timestamp = ts
-                        if last_timestamp is None or ts > last_timestamp:
-                            last_timestamp = ts
-
-                    # Count messages
-                    if entry.get("type") in ("user", "assistant"):
-                        message_count += 1
-
-                    # Extract skill usage from assistant tool_use
-                    if entry.get("type") == "assistant":
-                        message = entry.get("message", {})
-                        content = message.get("content", [])
-                        if isinstance(content, list):
-                            for block in content:
-                                if isinstance(block, dict) and block.get("name") == "Skill":
-                                    skill = block.get("input", {}).get("skill", "")
-                                    if skill:
-                                        skills_used.add(skill)
-        except Exception as e:
-            print(f"Error reading {jsonl_file}: {e}", file=sys.stderr)
-            continue
-
-        if message_count > 0:
-            sessions.append({
-                "session_id": session_id,
-                "skills": list(skills_used),
-                "first_timestamp": first_timestamp,
-                "last_timestamp": last_timestamp,
-                "message_count": message_count,
-            })
-
-    return sessions
-
-
-def analyze_projects(projects_dir: Path) -> dict:
-    """Analyze all projects and return usage statistics."""
-    results = {}
-
-    for project_dir in projects_dir.iterdir():
-        if not project_dir.is_dir():
-            continue
-
-        project_path = parse_project_path(project_dir.name)
-        sessions = extract_sessions(project_dir)
-
-        if not sessions:
-            continue
-
-        # Aggregate statistics
-        all_skills = set()
-        total_messages = 0
-        earliest = None
-        latest = None
-
-        for session in sessions:
-            all_skills.update(session["skills"])
-            total_messages += session["message_count"]
-
-            if session["last_timestamp"]:
-                if latest is None or session["last_timestamp"] > latest:
-                    latest = session["last_timestamp"]
-            if session["first_timestamp"]:
-                if earliest is None or session["first_timestamp"] < earliest:
-                    earliest = session["first_timestamp"]
-
-        results[project_path] = {
-            "session_count": len(sessions),
-            "total_messages": total_messages,
-            "skills_used": sorted(all_skills),
-            "first_activity": earliest,
-            "last_activity": latest,
-        }
-
-    return results
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        return json.loads(result.stdout)
+    except FileNotFoundError:
+        print("Error: cq not found. Install with: cargo install --path <cq-repo>", file=sys.stderr)
+        sys.exit(1)
+    except subprocess.CalledProcessError as e:
+        print(f"Error running cq: {e.stderr}", file=sys.stderr)
+        sys.exit(1)
 
 
 # Map skills to craftdesk profile categories
@@ -166,23 +74,6 @@ SKILL_TO_PROFILE = {
     "dev-tools:using-mcpproxy-tools": "dev-tools",
 }
 
-# Profile hierarchy - full includes all, superpowers is baseline
-PROFILE_HIERARCHY = {
-    "minimal": [],
-    "superpowers": ["superpowers"],
-    "document-skills": ["document-skills"],
-    "full": [
-        "superpowers",
-        "superpowers-chrome",
-        "superpowers-developing-for-claude-code",
-        "document-skills",
-        "git-workflows",
-        "ci-cd-tools",
-        "working-in-monorepos",
-        "dev-tools",
-    ],
-}
-
 
 def suggest_profile(skills_used: list[str]) -> tuple[str, list[str]]:
     """Suggest a craftdesk profile based on skills used.
@@ -192,7 +83,6 @@ def suggest_profile(skills_used: list[str]) -> tuple[str, list[str]]:
     if not skills_used:
         return "minimal", []
 
-    # Determine which profile categories are needed
     needed_categories = set()
     uncovered = []
 
@@ -203,19 +93,15 @@ def suggest_profile(skills_used: list[str]) -> tuple[str, list[str]]:
         else:
             uncovered.append(skill)
 
-    # Find smallest profile that covers all needed categories
     if not needed_categories:
         return "minimal", uncovered
 
-    # Check if superpowers alone is sufficient
     if needed_categories == {"superpowers"}:
         return "superpowers", uncovered
 
-    # Check if document-skills alone is sufficient
     if needed_categories == {"document-skills"}:
         return "document-skills", uncovered
 
-    # Otherwise suggest full
     return "full", uncovered
 
 
@@ -228,38 +114,32 @@ class Colors:
     BOLD = "\033[1m"
     DIM = "\033[2m"
 
-    # Foreground colors (using 256-color palette for precision)
-    # Catppuccin Mocha: green=#a6e3a1, blue=#89b4fa, yellow=#f9e2af,
-    #                   red=#f38ba8, sky=#74c7ec, text=#cdd6f4
-    GREEN = "\033[38;5;114m"      # Soft green for "today"
-    BLUE = "\033[38;5;111m"       # Soft blue for "this week"
-    YELLOW = "\033[38;5;222m"     # Soft yellow for "this month"
-    RED = "\033[38;5;210m"        # Soft red for errors/critical
-    SKY = "\033[38;5;117m"        # Sky blue for info
-    MAUVE = "\033[38;5;183m"      # Mauve for document-skills
-    TEXT = "\033[38;5;252m"       # Light gray for normal text
-    SUBTEXT = "\033[38;5;245m"    # Dimmer for secondary info
+    GREEN = "\033[38;5;114m"
+    BLUE = "\033[38;5;111m"
+    YELLOW = "\033[38;5;222m"
+    RED = "\033[38;5;210m"
+    SKY = "\033[38;5;117m"
+    MAUVE = "\033[38;5;183m"
+    TEXT = "\033[38;5;252m"
+    SUBTEXT = "\033[38;5;245m"
 
-    # Background colors for pills
     BG_GREEN = "\033[48;5;114m"
     BG_BLUE = "\033[48;5;111m"
     BG_YELLOW = "\033[48;5;222m"
     BG_MAUVE = "\033[48;5;183m"
-    BG_SURFACE = "\033[48;5;236m"  # Dark surface for pill content
-    FG_CRUST = "\033[38;5;234m"    # Dark text on light backgrounds
+    BG_SURFACE = "\033[48;5;236m"
+    FG_CRUST = "\033[38;5;234m"
 
 
 def pill(text: str, fg: str = Colors.TEXT, bg: str = "") -> str:
     """Create a pill-styled text element."""
     if bg:
-        # Colored pill with background
         return f"{bg}{Colors.FG_CRUST} {text} {Colors.RESET}"
     else:
-        # Simple bracketed pill
         return f"{Colors.SUBTEXT}({Colors.RESET}{fg}{text}{Colors.RESET}{Colors.SUBTEXT}){Colors.RESET}"
 
 
-def recency_color(timestamp: str | None) -> tuple[str, str]:
+def recency_color(timestamp: Optional[str] = None) -> tuple[str, str]:
     """Return (color, label) based on how recent the timestamp is."""
     if not timestamp:
         return Colors.SUBTEXT, "unknown"
@@ -277,7 +157,7 @@ def recency_color(timestamp: str | None) -> tuple[str, str]:
             return Colors.YELLOW, f"{delta.days}d ago"
         else:
             return Colors.SUBTEXT, dt.strftime("%Y-%m-%d")
-    except:
+    except Exception:
         return Colors.SUBTEXT, "unknown"
 
 
@@ -295,108 +175,78 @@ def profile_pill(profile: str) -> str:
     return f"{fg}{profile}{Colors.RESET}"
 
 
-def format_output(results: dict, sort_by: str = "last_activity") -> None:
-    """Print formatted output sorted by specified field."""
-
-    # Sort projects
-    if sort_by == "last_activity":
-        sorted_projects = sorted(
-            results.items(),
-            key=lambda x: x[1].get("last_activity") or "",
-            reverse=True
-        )
-    elif sort_by == "messages":
-        sorted_projects = sorted(
-            results.items(),
-            key=lambda x: x[1]["total_messages"],
-            reverse=True
-        )
+def format_output(projects: list[dict], sort_by: str = "last_activity") -> None:
+    """Print formatted output."""
+    if sort_by == "messages":
+        projects.sort(key=lambda x: x.get("messages", 0), reverse=True)
     elif sort_by == "sessions":
-        sorted_projects = sorted(
-            results.items(),
-            key=lambda x: x[1]["session_count"],
-            reverse=True
-        )
-    else:
-        sorted_projects = sorted(results.items())
+        projects.sort(key=lambda x: x.get("sessions", 0), reverse=True)
+    elif sort_by == "name":
+        projects.sort(key=lambda x: x.get("project", ""))
+    # default: already sorted by last_activity from cq
 
-    # Collect all skills across all projects
     all_skills = set()
-    for data in results.values():
-        all_skills.update(data["skills_used"])
+    for data in projects:
+        all_skills.update(data.get("skills", []))
 
-    # Header with pills
     print(f"{Colors.BOLD}Claude Sessions{Colors.RESET}  "
-          f"{pill(str(len(results)), Colors.SKY)} projects  "
+          f"{pill(str(len(projects)), Colors.SKY)} projects  "
           f"{pill(str(len(all_skills)), Colors.MAUVE)} skills")
     print()
 
-    # Print project details - compact table format
-    for project_path, data in sorted_projects:
-        # Shorten path for display
+    for data in projects:
+        project_path = data["project"]
         display_path = project_path.replace("/Users/josh.nichols/workspace/", "")
         display_path = display_path.replace("/Users/josh.nichols/", "~/")
 
-        # Recency with color
         recency_clr, recency_label = recency_color(data.get("last_activity"))
 
-        # Suggest profile
-        profile, _ = suggest_profile(data["skills_used"])
+        skills_used = data.get("skills", [])
+        profile, _ = suggest_profile(skills_used)
 
-        # Build the line: project path (bold) + stats + recency + profile
-        stats = f"{Colors.SUBTEXT}{data['session_count']}s/{data['total_messages']}m{Colors.RESET}"
+        stats = f"{Colors.SUBTEXT}{data['sessions']}s/{data['messages']}m{Colors.RESET}"
         recency = f"{recency_clr}{recency_label}{Colors.RESET}"
 
         print(f"{Colors.BOLD}{display_path}{Colors.RESET}  "
               f"{stats}  {recency}  {profile_pill(profile)}")
 
-        # Skills on second line if present (compact)
-        if data["skills_used"]:
-            # Shorten skill names by removing common prefixes
+        if skills_used:
             short_skills = []
-            for s in data["skills_used"][:4]:
-                # Remove plugin prefix if it matches the skill name
+            for s in skills_used[:4]:
                 parts = s.split(":")
                 if len(parts) == 2 and parts[0] == parts[1]:
                     short_skills.append(parts[1])
                 else:
-                    short_skills.append(s.split(":")[-1])  # Just the skill part
+                    short_skills.append(s.split(":")[-1])
 
-            skills_str = f"{Colors.SUBTEXT}  └ {', '.join(short_skills)}"
-            if len(data["skills_used"]) > 4:
-                skills_str += f" +{len(data['skills_used']) - 4}"
+            skills_str = f"{Colors.SUBTEXT}  \u2514 {', '.join(short_skills)}"
+            if len(skills_used) > 4:
+                skills_str += f" +{len(skills_used) - 4}"
             skills_str += Colors.RESET
             print(skills_str)
 
     print()
 
 
-def format_migration_commands(results: dict, limit: int = 10) -> None:
+def format_migration_commands(projects: list[dict], limit: int = 10) -> None:
     """Print craftdesk-setup commands for migration."""
-    # Sort by last activity
-    sorted_projects = sorted(
-        results.items(),
-        key=lambda x: x[1].get("last_activity") or "",
-        reverse=True
-    )
-
     print("# Migration commands for most recent projects")
     print("# Run these in order of priority (most recent first)")
     print()
 
     count = 0
-    for project_path, data in sorted_projects:
+    for data in projects:
         if count >= limit:
             break
 
-        # Check if project directory exists
+        project_path = data["project"]
         if not Path(project_path).exists():
             continue
 
-        profile, uncovered = suggest_profile(data["skills_used"])
+        skills_used = data.get("skills", [])
+        profile, uncovered = suggest_profile(skills_used)
 
-        # Skip minimal - no setup needed
-        if profile == "minimal" and not data["skills_used"]:
+        if profile == "minimal" and not skills_used:
             continue
 
         count += 1
@@ -405,7 +255,7 @@ def format_migration_commands(results: dict, limit: int = 10) -> None:
             try:
                 dt = datetime.fromisoformat(last_activity.replace("Z", "+00:00"))
                 last_activity = dt.strftime("%Y-%m-%d")
-            except:
+            except Exception:
                 pass
 
         print(f"# {project_path} (last: {last_activity}, profile: {profile})")
@@ -436,30 +286,32 @@ def main():
     parser.add_argument(
         "--limit",
         type=int,
-        default=10,
-        help="Limit number of projects for migration output (default: 10)"
+        default=50,
+        help="Limit number of projects (default: 50)"
     )
     parser.add_argument(
-        "--projects-dir",
-        type=Path,
-        default=Path.home() / ".claude" / "projects",
-        help="Path to Claude projects directory"
+        "--project",
+        type=str,
+        default=None,
+        help="Filter to a specific project (substring match)"
     )
 
     args = parser.parse_args()
 
-    if not args.projects_dir.exists():
-        print(f"Projects directory not found: {args.projects_dir}", file=sys.stderr)
-        sys.exit(1)
-
-    results = analyze_projects(args.projects_dir)
+    projects = fetch_projects(limit=args.limit, project=args.project)
 
     if args.json:
-        print(json.dumps(results, indent=2, default=str))
+        # Add profile suggestion to each project
+        for p in projects:
+            profile, uncovered = suggest_profile(p.get("skills", []))
+            p["suggested_profile"] = profile
+            if uncovered:
+                p["uncovered_skills"] = uncovered
+        print(json.dumps(projects, indent=2, default=str))
     elif args.migrate:
-        format_migration_commands(results, limit=args.limit)
+        format_migration_commands(projects, limit=args.limit)
     else:
-        format_output(results, sort_by=args.sort)
+        format_output(projects, sort_by=args.sort)
 
 
 if __name__ == "__main__":

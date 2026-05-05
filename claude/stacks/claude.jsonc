@@ -18,8 +18,8 @@
         // plugin hooks use uv run which needs to create .venv in cache
         "~/.claude/plugins/cache",
 
-        // cq indexes a lot
         "~/Library/Caches/cq",
+        "~/.local/share/claude-env/",
       ],
     },
     "network": {

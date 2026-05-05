@@ -4,14 +4,12 @@
     "network": {
       "allowedHosts": [
         "api.buildkite.com",
-        "buildkite.com"
-      ]
+        "buildkite.com",
+        "buildkiteartifacts.com",
+      ],
     },
     "filesystem": {
-      "allowWrite": [
-        "~/.local/state/bktide",
-        "~/.cache/bktide"
-      ]
-    }
-  }
+      "allowWrite": ["~/.local/state/bktide", "~/.cache/bktide"],
+    },
+  },
 }
