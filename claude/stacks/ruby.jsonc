@@ -54,6 +54,7 @@
         "~/.bundle",
         "~/.gem",
         "~/.cache/bundler",
+        "~/.cache/rubocop_cache",
         "~/.cache/rubygems",
         "~/Library/Caches/bundle",
         "~/.rbenv"
