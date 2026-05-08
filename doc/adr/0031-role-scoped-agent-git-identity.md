@@ -232,3 +232,15 @@ agent under a given role. Keeping identity on the role axis means:
   `home/.gitconfig.d/claude-agent-<role>` include file) rather than one env
   block. The trade is a more readable gitconfig vs. the opaque
   `GIT_CONFIG_COUNT/KEY/VALUE` scheme it replaced
+
+## See also
+
+When debugging a `git push` failure in an agent session, the `git:push`
+skill in
+[pickled-claude-plugins](https://github.com/technicalpickles/pickled-claude-plugins)
+covers reading mixed transport+hook output and how to add `-v` without
+dropping the `core.sshCommand` configured here. Specifically: use
+`GIT_SSH_COMMAND="$(git config core.sshCommand) -v"` rather than
+`GIT_SSH_COMMAND="ssh -v"`, which would replace the agent-key flags
+(`-i`, `IdentitiesOnly=yes`, `IdentityAgent`) and make it look like the
+wrong keys are being offered.
