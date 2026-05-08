@@ -1,0 +1,10 @@
+{
+  "sandbox": {
+    "network": {
+      "allowedHosts": [
+        "app.datadoghq.com",
+        "api.datadoghq.com"
+      ]
+    },
+  }
+}
