@@ -73,6 +73,18 @@ setup_claude_directory() {
 
 setup_claude_directory
 
+# Pre-create sandbox cache directories that tools can't create themselves.
+# Sandbox allowWrite permits writes UNDER an allowed path, but creating the
+# directory itself requires write access to its parent, which isn't allowed.
+# Without this, pip emits "cache disabled" and falls back to no-cache mode.
+setup_sandbox_dirs() {
+  echo "Pre-creating sandbox cache directories..."
+  mkdir -p "$HOME/Library/Caches/pip"
+  echo "  ✓ ~/Library/Caches/pip"
+}
+
+setup_sandbox_dirs
+
 # Generate settings.json from roles/ + stacks/
 generate_settings() {
   echo "Generating settings.json..."

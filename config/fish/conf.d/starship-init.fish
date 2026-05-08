@@ -12,6 +12,13 @@
 
 if status --is-interactive
     if type -q starship
-       starship init fish | source
+        set -l ctx (set -q DOTPICKLES_ROLE; and echo $DOTPICKLES_ROLE; or echo personal)
+        if test -f /.dockerenv; or test -n "$REMOTE_CONTAINERS"; or test -n "$CODESPACES"
+            set -gx STARSHIP_CTX "$ctx | devcontainer"
+        else
+            set -gx STARSHIP_CTX $ctx
+        end
+
+        starship init fish | source
     end
 end

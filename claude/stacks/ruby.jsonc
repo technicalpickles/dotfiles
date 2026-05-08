@@ -43,8 +43,8 @@
       "Bash(rake:*)",
       "Bash(rspec:*)",
       "Bash(ruby --version)",
-      "Bash(ruby:*)"
-    ]
+      "Bash(ruby:*)",
+    ],
   },
 
   // source: agent-safehouse
@@ -54,10 +54,11 @@
         "~/.bundle",
         "~/.gem",
         "~/.cache/bundler",
+        "~/.cache/rubocop_cache",
         "~/.cache/rubygems",
         "~/Library/Caches/bundle",
-        "~/.rbenv"
-      ]
-    }
-  }
+        "~/.rbenv",
+      ],
+    },
+  },
 }

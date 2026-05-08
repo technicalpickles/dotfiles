@@ -6,10 +6,8 @@
       "mcp__MCPProxy__call_tool_write",
       "mcp__MCPProxy__read_cache",
       "mcp__MCPProxy__retrieve_tools",
-      "mcp__MCPProxy__upstream_servers"
+      "mcp__MCPProxy__upstream_servers",
     ],
-    "ask": [
-      "mcp__MCPProxy__call_tool_destructive"
-    ]
-  }
+    "ask": ["mcp__MCPProxy__call_tool_destructive"],
+  },
 }

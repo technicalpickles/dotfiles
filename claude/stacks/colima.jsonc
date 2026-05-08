@@ -12,16 +12,14 @@
       "Bash(colima stop:*)",
       "Bash(colima template:*)",
       "Bash(colima version:*)",
-      "Bash(colima:*)"
-    ]
+      "Bash(colima:*)",
+    ],
   },
 
   // source: agent-safehouse
   "sandbox": {
     "filesystem": {
-      "allowWrite": [
-        "~/.colima"
-      ]
-    }
-  }
+      "allowWrite": ["~/.colima"],
+    },
+  },
 }

@@ -1,0 +1,26 @@
+# Agent git identity for Claude Code under DOTPICKLES_ROLE=work.
+# See doc/adr/0031-role-scoped-agent-git-identity.md.
+#
+# Referenced via GIT_CONFIG_GLOBAL in claude/roles/work.jsonc. The
+# [include] pulls in the real global gitconfig first (transitively pulling
+# in gitconfig.d fragments via ~/.gitconfig's own includes). Later sections
+# here override: user.email, core.sshCommand for the agent SSH key, and
+# gpg.ssh.program=ssh-keygen to defeat the 1Password op-ssh-sign default.
+[include]
+	path = ~/.gitconfig
+[user]
+	email = josh.nichols+agent@gusto.com
+	signingkey = ~/.ssh/agents/work/id_ed25519.pub
+[core]
+	sshCommand = ssh -i ~/.ssh/agents/work/id_ed25519 -o IdentitiesOnly=yes -o IdentityAgent=SSH_AUTH_SOCK
+	# fsmonitor's IPC daemon misbehaves under the Claude Code sandbox, surfacing
+	# "could not read IPC response" on every git op even when nothing is wrong.
+	# Disable it for agent sessions only — your interactive shell still inherits
+	# fsmonitor=true from ~/.gitconfig.
+	fsmonitor = false
+[commit]
+	gpgsign = true
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	program = ssh-keygen

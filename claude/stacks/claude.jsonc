@@ -17,6 +17,8 @@
       "allowWrite": [
         // plugin hooks use uv run which needs to create .venv in cache
         "~/.claude/plugins/cache",
+
+        "~/Library/Caches/cq",
         "~/.local/share/claude-env/",
       ],
     },

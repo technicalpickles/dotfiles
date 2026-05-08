@@ -28,8 +28,19 @@ SSH settings use `ssh/config.d/` fragments with SSH's native `Include` directive
 ./sshconfig.sh
 ```
 
+## 1Password SSH Agent Allowlist
+
+`Host *` in `ssh/config.d/auth` points at the 1Password agent. By default 1Password offers every key in the unlocked vault. Per-role allowlists live at `config/1password/agent.toml.<role>` and are symlinked to `~/.config/1Password/ssh/agent.toml` by `sshconfig.sh` based on `$DOTPICKLES_ROLE`. See [ADR 0033](../doc/adr/0033-1password-ssh-agent-allowlist.md).
+
+To check what 1Password is currently offering:
+
+```bash
+SSH_AUTH_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock" ssh-add -l
+```
+
 ## Important
 
 - Edit `ssh/config.d/auth` and `ssh/config.d/term` for versioned changes
 - Never edit `~/.ssh/config` directly -- it's managed by `sshconfig.sh`
 - `~/.ssh/config.d/hosts` is machine-local and gitignored; recreate it per machine
+- Never edit `~/.config/1Password/ssh/agent.toml` directly -- edit `config/1password/agent.toml.<role>` instead

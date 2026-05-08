@@ -11,9 +11,7 @@
 
   "sandbox": {
     "filesystem": {
-      "allowWrite": [
-        "~/.cache/qmd/"
-      ]
-    }
-  }
+      "allowWrite": ["~/.cache/qmd/"],
+    },
+  },
 }

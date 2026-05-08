@@ -26,8 +26,8 @@
       "Bash(goreleaser build:*)",
       "Bash(goreleaser check:*)",
       "Bash(goreleaser release:*)",
-      "Bash(goreleaser:*)"
-    ]
+      "Bash(goreleaser:*)",
+    ],
   },
 
   // source: agent-safehouse
@@ -40,8 +40,8 @@
         "~/.config/go",
         "~/.cache/golangci-lint",
         "~/Library/Caches/golangci-lint",
-        "~/.local/share/go"
-      ]
-    }
-  }
+        "~/.local/share/go",
+      ],
+    },
+  },
 }

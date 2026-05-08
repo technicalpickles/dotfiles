@@ -14,18 +14,19 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `functions.sh` | Modify lines 87-106 | `confirm()`, `backup_path()`, rewritten `link()` |
-| `symlinks.sh` | Modify lines 1-14 | `--yes`/`-y` flag parsing, interactivity guard |
-| `install.sh` | Modify lines 1-6 | `--yes`/`-y` flag parsing, interactivity guard |
-| `scripts/test-link.sh` | Create | Manual verification script |
+| File                   | Action              | Responsibility                                   |
+| ---------------------- | ------------------- | ------------------------------------------------ |
+| `functions.sh`         | Modify lines 87-106 | `confirm()`, `backup_path()`, rewritten `link()` |
+| `symlinks.sh`          | Modify lines 1-14   | `--yes`/`-y` flag parsing, interactivity guard   |
+| `install.sh`           | Modify lines 1-6    | `--yes`/`-y` flag parsing, interactivity guard   |
+| `scripts/test-link.sh` | Create              | Manual verification script                       |
 
 ---
 
 ### Task 1: Add `backup_path()` helper to `functions.sh`
 
 **Files:**
+
 - Modify: `functions.sh:86` (insert before `link()`)
 
 - [ ] **Step 1: Add `backup_path()` function**
@@ -64,6 +65,7 @@ git commit -m "feat(link): add backup_path() helper for timestamped backups"
 ### Task 2: Add `confirm()` helper to `functions.sh`
 
 **Files:**
+
 - Modify: `functions.sh:86` (insert before `backup_path()`)
 
 - [ ] **Step 1: Add `confirm()` function**
@@ -102,6 +104,7 @@ git commit -m "feat(link): add confirm() helper for interactive/auto-yes prompts
 ### Task 3: Rewrite `link()` in `functions.sh`
 
 **Files:**
+
 - Modify: `functions.sh:87-106` (the current `link()` function, line numbers will have shifted from Tasks 1-2)
 
 - [ ] **Step 1: Replace the `link()` function**
@@ -171,6 +174,7 @@ nested symlink creation."
 ### Task 4: Add `--yes`/`-y` flag and interactivity guard to `symlinks.sh`
 
 **Files:**
+
 - Modify: `symlinks.sh:1-14`
 
 - [ ] **Step 1: Add flag parsing and guard after the shebang block**
@@ -188,7 +192,7 @@ export DIR
 # Parse flags
 for arg in "$@"; do
   case "$arg" in
-    --yes|-y) export DOTPICKLES_YES=1 ;;
+    --yes | -y) export DOTPICKLES_YES=1 ;;
   esac
 done
 
@@ -225,6 +229,7 @@ git commit -m "feat(symlinks): add --yes/-y flag and interactivity guard"
 ### Task 5: Add `--yes`/`-y` flag and interactivity guard to `install.sh`
 
 **Files:**
+
 - Modify: `install.sh:1-6`
 
 - [ ] **Step 1: Add flag parsing after the shebang block**
@@ -235,7 +240,7 @@ Insert after line 4 (`set -eo pipefail`) and before line 6 (`DIR=...`):
 # Parse flags
 for arg in "$@"; do
   case "$arg" in
-    --yes|-y) export DOTPICKLES_YES=1 ;;
+    --yes | -y) export DOTPICKLES_YES=1 ;;
   esac
 done
 ```
@@ -267,6 +272,7 @@ git commit -m "feat(install): add --yes/-y flag and interactivity guard"
 ### Task 6: Write verification script and manually test
 
 **Files:**
+
 - Create: `scripts/test-link.sh`
 
 - [ ] **Step 1: Create the verification script**
@@ -287,7 +293,7 @@ export DIR
 
 for arg in "$@"; do
   case "$arg" in
-    --yes|-y) export DOTPICKLES_YES=1 ;;
+    --yes | -y) export DOTPICKLES_YES=1 ;;
   esac
 done
 
@@ -335,7 +341,7 @@ echo "precious data" > "$TEST_DIR/result4/config.json"
 link "source/thing" "$TEST_DIR/result4"
 if [ -L "$TEST_DIR/result4" ]; then
   echo "PASS: directory replaced with symlink"
-  backup=$(ls -d "$TEST_DIR"/result4.backup.* 2>/dev/null | head -1)
+  backup=$(ls -d "$TEST_DIR"/result4.backup.* 2> /dev/null | head -1)
   if [ -n "$backup" ] && [ -f "$backup/config.json" ]; then
     echo "PASS: backup exists with original content"
   else
@@ -352,7 +358,7 @@ echo "important stuff" > "$TEST_DIR/result5"
 link "source/thing" "$TEST_DIR/result5"
 if [ -L "$TEST_DIR/result5" ]; then
   echo "PASS: file replaced with symlink"
-  backup=$(ls "$TEST_DIR"/result5.backup.* 2>/dev/null | head -1)
+  backup=$(ls "$TEST_DIR"/result5.backup.* 2> /dev/null | head -1)
   if [ -n "$backup" ]; then
     echo "PASS: backup exists"
   else

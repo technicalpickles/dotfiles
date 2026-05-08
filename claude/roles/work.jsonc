@@ -1,7 +1,18 @@
 {
   // Work role settings (values from live settings, not stale source files)
   "awsAuthRefresh": "aws sso login --profile $AWS_PROFILE",
-  "env": {},
+  // Work role agent identity (mirrors personal.jsonc, see ADR 0031).
+  // Claude Code sessions under DOTPICKLES_ROLE=work commit and push as
+  // josh.nichols+agent@gusto.com via the agent key at
+  // ~/.ssh/agents/work/id_ed25519, instead of going through 1Password
+  // GPG. Prerequisite: bin/setup-agent-ssh-key work --email
+  // josh.nichols+agent@gusto.com, then the printed GitHub enrollment
+  // checklist.
+  "env": {
+    "GIT_CONFIG_GLOBAL": "~/.gitconfig.d/claude-agent-work",
+    // too many
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
+  },
 
   // Work-specific permissions
   "permissions": {

@@ -5,7 +5,7 @@ set -eo pipefail
 # Parse flags
 for arg in "$@"; do
   case "$arg" in
-    --yes|-y) export DOTPICKLES_YES=1 ;;
+    --yes | -y) export DOTPICKLES_YES=1 ;;
   esac
 done
 
@@ -69,6 +69,7 @@ git submodule update
 link_directory_contents home
 
 mkdir -p "$HOME/.config"
+./miseconfig.sh
 link_directory_contents config
 
 echo
@@ -94,6 +95,5 @@ if ! running_codespaces; then
   ./bash.sh
   ./skills.sh
 fi
-
 
 echo "✅ Done"

@@ -145,18 +145,22 @@ All config below was captured from the live `~/.claude/settings.json` (source: a
 ### roles/base.jsonc
 
 Settings:
+
 - `statusLine`, `includeCoAuthoredBy`
 
 Sandbox scalars:
+
 - `enabled: true`
 - `autoAllowBashIfSandboxed: true`
 - `enableWeakerNetworkIsolation: true`
 
 Sandbox network:
+
 - `api.anthropic.com` (claude infrastructure)
 - `code.claude.com` (claude docs)
 
 Permissions (from current `permissions.json`):
+
 - All base safety `allow`/`ask`/`deny` rules
 - NEW: `Read(~/.claude/plugins/cache/**)`
 - From old `web.json`: `WebFetch(domain:code.claude.com)`
@@ -164,12 +168,15 @@ Permissions (from current `permissions.json`):
 ### roles/work.jsonc
 
 Settings:
+
 - `awsAuthRefresh`, `env` (AWS/Bedrock config)
 
 Permissions (from current `permissions.work.json`):
+
 - `Bash(npx bktide:*)`, `Bash(bundle install)`, etc.
 
 Sandbox network:
+
 - `portal.sso.us-west-2.amazonaws.com` (AWS SSO)
 
 ### stacks/mise.jsonc
@@ -193,6 +200,7 @@ WebFetch permissions (from old `web.json`): `WebFetch(domain:docs.github.com)`, 
 Sandbox network: `registry.npmjs.org`
 
 Sandbox filesystem:
+
 - npm: `~/.npm`, `~/.config/npm`, `~/.cache/npm`, `~/.cache/node`, `~/.node-gyp`, `~/.cache/node-gyp`, `~/.config/configstore`, `~/Library/Caches/npm`
 - pnpm: `~/.config/pnpm`, `~/.pnpm-state`, `~/.pnpm-store`, `~/.local/share/pnpm`, `~/.local/state/pnpm`, `~/Library/pnpm`, `~/Library/Caches/pnpm`, `~/Library/Preferences/pnpm`
 - yarn: `~/.yarn`, `~/.yarnrc`, `~/.yarnrc.yml`, `~/.config/yarn`, `~/.cache/yarn`, `~/Library/Caches/Yarn`

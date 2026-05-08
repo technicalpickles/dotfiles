@@ -74,16 +74,16 @@ Stack files hold per-topic permissions and sandbox arrays (no scalars):
   "permissions": {
     "allow": [],
     "ask": [],
-    "deny": []
+    "deny": [],
   },
   "sandbox": {
     "network": {
-      "allowedHosts": []
+      "allowedHosts": [],
     },
     "filesystem": {
-      "allowWrite": []
-    }
-  }
+      "allowWrite": [],
+    },
+  },
 }
 ```
 
@@ -110,19 +110,17 @@ Create `claude/stacks/foo.jsonc`:
 {
   // Foo tool
   "permissions": {
-    "allow": [
-      "Bash(foo:*)"
-    ]
+    "allow": ["Bash(foo:*)"],
   },
   // Optional: sandbox config
   "sandbox": {
     "network": {
-      "allowedHosts": ["foo.example.com"]
+      "allowedHosts": ["foo.example.com"],
     },
     "filesystem": {
-      "allowWrite": ["~/.foo"]
-    }
-  }
+      "allowWrite": ["~/.foo"],
+    },
+  },
 }
 ```
 
@@ -176,11 +174,11 @@ claude-permissions cleanup --force
 
 ### Permission Lists
 
-| List    | Behavior                                                           |
-| ------- | ------------------------------------------------------------------ |
-| `allow` | Always permitted without prompting                                 |
+| List    | Behavior                                                            |
+| ------- | ------------------------------------------------------------------- |
+| `allow` | Always permitted without prompting                                  |
 | `ask`   | Always prompts for confirmation (useful for destructive operations) |
-| `deny`  | Always blocked                                                     |
+| `deny`  | Always blocked                                                      |
 
 ### Permission Format
 
@@ -238,5 +236,5 @@ jq '.sandbox.network.allowedHosts' ~/.claude/settings.json
 jq '.sandbox.filesystem.allowWrite' ~/.claude/settings.json
 
 # Verify claudeconfig.sh output
-./claudeconfig.sh  # Watch for "Loaded base role", "Merged X stack" messages
+./claudeconfig.sh # Watch for "Loaded base role", "Merged X stack" messages
 ```

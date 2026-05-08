@@ -78,3 +78,11 @@ set -gx GIT_MERGE_AUTOEDIT no
 
 # force an explicit path, otherwise it defaults to ~/Library/Application Support/eza on macOS vs ~/.config/eza on linux
 set -gx EZA_CONFIG_DIR "$HOME/.config/eza"
+
+# fabro
+fish_add_path $HOME/.fabro/bin
+
+# Added by LM Studio CLI (lms)
+set -gx PATH $PATH /Users/josh.nichols/.lmstudio/bin
+# End of LM Studio CLI section
+

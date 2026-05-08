@@ -17,11 +17,6 @@
         <dict><key>Minute</key><integer>30</integer></dict>
         <dict><key>Minute</key><integer>45</integer></dict>
     </array>
-    <key>EnvironmentVariables</key>
-    <dict>
-        <key>BREW_PREFIX</key>
-        <string>/opt/homebrew</string>
-    </dict>
     <key>RunAtLoad</key>
     <true/>
     <key>StandardOutPath</key>

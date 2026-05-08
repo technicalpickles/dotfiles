@@ -15,3 +15,10 @@ When writing _for_ me or _as_ me (blog posts, docs, messages), use the `writing-
 - **Observe before speculating.** State what you see. Frame guesses as questions to investigate, not assumptions to act on.
 - **Reflect after repeated failures.** If the same approach fails twice, pause to state observations and critically reassess before continuing. Don't just try more variants.
 - **Understand before executing.** When the user proposes an approach, first understand what they're trying to accomplish and why. Surface better alternatives early if they exist. Once the motivation is clear, proceed with the best approach. Don't silently substitute a different one mid-task.
+
+# graphify
+
+- **graphify** (`~/.claude/skills/graphify/SKILL.md`) - any input to knowledge graph. Trigger: `/graphify`
+  When the user types `/graphify`, invoke the Skill tool with `skill: "graphify"` before doing anything else.
+
+@RTK.md

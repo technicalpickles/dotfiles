@@ -60,6 +60,14 @@ Under the personal role, Claude commits and pushes as
 key at `~/.ssh/agents/personal/id_ed25519`, with its passphrase in macOS
 Keychain. The user's interactive shells are untouched.
 
+Under the work role, the same mechanism applied to a different identity:
+`josh.nichols+agent@gusto.com` (a verified plus-address on the user's
+single GitHub account), with a key at `~/.ssh/agents/work/id_ed25519`.
+Both agent identities live on the same GitHub account, distinguished by
+email and key fingerprint. `bin/setup-agent-ssh-key` and
+`bin/check-agent-ssh-key` accept `--email <addr>` to override the default
+plus-addressed gmail when the role's identity uses a different domain.
+
 ### Implementation
 
 **1. Key storage.** `~/.ssh/agents/<role>/id_ed25519` with a passphrase stored
@@ -76,9 +84,12 @@ on the GitHub account in two places:
 - Authentication keys (for `git push`)
 - Signing keys (so the Verified badge shows on signed commits)
 
-The `+<role>-agent` plus-addressed email is added as a verified email on the
-same GitHub account. Plus-addressing keeps it tied to one inbox while giving
-GitHub a distinct email to attribute commits to.
+A plus-addressed email is added as a verified email on the same GitHub
+account. Plus-addressing keeps it tied to one inbox while giving GitHub a
+distinct email to attribute commits to. The default email format is
+`joshua.nichols+<role>-agent@gmail.com`, override with `--email` when the
+role's identity uses a different mailbox or domain (work role uses
+`josh.nichols+agent@gusto.com`).
 
 **3. Per-role env injection.** `claude/roles/personal.jsonc` sets a single
 env var pointing at an agent-specific gitconfig file:

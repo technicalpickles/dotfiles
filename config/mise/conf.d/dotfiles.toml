@@ -1,10 +1,8 @@
 [tools]
 fnox = "latest"
 go = "1.26"
-"go:github.com/buildkite/cli/v3" = "main"
-goss = "latest"
-hk = "1.20.0"
-lefthook = "2.1.6"
+node = "lts"
 "npm:markdownlint-cli2" = "0.22.0"
 pkl = "0.30.0"
+python = "3.13"
 uv = "latest"

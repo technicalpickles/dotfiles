@@ -9,7 +9,7 @@
 set -euo pipefail
 
 usage() {
-    cat <<EOF
+  cat << EOF
 Usage: md2rich [file.md]
 
 Convert markdown to rich text and copy to clipboard.
@@ -21,14 +21,14 @@ Examples:
     cat notes.md | md2rich
     echo "**bold** and *italic*" | md2rich
 EOF
-    exit "${1:-0}"
+  exit "${1:-0}"
 }
 
 # Check dependencies
-if ! command -v pandoc &>/dev/null; then
-    echo "error: pandoc is required but not installed" >&2
-    echo "  brew install pandoc" >&2
-    exit 1
+if ! command -v pandoc &> /dev/null; then
+  echo "error: pandoc is required but not installed" >&2
+  echo "  brew install pandoc" >&2
+  exit 1
 fi
 
 # Handle --help
@@ -36,25 +36,25 @@ fi
 
 # Get input from file or stdin
 if [[ $# -gt 0 ]]; then
-    # File argument
-    if [[ ! -f "$1" ]]; then
-        echo "error: file not found: $1" >&2
-        exit 1
-    fi
-    input=$(cat "$1")
+  # File argument
+  if [[ ! -f "$1" ]]; then
+    echo "error: file not found: $1" >&2
+    exit 1
+  fi
+  input=$(cat "$1")
 else
-    # Stdin
-    if [[ -t 0 ]]; then
-        echo "error: no input provided (pass a file or pipe markdown)" >&2
-        usage 1
-    fi
-    input=$(cat)
+  # Stdin
+  if [[ -t 0 ]]; then
+    echo "error: no input provided (pass a file or pipe markdown)" >&2
+    usage 1
+  fi
+  input=$(cat)
 fi
 
 # Check for empty input
 if [[ -z "$input" ]]; then
-    echo "error: input is empty" >&2
-    exit 1
+  echo "error: input is empty" >&2
+  exit 1
 fi
 
 # Convert and copy

@@ -61,7 +61,7 @@
       "Bash(git tag:*)",
 
       // hk git hooks tool (from old web.json)
-      "WebFetch(domain:hk.jdx.dev)"
+      "WebFetch(domain:hk.jdx.dev)",
     ],
 
     // Operations that warrant confirmation
@@ -70,7 +70,7 @@
       "Bash(git clean -fdx:*)",
       "Bash(git push --force:*)",
       "Bash(git push -f:*)",
-      "Bash(git reset --hard:*)"
+      "Bash(git reset --hard:*)",
     ],
 
     // Destructive operations that should never be auto-allowed
@@ -82,16 +82,14 @@
       "Bash(git push --force upstream main:*)",
       "Bash(git push --force upstream master:*)",
       "Bash(git push -f upstream main:*)",
-      "Bash(git push -f upstream master:*)"
-    ]
+      "Bash(git push -f upstream master:*)",
+    ],
   },
 
   // source: agent-safehouse
   "sandbox": {
     "network": {
-      "allowedHosts": [
-        "hk.jdx.dev"
-      ]
-    }
-  }
+      "allowedHosts": ["hk.jdx.dev"],
+    },
+  },
 }

@@ -12,17 +12,15 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
   cat > "$CONFIG_FILE" << 'EOF'
 # This file is gitignored - it contains machine-specific tool versions.
 #
-# Versioned configuration lives in conf.d/:
+# Versioned configuration lives in conf.d/ and installs everywhere:
 #   - path.toml:     PATH additions (~/.cargo/bin, etc.)
-#   - dotfiles.toml: Tools managed by dotfiles (fnox, goss, hk, pkl)
+#   - dotfiles.toml: shared tools (fnox, go, hk, pkl, node, python, uv, etc.)
 #
-# Add your language runtimes below. Example:
+# Add machine-specific overrides or extras below. Example:
 #
 #   [tools]
-#   node = "lts"
 #   ruby = "3.4"
-#   python = "3.12"
-#   go = "latest"
+#   bun = "latest"
 
 [tools]
 
