@@ -52,6 +52,12 @@ fi
 
 # Fnox setup (CLI tool runner)
 if command -v fnox &> /dev/null; then
+  # Quiet fnox under Claude Code: skip activation chatter and stop warning
+  # about missing secrets the agent doesn't need
+  if [[ -n "$CLAUDECODE" ]]; then
+    export FNOX_SHELL_OUTPUT=none
+    export FNOX_IF_MISSING=ignore
+  fi
   eval "$(fnox activate zsh)"
 fi
 
