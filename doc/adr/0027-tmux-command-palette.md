@@ -38,11 +38,13 @@ Using forks (pinned to `add-key-binding-notes` branch) until upstream merges.
 ### Alternatives Considered
 
 1. **tmux-which-key** (alexwforsythe/tmux-which-key)
+
    - Manually curated menu system, not auto-discovered from actual bindings
    - Requires maintaining a separate `config.yaml` in sync with real bindings
    - Rejected: doesn't solve the discovery problem
 
 2. **tmux-menus** (jaclu/tmux-menus)
+
    - Rich built-in menu system using tmux's native `display-menu`
    - No fuzzy finding, static navigation only
    - Rejected: not a command palette

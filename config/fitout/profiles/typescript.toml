@@ -1,6 +1,4 @@
 # TypeScript profile - opt-in for TypeScript LSP intelligence
 # Type checking, diagnostics, go-to-definition via tsserver
 
-plugins = [
-  "typescript-lsp@claude-plugins-official",
-]
+plugins = ["typescript-lsp@claude-plugins-official"]

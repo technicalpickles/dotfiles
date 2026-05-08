@@ -19,17 +19,14 @@
       "Bash(mise use:*)",
       "Bash(mise which:*)",
       // From old web.json
-      "WebFetch(domain:mise.jdx.dev)"
-    ]
+      "WebFetch(domain:mise.jdx.dev)",
+    ],
   },
 
   // source: agent-safehouse
   "sandbox": {
     "network": {
-      "allowedHosts": [
-        "mise.jdx.dev",
-        "mise-versions.jdx.dev"
-      ]
+      "allowedHosts": ["mise.jdx.dev", "mise-versions.jdx.dev"],
     },
     "filesystem": {
       "allowWrite": [
@@ -37,8 +34,8 @@
         "~/.config/mise",
         "~/.local/state/mise",
         "~/.cache/mise",
-        "~/Library/Caches/mise"
-      ]
-    }
-  }
+        "~/Library/Caches/mise",
+      ],
+    },
+  },
 }
