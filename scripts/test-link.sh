@@ -12,7 +12,7 @@ export DIR
 
 for arg in "$@"; do
   case "$arg" in
-    --yes|-y) export DOTPICKLES_YES=1 ;;
+    --yes | -y) export DOTPICKLES_YES=1 ;;
   esac
 done
 
@@ -60,7 +60,7 @@ echo "precious data" > "$TEST_DIR/result4/config.json"
 link "source/thing" "$TEST_DIR/result4"
 if [ -L "$TEST_DIR/result4" ]; then
   echo "PASS: directory replaced with symlink"
-  backup=$(ls -d "$TEST_DIR"/result4.backup.* 2>/dev/null | head -1)
+  backup=$(ls -d "$TEST_DIR"/result4.backup.* 2> /dev/null | head -1)
   if [ -n "$backup" ] && [ -f "$backup/config.json" ]; then
     echo "PASS: backup exists with original content"
   else
@@ -77,7 +77,7 @@ echo "important stuff" > "$TEST_DIR/result5"
 link "source/thing" "$TEST_DIR/result5"
 if [ -L "$TEST_DIR/result5" ]; then
   echo "PASS: file replaced with symlink"
-  backup=$(ls "$TEST_DIR"/result5.backup.* 2>/dev/null | head -1)
+  backup=$(ls "$TEST_DIR"/result5.backup.* 2> /dev/null | head -1)
   if [ -n "$backup" ]; then
     echo "PASS: backup exists"
   else

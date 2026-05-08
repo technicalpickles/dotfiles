@@ -14,7 +14,7 @@ The original implementation had two problems:
 
 1. **Silent data loss.** If the target was a real file or directory (not a symlink), `link()` used `ln -Ff -s` to silently replace it. Tools like ccstatusline create their own config directories at runtime with user customizations. Running `symlinks.sh` would nuke those without warning.
 
-2. **Nested symlink bug.** If the target was an existing directory and `-F` didn't behave as expected, `ln -s source target/` would create a symlink *inside* the directory (e.g. `~/.config/fish/fish`) instead of replacing it. This is a well-known `ln` footgun.
+2. **Nested symlink bug.** If the target was an existing directory and `-F` didn't behave as expected, `ln -s source target/` would create a symlink _inside_ the directory (e.g. `~/.config/fish/fish`) instead of replacing it. This is a well-known `ln` footgun.
 
 The function also had no way to run non-interactively, making it unsuitable for CI or scripted installs.
 
@@ -23,16 +23,19 @@ The function also had no way to run non-interactively, making it unsuitable for 
 Rewrite `link()` with four explicit cases and two new helpers:
 
 **Cases:**
+
 - Target doesn't exist: create symlink (plain `ln -s`, no flags)
 - Target is a correct symlink: no-op
 - Target is a wrong symlink: prompt to repoint (or auto-repoint with `--yes`)
 - Target is a real file or directory: prompt to backup and replace (or auto with `--yes`)
 
 **Helpers:**
+
 - `confirm()` centralizes prompt logic. Returns yes immediately in auto-yes mode, prompts interactively otherwise.
 - `backup_path()` generates timestamped backup names (`target.backup.20260325-143022`) with collision counter.
 
 **Interactivity modes:**
+
 - Interactive (default): prompts for anything that isn't already correct
 - Auto-yes (`--yes`/`-y`): auto-answers yes to all prompts, safe for scripts
 - Non-interactive without `--yes`: script exits with error immediately
@@ -42,6 +45,7 @@ The nested symlink bug is prevented structurally: real files/dirs are `mv`'d out
 ### Alternatives Considered
 
 1. **Warn and skip (like claudeconfig.sh does)**
+
    - Simpler, no backup logic needed
    - Rejected: requires manual cleanup, annoying on repeated runs
 

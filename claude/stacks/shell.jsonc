@@ -79,20 +79,18 @@
       "Bash(xz:*)",
       "Bash(yamllint:*)",
       "Bash(yes:*)",
-      "Bash(zip:*)"
+      "Bash(zip:*)",
     ],
     "ask": [
       "Bash(claude-permissions cleanup --force)",
-      "Bash(claude-permissions cleanup -f)"
-    ]
+      "Bash(claude-permissions cleanup -f)",
+    ],
   },
 
   // source: agent-safehouse
   "sandbox": {
     "network": {
-      "allowedHosts": [
-        "formulae.brew.sh"
-      ]
-    }
-  }
+      "allowedHosts": ["formulae.brew.sh"],
+    },
+  },
 }

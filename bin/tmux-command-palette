@@ -4,9 +4,9 @@
 #
 
 # Colors (catppuccin mocha)
-blue='\033[38;2;137;180;250m'   # #89b4fa
-green='\033[38;2;166;227;161m'  # #a6e3a1
-dim='\033[38;2;108;112;134m'    # #6c7086 (overlay0)
+blue='\033[38;2;137;180;250m'  # #89b4fa
+green='\033[38;2;166;227;161m' # #a6e3a1
+dim='\033[38;2;108;112;134m'   # #6c7086 (overlay0)
 reset='\033[0m'
 
 # Format: colored key on left, description on right, with consistent alignment
@@ -26,11 +26,11 @@ formatted=$(tmux list-keys -N | awk -v blue="$blue" -v green="$green" -v dim="$d
 }')
 
 target=$(echo -e "$formatted" | fzf-tmux -p 80%,60% \
-    --ansi \
-    --no-sort \
-    --border-label ' command palette ' \
-    --prompt '  ' \
-    --bind 'tab:down,btab:up')
+  --ansi \
+  --no-sort \
+  --border-label ' command palette ' \
+  --prompt '  ' \
+  --bind 'tab:down,btab:up')
 
 [[ -z "$target" ]] && exit
 
@@ -44,7 +44,7 @@ full=$(tmux list-keys -T prefix | grep -F " ${key} " | head -1)
 
 # If not found in prefix table, try other tables
 if [[ -z "$full" ]]; then
-    full=$(tmux list-keys | grep -F " ${key} " | head -1)
+  full=$(tmux list-keys | grep -F " ${key} " | head -1)
 fi
 
 [[ -z "$full" ]] && exit
@@ -54,7 +54,7 @@ cmd=$(echo "$full" | awk '{ $1=$2=$3=$4=""; print $0 }' | sed 's/^ *//')
 
 # Handle copy-mode bindings
 if [[ "$cmd" == *"copy-mode"* ]] && [[ "$full" != *"prefix"* ]]; then
-    tmux copy-mode
+  tmux copy-mode
 fi
 
 tmux $cmd

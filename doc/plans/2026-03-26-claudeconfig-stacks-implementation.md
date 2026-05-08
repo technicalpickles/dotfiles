@@ -74,11 +74,13 @@
 Before changing anything, review the live `~/.claude/settings.json` to catch any drift since the spec was written. New permissions, hosts, write paths, or settings may have been added by Claude Code sessions or manual edits. These need to be accounted for in the role/stack files.
 
 **Files:**
+
 - Read: `~/.claude/settings.json`
 
 - [ ] **Step 1: Review live settings.json for drift**
 
 Compare the live file against what the spec expects. Check for:
+
 - New permissions in `allow`/`ask`/`deny` not in any source `permissions.*.json` file
 - New network hosts in `sandbox.network.allowedHosts` beyond the 15 in the spec
 - New filesystem write paths in `sandbox.filesystem.allowWrite` beyond the 64 in the spec
@@ -90,12 +92,13 @@ Compare the live file against what the spec expects. Check for:
 echo "Allow: $(jq '.permissions.allow | length' ~/.claude/settings.json)"
 echo "Ask: $(jq '.permissions.ask | length' ~/.claude/settings.json)"
 echo "Deny: $(jq '.permissions.deny | length' ~/.claude/settings.json)"
-echo "Hosts: $(jq '.sandbox.network.allowedHosts | length' ~/.claude/settings.json 2>/dev/null || echo 'none')"
-echo "Write paths: $(jq '.sandbox.filesystem.allowWrite | length' ~/.claude/settings.json 2>/dev/null || echo 'none')"
+echo "Hosts: $(jq '.sandbox.network.allowedHosts | length' ~/.claude/settings.json 2> /dev/null || echo 'none')"
+echo "Write paths: $(jq '.sandbox.filesystem.allowWrite | length' ~/.claude/settings.json 2> /dev/null || echo 'none')"
 echo "Top-level keys: $(jq 'keys[]' ~/.claude/settings.json)"
 ```
 
 If any drift is found, decide for each item:
+
 - Which role or stack file should it go in?
 - Is it a local_key that should be preserved but not managed?
 - Is it stale and should be dropped?
@@ -128,6 +131,7 @@ These counts become the baseline for Task 6 verification.
 ### Task 2: Create role files
 
 **Files:**
+
 - Create: `claude/roles/base.jsonc`
 - Create: `claude/roles/personal.jsonc`
 - Create: `claude/roles/work.jsonc`
@@ -156,7 +160,7 @@ The file should have this structure (abbreviated, full content from source files
   "statusLine": {
     "type": "command",
     "command": "npx -y ccstatusline@latest",
-    "padding": 0
+    "padding": 0,
   },
   "includeCoAuthoredBy": true,
 
@@ -167,14 +171,14 @@ The file should have this structure (abbreviated, full content from source files
       // NEW: plugin cache read access
       "Read(~/.claude/plugins/cache/**)",
       // From old web.json
-      "WebFetch(domain:code.claude.com)"
+      "WebFetch(domain:code.claude.com)",
     ],
     "ask": [
       // ... all entries from permissions.json .ask ...
     ],
     "deny": [
       // ... all entries from permissions.json .deny ...
-    ]
+    ],
   },
 
   // Sandbox: base config (source: agent-safehouse)
@@ -184,11 +188,11 @@ The file should have this structure (abbreviated, full content from source files
     "enableWeakerNetworkIsolation": true,
     "network": {
       "allowedHosts": [
-        "api.anthropic.com",  // claude infrastructure
-        "code.claude.com"     // claude docs
-      ]
-    }
-  }
+        "api.anthropic.com", // claude infrastructure
+        "code.claude.com", // claude docs
+      ],
+    },
+  },
 }
 ```
 
@@ -225,18 +229,18 @@ Merge `settings.work.json` + `permissions.work.json`. Add SSO network host. Use 
       "Bash(bundle install)",
       "Bash(npx bktide build:*)",
       "Bash(npx bktide)",
-      "Bash(npx bktide:*)"
-    ]
+      "Bash(npx bktide:*)",
+    ],
   },
 
   // Work-specific sandbox (source: agent-safehouse)
   "sandbox": {
     "network": {
       "allowedHosts": [
-        "portal.sso.us-west-2.amazonaws.com"  // AWS SSO
-      ]
-    }
-  }
+        "portal.sso.us-west-2.amazonaws.com", // AWS SSO
+      ],
+    },
+  },
 }
 ```
 
@@ -260,6 +264,7 @@ Adds Read(~/.claude/plugins/cache/**) to base allow list."
 These stacks carry forward existing permissions unchanged, just wrapped in the new schema. No sandbox config.
 
 **Files:**
+
 - Create: `claude/stacks/beans.jsonc`
 - Create: `claude/stacks/mcp.jsonc`
 - Create: `claude/stacks/skills.jsonc`
@@ -284,13 +289,10 @@ Read `permissions.beans.json`, wrap in `{"permissions": {...}}`:
       "Bash(beans query:*)",
       "Bash(beans show:*)",
       "Bash(beans update:*)",
-      "Bash(beans:*)"
+      "Bash(beans:*)",
     ],
-    "ask": [
-      "Bash(beans archive:*)",
-      "Bash(beans delete:*)"
-    ]
-  }
+    "ask": ["Bash(beans archive:*)", "Bash(beans delete:*)"],
+  },
 }
 ```
 
@@ -307,12 +309,10 @@ Read `permissions.mcp.json`, wrap in `{"permissions": {...}}`:
       "mcp__MCPProxy__call_tool_write",
       "mcp__MCPProxy__read_cache",
       "mcp__MCPProxy__retrieve_tools",
-      "mcp__MCPProxy__upstream_servers"
+      "mcp__MCPProxy__upstream_servers",
     ],
-    "ask": [
-      "mcp__MCPProxy__call_tool_destructive"
-    ]
-  }
+    "ask": ["mcp__MCPProxy__call_tool_destructive"],
+  },
 }
 ```
 
@@ -334,6 +334,7 @@ git commit -m "feat: create permissions-only stack files (beans, mcp, skills)"
 These stacks carry forward existing permissions AND add new sandbox config from agent-safehouse.
 
 **Files:**
+
 - Create: `claude/stacks/buildkite.jsonc` (NEW)
 - Create: `claude/stacks/colima.jsonc`
 - Create: `claude/stacks/docker.jsonc`
@@ -358,12 +359,12 @@ For each stack: read the source permissions file, wrap in the new schema with `{
   // Buildkite CI (source: agent-safehouse)
   "sandbox": {
     "network": {
-      "allowedHosts": ["buildkite.com"]
+      "allowedHosts": ["buildkite.com"],
     },
     "filesystem": {
-      "allowWrite": ["~/.local/state/bktide"]
-    }
-  }
+      "allowWrite": ["~/.local/state/bktide"],
+    },
+  },
 }
 ```
 
@@ -373,20 +374,14 @@ For each stack: read the source permissions file, wrap in the new schema with `{
 {
   // Reference documentation sites
   "permissions": {
-    "allow": [
-      "WebFetch(domain:karafka.io)",
-      "WebFetch(domain:lima-vm.io)"
-    ]
+    "allow": ["WebFetch(domain:karafka.io)", "WebFetch(domain:lima-vm.io)"],
   },
   // source: agent-safehouse
   "sandbox": {
     "network": {
-      "allowedHosts": [
-        "karafka.io",
-        "lima-vm.io"
-      ]
-    }
-  }
+      "allowedHosts": ["karafka.io", "lima-vm.io"],
+    },
+  },
 }
 ```
 
@@ -435,6 +430,7 @@ Distributes web.json WebFetch permissions to their topic stacks."
 ### Task 5: Rewrite claudeconfig.sh merge logic
 
 **Files:**
+
 - Modify: `claudeconfig.sh` (the `generate_settings()` function, lines 70-182)
 
 - [ ] **Step 1: Read current `claudeconfig.sh` fully**
@@ -476,6 +472,7 @@ extraKnownMarketplaces."
 ### Task 6: Verify output matches
 
 **Files:**
+
 - Read: `~/.claude/settings.json` (generated output)
 - Read: `/tmp/claude-settings-before-refactor.json` (saved in Task 1)
 
@@ -495,6 +492,7 @@ diff <(jq -S . /tmp/claude-settings-before-refactor.json) <(jq -S . ~/.claude/se
 ```
 
 Expected diff:
+
 - The new `Read(~/.claude/plugins/cache/**)` permission (added to base role)
 - Network `allowedHosts` array now populated (these are NEW in the generated output; previously they were either absent or came from Claude Code's own sandbox enforcement, not user settings)
 - Ordering differences (dedup + sort)
@@ -521,6 +519,7 @@ jq '{
 ```
 
 Expected:
+
 - `allow_count`: baseline + 1 (the new `Read(~/.claude/plugins/cache/**)`)
 - `ask_count`: same as baseline
 - `deny_count`: same as baseline
@@ -562,6 +561,7 @@ Expected: No output (all source permissions present in generated output).
 Only do this after Task 6 verification passes.
 
 **Files:**
+
 - Delete: All `claude/permissions.*.json`, `claude/permissions.*.jsonc`, `claude/settings.*.json`
 
 - [ ] **Step 1: Remove old permission files**
@@ -594,6 +594,7 @@ These are replaced by claude/roles/ and claude/stacks/ directories."
 ### Task 8: Update README.md
 
 **Files:**
+
 - Modify: `claude/README.md`
 
 - [ ] **Step 1: Read current README**
@@ -603,6 +604,7 @@ Read `claude/README.md` to understand structure and what to preserve.
 - [ ] **Step 2: Rewrite README for new structure**
 
 Update to cover:
+
 - New `roles/` + `stacks/` architecture with tree diagram
 - Schema: `permissions` + `sandbox` shape for both roles and stacks
 - All files use JSONC, comments encouraged for provenance (`// source: agent-safehouse`)
@@ -624,6 +626,7 @@ git commit -m "docs: update claude/README.md for roles/stacks structure"
 ### Task 9: Fix spec and mark implemented
 
 **Files:**
+
 - Modify: `docs/plans/2026-03-25-claudeconfig-stacks-refactor.md`
 
 - [ ] **Step 1: Update spec status to "Implemented"**
