@@ -12,7 +12,7 @@ echo "🧩 configuring agent skills"
 mkdir -p "$HOME/.agents"
 link "agents/.skill-lock.json" "$HOME/.agents/.skill-lock.json"
 
-if ! command -v npx &>/dev/null; then
+if ! command -v npx &> /dev/null; then
   echo "  ⚠ npx not found, skipping skill restoration"
   exit 0
 fi

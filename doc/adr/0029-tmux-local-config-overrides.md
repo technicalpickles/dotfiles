@@ -31,10 +31,12 @@ Catppuccin's tmux plugin reads `@catppuccin_flavor` at plugin init time, but `so
 ### Alternatives Considered
 
 1. **Conditional logic in .tmux.conf based on hostname**
+
    - `if-shell '[ "$(hostname)" = "myserver" ]' 'set ...'`
    - Rejected: puts machine-specific knowledge in the committed config. Grows into a mess.
 
 2. **Separate .tmux.conf per machine**
+
    - Rejected: duplication. The configs are 95% identical.
 
 3. **Environment variable toggles**
