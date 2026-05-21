@@ -7,6 +7,11 @@ if command -v starship &> /dev/null; then
   eval "$(starship init zsh)"
 fi
 
+# Pitchfork daemon manager (cd hook for autostart)
+if command -v pitchfork &> /dev/null; then
+  eval "$(pitchfork activate zsh)"
+fi
+
 # 1Password CLI plugins
 if command -v op &> /dev/null && [[ -f ~/.config/op/plugins.sh ]]; then
   source ~/.config/op/plugins.sh
