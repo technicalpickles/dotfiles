@@ -72,6 +72,8 @@
         "~/Library/Caches/ms-playwright",
         "~/Library/Caches/Cypress",
         "~/.cache/puppeteer",
+        // watchman: jest spawns fb-watchman, which fchmods its per-user state dir
+        "~/.local/state/watchman",
       ],
     },
   },
