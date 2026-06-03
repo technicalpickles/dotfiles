@@ -17,3 +17,7 @@ config/fish/fish_plugins
 .editorconfig
 home/.gitconfig
 config/ghostty/config
+
+# bats tests (prettier-plugin-sh can't parse @test syntax) + JSONL fixtures
+*.bats
+*.jsonl

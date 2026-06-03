@@ -1,0 +1,90 @@
+{"expect": "DENY", "command": "git add src/opt/gusto/etc/scope/shared/known-errors/docker/colima-docker-socket-eof.yaml src/opt/gusto/etc/scope/shared/known-errors/docker/colima-docker-socket-eof.txt src/opt/gusto/etc/scope/shared/known-errors/docker/colima-ssh-broken-pipe.yaml src/opt/gusto/etc/scope/shared/known-errors/docker/colima-ssh-broken-pipe.txt src/opt/gusto/etc/scope/shared/known-errors/kafka/kafka-api-version-timeout.yaml src/opt/gusto/etc/scope/shared/known-errors/kafka/kafka-api-version-timeout.txt test/known-errors/docker.bats test/known-errors/kafka.bats && git status --short"}
+{"expect": "DENY", "command": "git push -u origin colima-and-rdkafka-known-errors 2>&1 | tail -10"}
+{"expect": "DENY", "command": "cd /Users/josh.nichols/pickleton/repos/plannotator/bare.git && git worktree list 2>&1; echo \"---prune---\"; git worktree prune 2>&1; echo \"done\""}
+{"expect": "DENY", "command": "git worktree add /Users/josh.nichols/pickleton/repos/plannotator/worktrees/main main 2>&1 | tail -10"}
+{"expect": "DENY", "command": "git add projects/agent-orchestration-survey/BRIEFING.md projects/agent-orchestration-survey/FRAMING.md projects/agent-orchestration-survey/PRIMER.md projects/agent-orchestration-survey/PATTERNS.md projects/agent-orchestration-survey/docs/ && git status --short -- projects/agent-orchestration-survey/"}
+{"expect": "DENY", "command": "cd /Users/josh.nichols/pickleton && git push 2>&1 | tail -15"}
+{"expect": "DENY", "command": "git push origin main 2>&1 | tail -10"}
+{"expect": "DENY", "command": "cd repos/pinwheel/worktrees/main && git pull --ff-only"}
+{"expect": "DENY", "command": "git -C /Users/josh.nichols/pickleton/repos/pinwheel/worktrees/main pull --ff-only"}
+{"expect": "DENY", "command": "git -C /Users/josh.nichols/pickleton/repos/pinwheel/worktrees/pipeline-env-keys push -u origin pipeline-env-keys"}
+{"expect": "DENY", "command": "git -C /Users/josh.nichols/pickleton/repos/pinwheel/worktrees/pipeline-env-keys push"}
+{"expect": "DENY", "command": "git checkout -b team-hud/horizon-holidays && git status --short"}
+{"expect": "DENY", "command": "git add team-hud/src/config.js team-hud/src/fetch.js team-hud/src/horizon.js team-hud/src/render-horizon.js team-hud/src/state.js team-hud/team.yml team-hud/test/horizon.test.js && git status --short"}
+{"expect": "DENY", "command": "git add src/config.js src/fetch.js src/horizon.js src/render-horizon.js src/state.js team.yml test/horizon.test.js && git status --short"}
+{"expect": "DENY", "command": "git push -u origin team-hud/horizon-holidays 2>&1"}
+{"expect": "DENY", "command": "git checkout main && git status --short && git rev-parse --abbrev-ref HEAD"}
+{"expect": "DENY", "command": "git add projects/team-time-tools-playground/design/2026-05-21-agent-orchestration-survey-design.md && git status"}
+{"expect": "DENY", "command": "git mv projects/team-time-tools-playground projects/agent-orchestration-survey && mkdir -p projects/agent-orchestration-survey/frameworks projects/agent-orchestration-survey/playground && cd projects/agent-orchestration-survey && git mv FINDINGS.md frameworks/team-time-tools.md && git mv playground.html playground/playground.html && git mv extract.py playground/extract.py"}
+{"expect": "DENY", "command": "git add projects/agent-orchestration-survey/handoffs projects/agent-orchestration-survey/frameworks/team-time-tools.md beans/gt-tcai--agent-orchestration-survey.md && git status | head -25"}
+{"expect": "DENY", "command": "git add projects/agent-orchestration-survey/frameworks/speckit.md && git status --short projects/agent-orchestration-survey/frameworks/"}
+{"expect": "DENY", "command": "git -C /Users/josh.nichols/pickleton/repos/bowerbird/worktrees/main add docs/bmad/implementation-artifacts/sprint-status.yaml docs/bmad/planning-artifacts/epics.md docs/bmad/planning-artifacts/sprint-change-proposal-2026-05-27.md docs/bmad/planning-artifacts/sprint-change-proposal-2026-05-27-pid-liveness.md docs/bmad/planning-artifacts/sprint-change-proposal-2026-05-27-epic-5-resequencing.md docs/protocol-changelog.md && git -C /Users/josh.nichols/pickleton/repos/bowerbird/worktrees/main status"}
+{"expect": "DENY", "command": "cd /Users/josh.nichols/pickleton/repos/switchboard/worktrees/adr-002-extending-get-deployment-status && git worktree remove ../adr-002-pr1-is-paused-foundation 2>&1"}
+{"expect": "DENY", "command": "cd /Users/josh.nichols/pickleton/repos/switchboard/worktrees/adr-002-extending-get-deployment-status && git push origin --delete adr-002-pr1-is-paused-foundation 2>&1"}
+{"expect": "DENY", "command": "git push origin --delete adr-002-pr1-is-paused-foundation 2>&1"}
+{"expect": "DENY", "command": "git push -u origin extract-is-ci-failing 2>&1"}
+{"expect": "DENY", "command": "git push -u origin extract-is-ci-failing 2>&1 | tail -25"}
+{"expect": "DENY", "command": "git push -u origin add-get-merge-status 2>&1 | tail -5"}
+{"expect": "DENY", "command": "cd /Users/josh.nichols/pickleton/repos/switchboard/worktrees/extend-get-deployment-status && git add plugins/gusto-deployment-backend/src/actions/getDeploymentStatus.ts plugins/gusto-deployment-backend/src/actions/getDeploymentStatus.test.ts plugins/gusto-deployment-backend/src/plugin.ts plugins/gusto-deployment-backend/src/services/GustoDeploymentApiService.ts"}
+{"expect": "DENY", "command": "cd /Users/josh.nichols/pickleton/repos/switchboard/worktrees/extend-get-deployment-status && git push -u origin extend-get-deployment-status > /tmp/push-output.txt 2>&1; echo \"PUSH EXIT=$?\"; cat /tmp/push-output.txt"}
+{"expect": "DENY", "command": "cd /Users/josh.nichols/pickleton/repos/switchboard/worktrees/add-get-merge-status && git push 2>&1 | tail -3"}
+{"expect": "DENY", "command": "cd /Users/josh.nichols/pickleton/repos/switchboard/worktrees/extend-get-deployment-status && git push -u origin extend-get-deployment-status 2>&1; echo \"EXIT=$?\""}
+{"expect": "DENY", "command": "cd /Users/josh.nichols/pickleton/repos/switchboard/worktrees/extend-get-deployment-status && git push -u origin extend-get-deployment-status > /tmp/push2.txt 2>&1; echo \"EXIT=$?\"; cat /tmp/push2.txt"}
+{"expect": "DENY", "command": "cd /Users/josh.nichols/pickleton/repos/switchboard/worktrees/extend-get-deployment-status && git fetch origin extend-get-deployment-status 2>&1; echo \"FETCH EXIT=$?\"; git log --oneline origin/extend-get-deployment-status 2>/dev/null | head -3 || echo \"remote branch not found yet\""}
+{"expect": "DENY", "command": "cd /Users/josh.nichols/pickleton/repos/switchboard/worktrees/extend-get-deployment-status && NODE_OPTIONS=\"--max-old-space-size=8192\" git push -u origin extend-get-deployment-status > /tmp/push-direct.txt 2>&1; echo \"PUSH_EXIT=$?\"; cat /tmp/push-direct.txt | tail -20"}
+{"expect": "DENY", "command": "git push 2>&1 | tail -10"}
+{"expect": "DENY", "command": "git push 2>&1; echo \"EXIT:$?\""}
+{"expect": "DENY", "command": "cd /Users/josh.nichols/pickleton/repos/switchboard/worktrees/add-get-merge-status && pwd && git rev-parse HEAD && git log --oneline -3 && echo \"---FETCH---\" && git fetch origin add-get-merge-status 2>&1 | tail -3 && echo \"---REMOTE---\" && git rev-parse origin/add-get-merge-status"}
+{"expect": "DENY", "command": "git push origin add-get-merge-status 2>&1 | tail -5; echo \"EXIT:$?\""}
+{"expect": "DENY", "command": "git log --oneline origin/main..HEAD 2>&1; echo \"---\"; git push 2>&1 | tail -3"}
+{"expect": "DENY", "command": "git push 2>&1 | tail -5; echo \"EXIT:$?\""}
+{"expect": "DENY", "command": "git push 2>&1 | tail -30"}
+{"expect": "DENY", "command": "git push 2>&1 | grep -E \"^(remote|error|fatal|To |!|rejected|^\\\\s*[a-f0-9]+\\\\.\\\\.[a-f0-9]+)\" | head -10; echo \"---\"; git push 2>&1 | tail -10"}
+{"expect": "DENY", "command": "yarn prettier --write docs/code-reviews/2026-05-07-pr-3221-extend-get-deployment-status.md 2>&1 | tail -3; echo \"---\"; git push 2>&1 | tail -3; echo \"EXIT:$?\""}
+{"expect": "DENY", "command": "git switch -c story/5-6-deck-drop-reaction-parenthetical && git add src/index.ts && git status --short"}
+{"expect": "DENY", "command": "git add projects/agent-orchestration-survey/FRAMING.md projects/agent-orchestration-survey/README.md projects/agent-orchestration-survey/BRIEFING.md projects/agent-orchestration-survey/handoffs/2026-05-26-v2-iterate-or-share-decision.md && git status --short projects/agent-orchestration-survey/"}
+{"expect": "ALLOW", "command": "cd /Users/josh.nichols/pickleton/repos/gusto-karafka/worktrees/devcontainer-scope-experiment && git log --oneline -20 2>&1 | head -30 && echo \"---STATUS---\" && git status --short 2>&1 | head -30"}
+{"expect": "ALLOW", "command": "git status --short && echo \"---\" && git log --oneline -5"}
+{"expect": "ALLOW", "command": "git branch --show-current"}
+{"expect": "ALLOW", "command": "cd /Users/josh.nichols/pickleton/repos/gusto-scope/worktrees/colima-and-rdkafka-known-errors && pwd && git log --oneline -3"}
+{"expect": "ALLOW", "command": "git status --short && echo \"---\" && ls bin/"}
+{"expect": "ALLOW", "command": "git log --oneline -10"}
+{"expect": "ALLOW", "command": "git log --oneline -3 && echo \"---\" && git status --short"}
+{"expect": "ALLOW", "command": "echo \"SID=${CLAUDE_SESSION_ID:-unknown}\"; echo \"cwd=$(pwd)\"; echo \"branch=$(git -C /Users/josh.nichols/pickleton rev-parse --abbrev-ref HEAD 2>/dev/null)\""}
+{"expect": "ALLOW", "command": "git show b0496bd --stat 2>/dev/null | head -30; echo \"---LIGHTNING TALK FILES---\"; find projects/agent-orchestration-survey -iname '*lightning*' -o -iname '*talk*' 2>/dev/null"}
+{"expect": "ALLOW", "command": "cd /Users/josh.nichols/pickleton && git status --short -- projects/agent-orchestration-survey/"}
+{"expect": "ALLOW", "command": "git log --oneline -1 && git status --short -- projects/agent-orchestration-survey/"}
+{"expect": "ALLOW", "command": "cd /Users/josh.nichols/pickleton && ./projects/agent-orchestration-survey/bin/survey lint; echo \"---\"; git status --short -- projects/agent-orchestration-survey/"}
+{"expect": "ALLOW", "command": "cd /Users/josh.nichols/pickleton/repos/ai-devtools/worktrees/main/team-hud && git status && echo \"---BRANCH---\" && git branch --show-current && echo \"---RECENT---\" && git log --oneline -5"}
+{"expect": "ALLOW", "command": "cd /Users/josh.nichols/pickleton && git remote -v 2>&1 | head -3"}
+{"expect": "ALLOW", "command": "cd /Users/josh.nichols/pickleton/repos/ai-devtools/worktrees/main/team-hud && git status && echo \"---DIFF---\" && git diff --stat"}
+{"expect": "ALLOW", "command": "git diff README.md | head -40"}
+{"expect": "ALLOW", "command": "git log --oneline -3 origin/main"}
+{"expect": "ALLOW", "command": "cd repos/pinwheel/worktrees/main && git status && echo \"---\" && git log --oneline -5"}
+{"expect": "ALLOW", "command": "git -C /Users/josh.nichols/pickleton/repos/pinwheel/worktrees/pipeline-env-keys diff .buildkite/pipeline.rb"}
+{"expect": "ALLOW", "command": "git -C /Users/josh.nichols/pickleton/repos/pinwheel/worktrees/pipeline-env-keys status && echo \"---log---\" && git -C /Users/josh.nichols/pickleton/repos/pinwheel/worktrees/pipeline-env-keys log --oneline origin/main..HEAD"}
+{"expect": "ALLOW", "command": "git -C /Users/josh.nichols/pickleton/repos/pinwheel/worktrees/pipeline-env-keys log --all --oneline -p .buildkite/pipeline.rb 2>&1 | grep -B 2 -A 5 \"Danger\\|danger\\|pull_request\" | head -60"}
+{"expect": "ALLOW", "command": "git -C /Users/josh.nichols/pickleton/repos/pinwheel/worktrees/pipeline-env-keys log --all --oneline -S \"build.pull_request.id\" .buildkite/pipeline.rb 2>&1 | head -5"}
+{"expect": "ALLOW", "command": "git -C /Users/josh.nichols/pickleton/repos/pinwheel/worktrees/pipeline-env-keys show 0129b2d --stat 2>&1 | head -10; echo \"---commit msg---\"; git -C /Users/josh.nichols/pickleton/repos/pinwheel/worktrees/pipeline-env-keys log -1 --format=\"%s%n%n%b\" 0129b2d 2>&1"}
+{"expect": "ALLOW", "command": "cd /Users/josh.nichols/pickleton/repos/dotfiles/worktrees/main && ls && git status -s 2>&1 | head -20"}
+{"expect": "ALLOW", "command": "git config --global user.email; echo \"---\"; git config --global include.path 2>&1; ls ~/.gitconfig.d/ 2>/dev/null; echo \"---\"; cat ~/.gitconfig.local 2>/dev/null | head -20"}
+{"expect": "ALLOW", "command": "cd /Users/josh.nichols/pickleton/repos/gdev-wish/worktrees/wish-app-v1-cli-https/ 2>&1 && git status 2>&1 | head -10 && git log --oneline -3 2>&1"}
+{"expect": "ALLOW", "command": "cd /Users/josh.nichols/pickleton/repos/pinwheel/worktrees/wish-app-v1-controller/ 2>&1 && git status 2>&1 | head -10 && echo \"---\" && git log --oneline -5 2>&1"}
+{"expect": "ALLOW", "command": "git log --oneline --all -n 30 -- src/horizon.js src/render-horizon.js team.yml"}
+{"expect": "ALLOW", "command": "git log --oneline --all -n 20 | head -25"}
+{"expect": "ALLOW", "command": "git status --short && echo \"--- branch:\" && git rev-parse --abbrev-ref HEAD && echo \"--- worktree:\" && git rev-parse --show-toplevel"}
+{"expect": "ALLOW", "command": "pt sessions unpark --from 9db4988b-97f4-4314-8ecd-305425c4894d --handoff /Users/josh.nichols/pickleton/docs/handoffs/2026-05-21-cristina-react-render-error-kafka-scope.md"}
+{"expect": "ALLOW", "command": "ls /Users/josh.nichols/pickleton/repos/gusto-karafka/worktrees/ 2>/dev/null && echo \"---\" && ls /Users/josh.nichols/pickleton/repos/zenpayroll/worktrees/main/tmp/cristina-react-render-error/ 2>/dev/null"}
+{"expect": "ALLOW", "command": "ls -lt /Users/josh.nichols/pickleton/docs/handoffs/ 2>/dev/null | head -15 && echo \"---\" && find /Users/josh.nichols/pickleton/repos/gusto-karafka/worktrees/devcontainer-scope-experiment -maxdepth 3 -name \"*.scope*\" -o -name \"scope-linux*\" -o -name \".devcontainer*\" 2>/dev/null | head -20"}
+{"expect": "ALLOW", "command": "ls .scope/ 2>/dev/null && echo \"---\" && ls .devcontainer/ 2>/dev/null"}
+{"expect": "ALLOW", "command": "ls .scope/linux/ 2>&1 && echo \"---\" && cat .scope/gusto-karafka.yaml 2>&1"}
+{"expect": "ALLOW", "command": "cd /Users/josh.nichols/pickleton/repos/zenpayroll/worktrees/main && for f in tmp/cristina-react-render-error/proposed-known-errors/*.yaml; do echo \"=== $f ===\"; cat \"$f\"; echo; done"}
+{"expect": "ALLOW", "command": "cd /Users/josh.nichols/pickleton/repos/gusto-scope/worktrees/main && ls src/opt/gusto/etc/scope/shared/known-errors/docker/ && echo \"---\" && ls src/opt/gusto/etc/scope/shared/known-errors/kafka/ && echo \"---bats---\" && ls test/known-errors/"}
+{"expect": "ALLOW", "command": "cat src/opt/gusto/etc/scope/shared/known-errors/kafka/local-broker-transport-error.yaml && echo \"---KAFKA TXT---\" && cat src/opt/gusto/etc/scope/shared/known-errors/kafka/local-broker-transport-error.txt && echo \"---KAFKA BATS---\" && cat test/known-errors/kafka.bats"}
+{"expect": "ALLOW", "command": "cat src/opt/gusto/etc/scope/shared/known-errors/docker/colima-corrupt-network.yaml && echo \"---DOCKER TXT---\" && cat src/opt/gusto/etc/scope/shared/known-errors/docker/colima-corrupt-network.txt && echo \"---DOCKER BATS---\" && cat test/known-errors/docker.bats && echo \"---HELPERS---\" && cat test/known-errors/known-error-helpers.bash"}
+{"expect": "ALLOW", "command": "cat test/known-errors/karafka.bats && echo \"---\" && ls src/opt/gusto/etc/scope/shared/known-errors/karafka/ 2>&1"}
+{"expect": "ALLOW", "command": "cd /Users/josh.nichols/pickleton && pt checkout gusto-scope -b colima-and-rdkafka-known-errors --from origin/main 2>&1 | tail -20"}
+{"expect": "ALLOW", "command": "pt checkout --help 2>&1 | head -40"}
+{"expect": "ALLOW", "command": "pt checkout gusto-scope colima-and-rdkafka-known-errors --create --base origin/main 2>&1 | tail -20"}
+{"expect": "ALLOW", "command": "cd /Users/josh.nichols/pickleton/repos/zenpayroll/worktrees/main && grep -n 'docker\\.sock' tmp/cristina-react-render-error/backend-2026-05-20.txt | head -3 && echo \"---\" && grep -n 'Broken pipe' tmp/cristina-react-render-error/backend-2026-05-20.txt | head -3 && echo \"---\" && grep -n 'broker version' tmp/cristina-react-render-error/backend-2026-05-20.txt | head -3"}
+{"expect": "ALLOW", "command": "grep -rn 'docker\\.sock\\|Broken pipe\\|broker version' tmp/cristina-react-render-error/*.log tmp/cristina-react-render-error/*.md 2>&1 | head -20"}

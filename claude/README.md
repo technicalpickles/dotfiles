@@ -93,10 +93,10 @@ All keys are optional. A stack can have only `permissions`, only `sandbox`, or b
 
 When you run `./claudeconfig.sh`:
 
-1. **Base role** (`roles/base.jsonc`): settings, permissions, and sandbox extracted
-2. **Active role** (`roles/$ROLE.jsonc`): settings deep-merged on top of base. Permissions and sandbox arrays concatenated (not deep-merged, which would replace arrays)
-3. **Stacks** (`stacks/*.jsonc`, sorted alphabetically): permissions and sandbox arrays concatenated
-4. **Deduplication**: all arrays sorted and deduplicated
+1. **Base role** (`roles/base.jsonc`): settings, permissions, sandbox, and hooks extracted
+2. **Active role** (`roles/$ROLE.jsonc`): settings deep-merged on top of base. Permissions and sandbox arrays concatenated (not deep-merged, which would replace arrays). `hooks.<event>` arrays are also concatenated (base hooks first, then role), so a base-level hook survives even when a role defines the same event
+3. **Stacks** (`stacks/*.jsonc`, sorted alphabetically): permissions and sandbox arrays concatenated (stacks do not carry `hooks`; those live in roles only)
+4. **Deduplication**: permission and sandbox arrays sorted and deduplicated (hooks are left in order, not deduped)
 5. **Local keys**: `enabledPlugins`, `extraKnownMarketplaces` preserved from existing `~/.claude/settings.json`
 6. **Validation and write**
 

@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+#
+# claude-sandbox-guard: a Claude Code PreToolUse/Bash hook.
+#
+# Some Bash commands reliably fail under Claude Code's command sandbox and have
+# to be retried with dangerouslyDisableSandbox=true. Eating that failure first
+# wastes a round-trip and surfaces a cryptic EPERM. This hook denies the
+# sandboxed attempt up front with a clear instruction to retry unsandboxed, for
+# the two classes that are safe to always run unsandboxed:
+#
+#   - git WRITE subcommands  (fail on .git/worktrees/.../index.lock and the
+#     hardcoded blocked-path set .claude/, .vscode/, .gitmodules inside pt
+#     worktrees). Read-only git (log/show/diff/status, worktree/stash list, ...)
+#     is left sandboxed.
+#   - srb / sorbet           (always wants to write its mdb + rubocop cache).
+#
+# Motivation, frequencies, and the test fixture all come from pickletown
+# projects/transcript-mining/findings/2026-06-03-sandbox-friction.md
+#
+# Contract: reads the PreToolUse JSON on stdin, writes a deny decision to stdout
+# (exit 0). Any internal error exits non-zero => non-blocking => the command
+# proceeds normally. Fail-open by design: a broken guard must never wedge work.
+#
+# Tests: test/claude-sandbox-guard.bats (run with `bats test/`).
+
+set -uo pipefail
+
+command -v jq > /dev/null 2>&1 || exit 0 # no jq => fail open
+
+# One jq pass does the gating too: emit the command ONLY for a sandboxed Bash
+# call (Bash tool, dangerouslyDisableSandbox not already set); empty otherwise.
+cmd="$(jq -r '
+  if (.tool_name == "Bash")
+     and ((.tool_input.dangerouslyDisableSandbox // false) | not)
+  then .tool_input.command // "" else "" end
+' 2> /dev/null)"
+[ -n "$cmd" ] || exit 0
+
+# git subcommands that always write (worktree/index/refs/network). Subcommands
+# with a common read-only form (worktree, stash, submodule) are handled below.
+GIT_ALWAYS_WRITE=" add commit rebase merge cherry-pick revert rm mv restore reset pull fetch push am apply clean checkout switch clone init "
+
+# Does one already-separated command segment invoke a git WRITE?
+git_write_segment() {
+  local -a toks
+  read -ra toks <<< "$1"
+  [ "${toks[0]:-}" = "git" ] || return 1
+
+  # walk past git's global options to the subcommand (+ its first argument)
+  local i=1 sub="" subsub="" t
+  while [ "$i" -lt "${#toks[@]}" ]; do
+    t="${toks[$i]}"
+    case "$t" in
+      -C | -c | --git-dir | --work-tree | --namespace | --super-prefix)
+        i=$((i + 2))
+        continue
+        ;;
+      --git-dir=* | --work-tree=* | --namespace=*)
+        i=$((i + 1))
+        continue
+        ;;
+      -*)
+        i=$((i + 1))
+        continue
+        ;;
+      *)
+        sub="$t"
+        subsub="${toks[$((i + 1))]:-}"
+        break
+        ;;
+    esac
+  done
+  [ -n "$sub" ] || return 1
+
+  if [[ "$GIT_ALWAYS_WRITE" == *" $sub "* ]]; then
+    return 0
+  fi
+  case "$sub" in
+    worktree) case "$subsub" in add | remove | move | prune | repair | lock | unlock) return 0 ;; esac ;;
+    stash) case "$subsub" in list | show) return 1 ;; *) return 0 ;; esac ;; # bare `stash` == push
+    submodule) case "$subsub" in add | update | init | deinit | sync | set-url | set-branch | foreach) return 0 ;; esac ;;
+  esac
+  return 1
+}
+
+deny() {
+  jq -n --arg reason "$1" '{
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: $reason
+    }
+  }'
+  exit 0
+}
+
+# Split on shell separators so each invocation sits on its own line
+# (`cd x && git add .` -> two lines; pipelines, subshells likewise). Strip
+# leading env assignments (FOO=bar git ...), then inspect each segment.
+# `|| [ -n "$seg" ]` so the final newline-less segment is not dropped by read.
+while IFS= read -r seg || [ -n "$seg" ]; do
+  seg="${seg#"${seg%%[![:space:]]*}"}" # ltrim
+  seg="$(printf '%s' "$seg" | sed -E 's/^([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)+//')"
+  [ -n "$seg" ] || continue
+
+  if [[ "$seg" =~ ^(bundle[[:space:]]+exec[[:space:]]+)?(\./)?(bin/)?srb([[:space:]]|$) ]]; then
+    deny "sorbet (srb) writes its mdb / rubocop cache, which the sandbox blocks (it fails ~90% of the time sandboxed). Re-run this command with dangerouslyDisableSandbox: true."
+  fi
+
+  if git_write_segment "$seg"; then
+    deny "Sandboxed git-write commands fail inside pt worktrees (.git/worktrees/.../index.lock and the blocked .claude/.vscode/.gitmodules paths). git writes are safe to run unsandboxed. Re-run this command with dangerouslyDisableSandbox: true."
+  fi
+done < <(printf '%s' "$cmd" | tr ';|&()\n' '\n')
+
+exit 0

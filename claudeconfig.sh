@@ -115,9 +115,15 @@ generate_settings() {
   local base_json
   base_json=$(read_json "$base_role")
 
-  # Extract settings (everything except permissions and sandbox)
+  # Extract settings (everything except permissions, sandbox, and hooks)
   local merged_settings
-  merged_settings=$(echo "$base_json" | jq 'del(.permissions, .sandbox)')
+  merged_settings=$(echo "$base_json" | jq 'del(.permissions, .sandbox, .hooks)')
+
+  # Hooks are concatenated per-event across base + role, NOT deep-merged. A deep
+  # merge (jq *) replaces same-event arrays, so a base-level PreToolUse hook
+  # would be silently dropped whenever the active role also defines PreToolUse.
+  local merged_hooks
+  merged_hooks=$(echo "$base_json" | jq '.hooks // {}')
 
   # Extract permissions arrays from base
   local merged_allow merged_ask merged_deny
@@ -145,8 +151,15 @@ generate_settings() {
 
     # Deep merge settings keys (role overrides base)
     local role_settings
-    role_settings=$(echo "$role_json" | jq 'del(.permissions, .sandbox)')
+    role_settings=$(echo "$role_json" | jq 'del(.permissions, .sandbox, .hooks)')
     merged_settings=$(echo "$merged_settings" | jq --argjson role "$role_settings" '. * $role')
+
+    # Concat hooks per-event arrays (role appended after base, no dedup: hook
+    # entries are objects and order is meaningful)
+    merged_hooks=$(jq -n \
+      --argjson a "$merged_hooks" \
+      --argjson b "$(echo "$role_json" | jq '.hooks // {}')" \
+      'reduce (($a, $b) | keys_unsorted[]) as $k ({}; .[$k] = (($a[$k] // []) + ($b[$k] // [])))')
 
     # Concat permissions arrays (not deep merge, which would replace)
     merged_allow=$(echo "$merged_allow" | jq --argjson r "$(echo "$role_json" | jq '.permissions.allow // []')" '. + $r')
@@ -214,6 +227,11 @@ generate_settings() {
         filesystem: {allowWrite: $write_paths}
       })
     }')
+
+  # Inject merged hooks (only when any are defined)
+  if [ "$(echo "$merged_hooks" | jq 'length')" -gt 0 ]; then
+    final_settings=$(echo "$final_settings" | jq --argjson hooks "$merged_hooks" '. + {hooks: $hooks}')
+  fi
 
   # Merge in local-only settings
   final_settings=$(echo "$final_settings" | jq --argjson local "$local_settings" '. * $local')

@@ -12,6 +12,30 @@
   // session logs
   "showThinkingSummaries": true,
 
+  // Hooks. claudeconfig.sh concatenates hooks.<event> arrays across base +
+  // active role, so base-level hooks survive even when a role also defines the
+  // same event (e.g. work.jsonc's PreToolUse/Skill tracking hook).
+  "hooks": {
+    // Deny sandboxed git-write and srb commands up front, telling Claude to
+    // retry with dangerouslyDisableSandbox=true instead of eating the EPERM and
+    // retrying. These two classes reliably fail under the sandbox (git writes
+    // hit .git/worktrees index.lock + blocked .claude/.vscode paths in pt
+    // worktrees; sorbet wants its mdb/rubocop cache) and are safe unsandboxed.
+    // Read-only git (log/show/diff/status) is left sandboxed. See pickletown
+    // projects/transcript-mining/findings/2026-06-03-sandbox-friction.md.
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.pickles/bin/claude-sandbox-guard",
+          },
+        ],
+      },
+    ],
+  },
+
   // Permissions: base safety rules
   "permissions": {
     "defaultMode": "acceptEdits",

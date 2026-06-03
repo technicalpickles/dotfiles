@@ -21,6 +21,7 @@ Spotlight is kept enabled (Alfred requires it) but specific directories are excl
 
 ## Claude Code Utilities
 
+- `bin/claude-sandbox-guard`: PreToolUse/Bash hook (wired in `claude/roles/base.jsonc`). Denies sandboxed git-write and `srb` commands with an instruction to retry with `dangerouslyDisableSandbox=true`, since those reliably fail under the sandbox and are safe to run unsandboxed. Read-only git is untouched.
 - `bin/claude-spend-today`: Read today's Claude spend from ccusage cache (for tmux status bar)
 - `bin/ccusage-refresh`: Refresh ccusage cache (run by LaunchAgent every 5 min)
 - `bin/tmux-smart-open`: Open URLs/files on double-click in tmux
