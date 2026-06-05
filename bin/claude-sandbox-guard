@@ -19,15 +19,16 @@
 #   - srb / sorbet typecheck. Fails with `mdb_error="Operation not permitted"`
 #     (LMDB). This is NOT a path deny: sorbet's --cache-dir (tmp/cache/sorbet) is
 #     inside cwd and already writable (a plain touch there succeeds sandboxed).
-#     The exact blocked syscall is unconfirmed: sandbox-probe (pickletown
-#     projects/sandbox-probe) showed it is NOT generic writable mmap and NOT file
-#     locking (both succeed sandboxed). Leading suspect is macOS LMDB's POSIX
-#     named semaphores (sem_open). Either way allowWrite governs only paths, so
-#     it can't help; the path is not the problem.
+#     Confirmed blocked syscall (sandbox-probe, pickletown projects/sandbox-probe):
+#     LMDB on macOS is built with MDB_USE_SYSV_SEM, and the sandbox allows semget
+#     (creating the semaphore set) but DENIES semctl/semop on it with EPERM. So
+#     mdb_env_open creates the set then EPERMs initialising it. NOT writable mmap,
+#     NOT flock/fcntl, NOT sem_open (all ruled out). allowWrite governs only paths,
+#     so it can't help; the path is not the problem.
 #
 # In short: allowlisting was considered for both and ruled out by testing
 # (2026-06-05). git => hardcoded path deny; srb => a non-path syscall deny
-# (LMDB; mmap/flock disproven, mechanism still being pinned down).
+# (LMDB SysV semaphores: semctl/semop denied with EPERM).
 #
 # Motivation, frequencies, and the test fixture all come from pickletown
 # projects/transcript-mining/findings/2026-06-03-sandbox-friction.md
@@ -119,7 +120,7 @@ while IFS= read -r seg || [ -n "$seg" ]; do
   [ -n "$seg" ] || continue
 
   if [[ "$seg" =~ ^(bundle[[:space:]]+exec[[:space:]]+)?(\./)?(bin/)?srb([[:space:]]|$) ]]; then
-    deny "sorbet (srb) caches in LMDB and fails sandboxed with a non-path EPERM (the cache dir is already writable; allowWrite can't fix it). Re-run this command with dangerouslyDisableSandbox: true."
+    deny "sorbet (srb) caches in LMDB, which uses SysV semaphores the sandbox denies (semctl/semop EPERM); the cache dir is already writable, so allowWrite can't fix it. Re-run this command with dangerouslyDisableSandbox: true."
   fi
 
   if git_write_segment "$seg"; then
