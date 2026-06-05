@@ -7,8 +7,8 @@
 # wastes a round-trip and surfaces a cryptic EPERM. This hook denies the
 # sandboxed attempt up front with a clear instruction to retry unsandboxed.
 #
-# Only two classes are blocked, and both were verified to be unfixable by the
-# sandbox's filesystem allowWrite list, so unsandboxing is the only option:
+# Three classes are blocked, all verified to be unfixable by the sandbox's
+# filesystem allowWrite list, so unsandboxing is the only option:
 #
 #   - git WRITE subcommands. Fail on .git/worktrees/.../index.lock and the
 #     hardcoded blocked-path set (.claude/, .vscode/, .gitmodules) inside pt
@@ -25,10 +25,18 @@
 #     mdb_env_open creates the set then EPERMs initialising it. NOT writable mmap,
 #     NOT flock/fcntl, NOT sem_open (all ruled out). allowWrite governs only paths,
 #     so it can't help; the path is not the problem.
+#   - ps / top. The sandbox denies exec of setuid/setgid binaries (a privilege-
+#     escalation guard): /bin/ps and /usr/bin/top are setuid root, so they EPERM
+#     on exec. Bare `ps` is shimmed through rtk, which execs /bin/ps and hits the
+#     same deny ("Operation not permitted (os error 1)"). The sysctl ps reads
+#     (KERN_PROC) is actually allowed sandboxed; the friction is purely the setuid
+#     exec, which allowWrite can't touch. Both are read-only and safe unsandboxed.
+#     Only ps/top are listed (the tools agents actually run); other setuid binaries
+#     (su, crontab, ...) are left to fail loudly rather than auto-unsandboxed.
 #
-# In short: allowlisting was considered for both and ruled out by testing
-# (2026-06-05). git => hardcoded path deny; srb => a non-path syscall deny
-# (LMDB SysV semaphores: semctl/semop denied with EPERM).
+# In short: allowlisting was considered for all three and ruled out by testing
+# (2026-06-05). git => hardcoded path deny; srb => a non-path syscall deny (LMDB
+# SysV semaphores: semctl/semop EPERM); ps/top => setuid-exec deny.
 #
 # Motivation, frequencies, and the test fixture all come from pickletown
 # projects/transcript-mining/findings/2026-06-03-sandbox-friction.md
@@ -121,6 +129,14 @@ while IFS= read -r seg || [ -n "$seg" ]; do
 
   if [[ "$seg" =~ ^(bundle[[:space:]]+exec[[:space:]]+)?(\./)?(bin/)?srb([[:space:]]|$) ]]; then
     deny "sorbet (srb) caches in LMDB, which uses SysV semaphores the sandbox denies (semctl/semop EPERM); the cache dir is already writable, so allowWrite can't fix it. Re-run this command with dangerouslyDisableSandbox: true."
+  fi
+
+  # ps/top are setuid-root; the sandbox denies exec of setuid/setgid binaries, so
+  # they EPERM sandboxed (bare `ps` is shimmed through rtk, which execs /bin/ps and
+  # hits the same deny). Read-only and safe unsandboxed. Matches bare, path-qualified,
+  # and rtk-wrapped forms; anchored so psql/topology/etc. don't trip it.
+  if [[ "$seg" =~ ^(rtk[[:space:]]+)?(/usr/bin/|/bin/)?(ps|top)([[:space:]]|$) ]]; then
+    deny "ps/top are setuid-root binaries and the sandbox denies executing setuid/setgid binaries, so they fail sandboxed with 'Operation not permitted' (rtk wrapping ps hits the same deny). They are read-only and safe unsandboxed. Re-run this command with dangerouslyDisableSandbox: true."
   fi
 
   if git_write_segment "$seg"; then

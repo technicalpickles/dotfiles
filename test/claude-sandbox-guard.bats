@@ -51,6 +51,15 @@ assert_allow() { [ "$(decision_for "$1" "${2:-}")" = ALLOW ] || { echo "expected
 @test "bin/srb is denied" { assert_deny "bin/srb tc"; }
 @test "bundle exec srb is denied" { assert_deny "bundle exec srb tc"; }
 
+# --- ps/top (setuid exec deny): should DENY ----------------------------------
+
+@test "ps aux is denied" { assert_deny "ps aux"; }
+@test "top is denied (bare)" { assert_deny "top"; }
+@test "/bin/ps is denied" { assert_deny "/bin/ps -ef"; }
+@test "/usr/bin/top is denied" { assert_deny "/usr/bin/top -l 1"; }
+@test "rtk ps (explicit wrap) is denied" { assert_deny "rtk ps aux"; }
+@test "cd then ps (compound) is denied" { assert_deny "cd /tmp && ps aux"; }
+
 # --- reads / non-git / ambiguous list-forms: should ALLOW --------------------
 
 @test "git log is allowed" { assert_allow "git log --oneline -5"; }
@@ -65,6 +74,9 @@ assert_allow() { [ "$(decision_for "$1" "${2:-}")" = ALLOW ] || { echo "expected
 @test "plain ls is allowed" { assert_allow "ls -la"; }
 @test "echo is allowed" { assert_allow "echo hi"; }
 @test "rspec (not srb) is allowed" { assert_allow "bundle exec rspec"; }
+@test "psql (not ps) is allowed" { assert_allow "psql -c 'select 1'"; }
+@test "topgrade (not top) is allowed" { assert_allow "topgrade"; }
+@test "pstree-like name is allowed" { assert_allow "pstree"; }
 @test "grep for the string git add is allowed" { assert_allow 'grep -rn "git add" .'; }
 @test "cd then git status is allowed" { assert_allow "cd /p && git status"; }
 
