@@ -5,14 +5,26 @@
 # Some Bash commands reliably fail under Claude Code's command sandbox and have
 # to be retried with dangerouslyDisableSandbox=true. Eating that failure first
 # wastes a round-trip and surfaces a cryptic EPERM. This hook denies the
-# sandboxed attempt up front with a clear instruction to retry unsandboxed, for
-# the two classes that are safe to always run unsandboxed:
+# sandboxed attempt up front with a clear instruction to retry unsandboxed.
 #
-#   - git WRITE subcommands  (fail on .git/worktrees/.../index.lock and the
-#     hardcoded blocked-path set .claude/, .vscode/, .gitmodules inside pt
-#     worktrees). Read-only git (log/show/diff/status, worktree/stash list, ...)
-#     is left sandboxed.
-#   - srb / sorbet           (always wants to write its mdb + rubocop cache).
+# Only two classes are blocked, and both were verified to be unfixable by the
+# sandbox's filesystem allowWrite list, so unsandboxing is the only option:
+#
+#   - git WRITE subcommands. Fail on .git/worktrees/.../index.lock and the
+#     hardcoded blocked-path set (.claude/, .vscode/, .gitmodules) inside pt
+#     worktrees. Those blocked paths are NOT overridable by allowWrite (it's a
+#     hardcoded deny in the sandbox, not a config-driven one). Read-only git
+#     (log/show/diff/status, worktree/stash/submodule list, ...) is left
+#     sandboxed, so the common path is untouched.
+#   - srb / sorbet typecheck. Fails with `mdb_error="Operation not permitted"`.
+#     This is NOT a path deny: sorbet's --cache-dir (tmp/cache/sorbet) is inside
+#     cwd and already writable (a plain touch there succeeds sandboxed). Sorbet
+#     caches in LMDB, and the sandbox blocks LMDB's writable *mmap* of its data
+#     file at the syscall level (same class as Metal/qmd and incus). allowWrite
+#     only governs paths, so it can't help; the path is not the problem.
+#
+# In short: allowlisting was considered for both and ruled out by testing
+# (2026-06-05). git => hardcoded path deny; srb => mmap-syscall deny.
 #
 # Motivation, frequencies, and the test fixture all come from pickletown
 # projects/transcript-mining/findings/2026-06-03-sandbox-friction.md
@@ -104,7 +116,7 @@ while IFS= read -r seg || [ -n "$seg" ]; do
   [ -n "$seg" ] || continue
 
   if [[ "$seg" =~ ^(bundle[[:space:]]+exec[[:space:]]+)?(\./)?(bin/)?srb([[:space:]]|$) ]]; then
-    deny "sorbet (srb) writes its mdb / rubocop cache, which the sandbox blocks (it fails ~90% of the time sandboxed). Re-run this command with dangerouslyDisableSandbox: true."
+    deny "sorbet (srb) caches in LMDB, whose writable mmap the sandbox blocks at the syscall level (not a path issue allowWrite can fix). Re-run this command with dangerouslyDisableSandbox: true."
   fi
 
   if git_write_segment "$seg"; then
