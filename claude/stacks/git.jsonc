@@ -91,5 +91,13 @@
     "network": {
       "allowedHosts": ["hk.jdx.dev"],
     },
+    "filesystem": {
+      "allowWrite": [
+        // hk writes its cache here; without it hk EPERMs ("failed to write
+        // cache file ... Operation not permitted") on every commit
+        "~/.cache/hk",
+        "~/Library/Caches/hk",
+      ],
+    },
   },
 }
