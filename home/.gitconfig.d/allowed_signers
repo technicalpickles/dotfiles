@@ -1,0 +1,20 @@
+# SSH allowed signers for local git commit/tag verification.
+# Pointed at by gpg.ssh.allowedSignersFile in the `signing` fragment, so both
+# the human gitconfig and the Claude agent gitconfig (claude-agent-<role>,
+# which [include]s ~/.gitconfig) inherit it. See ADR 0034.
+#
+# This is a LOCAL trust set only: it lets `git log --show-signature` and
+# `git verify-commit` confirm a commit was signed by a key listed here. It has
+# no effect on signing, on GitHub's Verified badge, or on enforcement (git
+# never blocks anything based on this file).
+#
+# Format: <principal-email> <keytype> <key-blob>
+# A principal not listed here verifies as "Could not verify signature" (valid
+# bytes, untrusted identity), NOT a bad/forged signature. Public keys are safe
+# to commit. Append work-role identities here when that role is set up.
+
+# Personal human identity (1Password-managed signing key)
+joshua.nichols@gmail.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMq3iskSznOUrNVpvTSVuXnXcRLtezOm9ey3X/TlnyhH
+
+# Personal-agent identity (Claude Code, ~/.ssh/agents/personal/id_ed25519, ADR 0031)
+joshua.nichols+personal-agent@gmail.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFD+X13rkqG4oVpGXa1PevJVl/SgYWzZvrTyyc9CYSxT

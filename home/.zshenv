@@ -16,7 +16,7 @@ if [[ -f /.dockerenv ]] || grep -q 'docker\|lxc\|containerd' /proc/1/cgroup 2> /
 elif [[ "$(hostname)" =~ ^josh-nichols- ]]; then
   export DOTPICKLES_ROLE=work
 else
-  export DOTPICKLES_ROLE=personal
+  export DOTPICKLES_ROLE=home
 fi
 
 # Load local environment customizations if present

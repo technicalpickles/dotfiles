@@ -48,7 +48,7 @@ read_json() {
 }
 
 # Detect role (uses existing DOTPICKLES_ROLE from environment)
-ROLE="${DOTPICKLES_ROLE:-personal}"
+ROLE="${DOTPICKLES_ROLE:-home}"
 echo "Configuring Claude Code for role: $ROLE"
 
 # Ensure ~/.claude exists and symlink managed files
@@ -143,6 +143,14 @@ generate_settings() {
 
   # --- Load active role (if not base) ---
   local role_file="$DIR/claude/roles/$ROLE.jsonc"
+  # Loud guard: a missing role file silently drops all role-specific settings
+  # (env like GIT_CONFIG_GLOBAL, sandbox rules). That used to fail quietly when
+  # DOTPICKLES_ROLE and the role filenames drifted apart. See ADR 0031.
+  if [ "$ROLE" != "base" ] && [ ! -f "$role_file" ]; then
+    echo "  ⚠️  WARNING: role '$ROLE' has no role file ($role_file)." >&2
+    echo "     No role-specific env (e.g. GIT_CONFIG_GLOBAL) or sandbox rules will apply." >&2
+    echo "     Check DOTPICKLES_ROLE and claude/roles/ for a name mismatch." >&2
+  fi
   if [ -f "$role_file" ] && [ "$ROLE" != "base" ]; then
     local role_json
     role_json=$(read_json "$role_file")
