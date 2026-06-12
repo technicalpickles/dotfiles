@@ -20,6 +20,9 @@
 
         "~/Library/Caches/cq",
         "~/.local/share/claude-env/",
+
+        // plannotator stores drafts/ and sessions/ here
+        "~/.plannotator",
       ],
     },
     "network": {

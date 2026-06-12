@@ -81,6 +81,10 @@ setup_sandbox_dirs() {
   echo "Pre-creating sandbox cache directories..."
   mkdir -p "$HOME/Library/Caches/pip"
   echo "  ✓ ~/Library/Caches/pip"
+  # plannotator writes ~/.plannotator/sessions/<pid>.json; allowWrite covers
+  # writes under ~/.plannotator but not creating the dir itself (needs ~/).
+  mkdir -p "$HOME/.plannotator"
+  echo "  ✓ ~/.plannotator"
 }
 
 setup_sandbox_dirs
