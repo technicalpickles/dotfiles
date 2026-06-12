@@ -1,5 +1,9 @@
 [gpg]
   format = ssh
 
+[gpg "ssh"]
+	# Local trust set for verifying SSH-signed commits/tags. See ADR 0034.
+	allowedSignersFile = ~/.gitconfig.d/allowed_signers
+
 [commit]
 	gpgsign = true
