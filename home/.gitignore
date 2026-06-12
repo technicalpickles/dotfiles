@@ -8,3 +8,7 @@
 scratch-area
 scratch
 .scratch
+
+# per-machine tool state (not project config)
+.claude/actually-lsp.json
+.bk.yaml
