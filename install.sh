@@ -31,7 +31,7 @@ if [[ -z "${DOTPICKLES_ROLE}" ]]; then
   if [[ "$hostname" =~ ^josh-nichols- ]]; then
     DOTPICKLES_ROLE="work"
   else
-    DOTPICKLES_ROLE="personal"
+    DOTPICKLES_ROLE="home"
   fi
 fi
 

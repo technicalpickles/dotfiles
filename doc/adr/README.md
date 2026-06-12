@@ -33,3 +33,6 @@
 - [31. role-scoped-agent-git-identity](0031-role-scoped-agent-git-identity.md)
 - [32. use-fnox-for-secrets](0032-use-fnox-for-secrets.md)
 - [33. 1password-ssh-agent-allowlist](0033-1password-ssh-agent-allowlist.md)
+- [34. local-ssh-allowed-signers-for-commit-verification](0034-local-ssh-allowed-signers-for-commit-verification.md)
+- [35. canonical-dotpickles-role-names](0035-canonical-dotpickles-role-names.md)
+- [36. fail-loud-role-resolution](0036-fail-loud-role-resolution.md)

@@ -8,7 +8,7 @@ The central architectural pattern is **role-based adaptation**. The role is dete
 - **Brewfile selection**: `Brewfile` + `Brewfile.$ROLE` are merged during brew bundle
 - **Shell environment**: Various configs conditionally load based on role
 
-Role detection logic is in [install.sh:12-23](../install.sh#L12-L23). The role defaults to "work" for hostnames matching `josh-nichols-*`, otherwise "personal".
+The canonical role values are `home`, `work`, and `container` (see [ADR 0035](adr/0035-canonical-dotpickles-role-names.md)). Detection defaults to `work` for hostnames matching `josh-nichols-*`, `container` inside containers, otherwise `home`. The same hostname check is duplicated across [install.sh](../install.sh), [config/fish/config.fish](../config/fish/config.fish), and [home/.zshenv](../home/.zshenv) because bash, fish, and zsh can't share one snippet; the canonical-name list and a fail-loud guard ([ADR 0036](adr/0036-fail-loud-role-resolution.md)) keep the copies from drifting silently.
 
 ## Symlink-Based File Management
 
@@ -29,8 +29,8 @@ Git settings are **generated**, not static. [gitconfig.sh](../gitconfig.sh) rebu
 3. Conditionally including config fragments from `home/.gitconfig.d/` based on:
    - Available commands (delta, gh, git-duet, fzf, code/code-insiders)
    - Operating system (macOS)
-   - Role (personal/work)
-   - 1Password availability (for SSH signing on personal)
+   - Role (home/work)
+   - 1Password availability (for SSH signing on home)
 
 `~/.gitconfig.local` should never be edited manually or committed. The base config at [home/.gitconfig](../home/.gitconfig) includes this generated file.
 

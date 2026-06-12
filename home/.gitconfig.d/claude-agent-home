@@ -1,7 +1,11 @@
-# Agent git identity for Claude Code under DOTPICKLES_ROLE=personal.
+# Agent git identity for Claude Code under DOTPICKLES_ROLE=home.
 # See doc/adr/0031-role-scoped-agent-git-identity.md.
 #
-# Referenced via GIT_CONFIG_GLOBAL in claude/roles/personal.jsonc. The
+# The role is "home"; the identity is the GitHub-enrolled "personal-agent"
+# (email + key under ~/.ssh/agents/personal/), kept named "personal" to
+# preserve the Verified-badge enrollment.
+#
+# Referenced via GIT_CONFIG_GLOBAL in claude/roles/home.jsonc. The
 # [include] pulls in the real global gitconfig first (transitively pulling
 # in gitconfig.d fragments via ~/.gitconfig's own includes). Later sections
 # here override: user.email, core.sshCommand for the agent SSH key, and

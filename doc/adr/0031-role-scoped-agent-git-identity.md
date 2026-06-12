@@ -6,6 +6,12 @@ Date: 2026-04-18
 
 Accepted
 
+Amended by [ADR 0035](0035-canonical-dotpickles-role-names.md) and
+[ADR 0036](0036-fail-loud-role-resolution.md): the non-work role this ADR calls
+"personal" was renamed to the canonical `home`. The git _identity_ keeps the
+`personal-agent` name (GitHub-enrolled); only the role name changed. References
+below have been updated to match.
+
 ## Context
 
 Git commits in this repo (and everywhere else) are signed via 1Password's GPG
@@ -55,10 +61,11 @@ override git identity per role.
 Every Claude Code session inherits its git identity from the active dotfiles
 role via environment variables set in `claude/roles/<role>.jsonc`.
 
-Under the personal role, Claude commits and pushes as
+Under the home role, Claude commits and pushes as
 `joshua.nichols+personal-agent@gmail.com`, signed with a dedicated ed25519
 key at `~/.ssh/agents/personal/id_ed25519`, with its passphrase in macOS
-Keychain. The user's interactive shells are untouched.
+Keychain. The user's interactive shells are untouched. (The identity and key
+keep the `personal-agent`/`personal` name; only the role is `home`.)
 
 Under the work role, the same mechanism applied to a different identity:
 `josh.nichols+agent@gusto.com` (a verified plus-address on the user's
@@ -91,18 +98,18 @@ distinct email to attribute commits to. The default email format is
 role's identity uses a different mailbox or domain (work role uses
 `josh.nichols+agent@gusto.com`).
 
-**3. Per-role env injection.** `claude/roles/personal.jsonc` sets a single
+**3. Per-role env injection.** `claude/roles/home.jsonc` sets a single
 env var pointing at an agent-specific gitconfig file:
 
 ```jsonc
 "env": {
-  "GIT_CONFIG_GLOBAL": "~/.gitconfig.d/claude-agent-personal"
+  "GIT_CONFIG_GLOBAL": "~/.gitconfig.d/claude-agent-home"
 }
 ```
 
 `GIT_CONFIG_GLOBAL` tells git to read the pointed-at file instead of
 `~/.gitconfig` for every git command in the session. The target is a
-symlinked dotfiles-managed file (`home/.gitconfig.d/claude-agent-personal`
+symlinked dotfiles-managed file (`home/.gitconfig.d/claude-agent-home`
 in the repo, surfaced via `link_directory_contents home`):
 
 ```ini
