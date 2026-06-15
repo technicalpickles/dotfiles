@@ -141,7 +141,8 @@ echo
 echo -e "  ${BOLD}3.${NC} Upload the ${BOLD}same${NC} public key as a ${BOLD}signing key${NC}:"
 echo "     https://github.com/settings/ssh/new (Key type: Signing Key)"
 echo
-echo -e "  ${BOLD}4.${NC} Re-run ${GREEN}./claudeconfig.sh${NC} so role env vars land in ~/.claude/settings.json"
+echo -e "  ${BOLD}4.${NC} Re-run ${GREEN}./claudeconfig.sh --skip-ssh-check${NC} so role env vars land in"
+echo "     ~/.claude/settings.json (--skip-ssh-check because the key isn't authorized yet)"
 echo
 echo -e "  ${BOLD}5.${NC} Start a Claude session under ${GREEN}DOTPICKLES_ROLE=$ROLE${NC}, make a"
 echo "     signed commit, push, and confirm the Verified badge on github.com"
