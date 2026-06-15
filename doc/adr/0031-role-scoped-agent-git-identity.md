@@ -142,7 +142,7 @@ Three subtleties worth noting:
   holds the unlocked agent key; the literal string `SSH_AUTH_SOCK` is
   specially recognized by ssh and resolved to the env variable's value.
   But `Host *` in `~/.ssh/config` also sets `IdentityFile ~/.ssh/id_ed25519`
-  (the human laptop key), and `IdentityFile` is *additive* — `IdentitiesOnly=yes`
+  (the human laptop key), and `IdentityFile` is _additive_ — `IdentitiesOnly=yes`
   does not drop it, so the laptop key stayed a second candidate identity.
   That caused agent git ops to authenticate to GitHub as the human, or to
   hard-fail headless when the agent couldn't sign the laptop key

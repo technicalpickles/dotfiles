@@ -12,6 +12,11 @@ home/.vim/plugged
 # stuff that doesn't need formatting
 config/fish/fish_plugins
 
+# auto-generated issue-tracker files (beans); change constantly and contain
+# markdown-emphasis-like text (*, _) that prettier rewrites, breaking CI on
+# every push. Not hand-authored, so don't lint them.
+.beans/
+
 # stuff without prettier support
 *.fish
 .editorconfig
