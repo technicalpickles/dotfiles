@@ -23,7 +23,7 @@
   //
   // Setting SHELL=/bin/zsh makes that prompt line match reality (it already
   // ran in zsh), so the misattribution stops. The Bash tool cannot run fish
-  // regardless; this only corrects what Claude is told. See ADR 0037.
+  // regardless; this only corrects what Claude is told. See ADR 0038.
   // https://github.com/anthropics/claude-code/issues/68349
   "env": {
     "SHELL": "/bin/zsh",

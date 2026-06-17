@@ -15,6 +15,7 @@ set -uo pipefail
 #   6. ~/.claude/settings.json wires GIT_CONFIG_GLOBAL to a gitconfig include
 #      file that overrides user.email, core.sshCommand, and gpg.ssh.program
 #   7. SSH can authenticate to github.com using this key
+#   8. (work role only) the key is authorized for each org's SAML SSO
 #
 # Exits 0 on all-pass, 1 if anything failed.
 
@@ -276,20 +277,83 @@ else
   check_fail "~/.claude/settings.json not found" "Run: DOTPICKLES_ROLE=$ROLE ./claudeconfig.sh"
 fi
 
-# --- 7. SSH auth to github.com ---
+# --- 7. SSH auth to github.com using THIS key ---
 # GitHub returns "Hi <user>!" on success, exit code 1 (expected, no shell).
+#
+# Two non-obvious things this guards against:
+#   - -F /dev/null: ~/.ssh/config's `Host *` adds `IdentityFile ~/.ssh/id_ed25519`
+#     (the human laptop key). IdentityFile is additive and IdentitiesOnly=yes does
+#     NOT drop config-supplied identities -- only extra agent-offered ones. Without
+#     -F, ssh offers the laptop key first, the server accepts it, and the test
+#     "passes" via the wrong key. Because both keys live on the same GitHub account,
+#     the "Hi <user>!" greeting is identical either way, so the username alone can't
+#     catch it. -F /dev/null makes the explicit `-i` the only candidate.
+#   - fingerprint assertion: we parse the -v trace's "Server accepts key" line and
+#     require the accepted fingerprint to equal THIS key's. Belt-and-suspenders so a
+#     future config leak can never let a different key satisfy the check silently.
 info "Testing SSH auth to github.com (this may take a second)..."
-ssh_out=$(ssh -i "$KEY_PATH" \
+ssh_out=$(ssh -v -F /dev/null -i "$KEY_PATH" \
   -o IdentitiesOnly=yes \
   -o IdentityAgent=SSH_AUTH_SOCK \
   -o StrictHostKeyChecking=accept-new \
   -o ConnectTimeout=10 \
   -T git@github.com 2>&1 || true)
+accepted_fp=$(echo "$ssh_out" | grep "Server accepts key:" | grep -oE 'SHA256:[A-Za-z0-9+/]+' | head -1)
 if echo "$ssh_out" | grep -q "successfully authenticated"; then
   gh_user=$(echo "$ssh_out" | sed -n 's/^Hi \([^!]*\)!.*/\1/p')
-  check_pass "SSH auth to github.com works (as: $gh_user)"
+  if [[ "$accepted_fp" == "$LOCAL_FP" ]]; then
+    check_pass "SSH auth to github.com works with this key (as: $gh_user)"
+  else
+    check_fail "SSH auth succeeded but with the WRONG key" \
+      "server accepted ${accepted_fp:-<unknown>}, expected this key $LOCAL_FP -- check ~/.ssh/config IdentityFile leakage"
+  fi
 else
-  check_fail "SSH auth to github.com failed" "$(echo "$ssh_out" | head -3)"
+  check_fail "SSH auth to github.com failed" \
+    "$(echo "$ssh_out" | grep -iE 'denied|permission|error|fatal' | head -3)"
+fi
+
+# --- 8. Per-org SAML SSO authorization (work role only) ---
+# Authenticating to github.com (step 7) only proves the key maps to the
+# account. Org-owned repos behind SAML SSO additionally require the key to be
+# *authorized for that org* -- a separate, per-org, browser-only grant
+# (github.com/settings/keys -> Configure SSO). It is invisible to `ssh -T` and
+# not exposed via gh/API, so the only way to verify it is to actually reach an
+# org repo. An unauthorized key gets a loud "enabled or enforced SAML SSO"
+# error from `git ls-remote` while still passing step 7.
+#
+# Only the work role has org-scoped access. The personal/home role uses a
+# personal identity against personal repos with no org SSO, so it has no org
+# list and this whole block is skipped for it.
+declare -a SSO_ORG_PROBES
+case "$ROLE" in
+  work)
+    # org:probe-repo -- any stable private repo in the org works as a canary.
+    SSO_ORG_PROBES=("Gusto:Gusto/web" "guideline-app:guideline-app/bamboo-cli")
+    ;;
+  *)
+    SSO_ORG_PROBES=()
+    ;;
+esac
+
+if [[ ${#SSO_ORG_PROBES[@]} -gt 0 ]]; then
+  info "Checking per-org SAML SSO authorization (this may take a few seconds)..."
+  # Mirror the live agent sshCommand: -F /dev/null so ~/.ssh/config's additive
+  # `Host *` IdentityFile can't leak the human laptop key into the probe.
+  agent_ssh="ssh -F /dev/null -i $KEY_PATH -o IdentitiesOnly=yes -o IdentityAgent=SSH_AUTH_SOCK -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10"
+  for probe in "${SSO_ORG_PROBES[@]}"; do
+    org="${probe%%:*}"
+    repo="${probe#*:}"
+    ls_out=$(GIT_SSH_COMMAND="$agent_ssh" git ls-remote "git@github.com:${repo}.git" HEAD 2>&1 || true)
+    if echo "$ls_out" | grep -q "enabled or enforced SAML SSO"; then
+      check_fail "$org: key not authorized for SAML SSO" \
+        "Authorize at https://github.com/settings/keys -> Configure SSO -> $org"
+    elif echo "$ls_out" | grep -Eq "^[0-9a-f]{40}[[:space:]]+HEAD"; then
+      check_pass "$org: key authorized for SAML SSO (probed $repo)"
+    else
+      check_fail "$org: SSO probe inconclusive (could not reach $repo)" \
+        "$(echo "$ls_out" | head -2)"
+    fi
+  done
 fi
 
 # --- Summary ---

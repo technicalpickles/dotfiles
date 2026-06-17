@@ -1,4 +1,4 @@
-# 37. Pin the Bash tool shell via SHELL env
+# 38. Pin the Bash tool shell via SHELL env
 
 Date: 2026-06-17
 
