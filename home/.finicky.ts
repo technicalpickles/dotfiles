@@ -21,6 +21,9 @@ if (hostname === 'josh-nichols-K9DJ2M7WK6') {
 const slackTeams: Record<string, string> = {
   // For Enterprise Grid, use the team_id (T...) not enterprise_id (E...)
   gustohq: 'T0250HMT7',
+  // Enterprise Grid "Copy link" uses the org host (gusto.enterprise.slack.com);
+  // same workspace team_id resolves the channel within the grid.
+  gusto: 'T0250HMT7',
 };
 
 // Example: Customize per hostname
