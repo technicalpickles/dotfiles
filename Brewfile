@@ -54,9 +54,6 @@ brew 'specstoryai/tap/specstory'
 # benchmarking
 brew "hyperfine"
 
-# container stuff
-brew "container-diff"
-
 cask 'cleanshot'
 cask 'dash'
 cask 'finicky'
