@@ -15,6 +15,34 @@ if ! command_available jq; then
   exit 1
 fi
 
+# Args. SKIP_SSH_CHECK (flag or env) skips only the final agent SSH key
+# validation, leaving config apply intact -- for offline runs and fresh setup,
+# where the key isn't registered/SSO-authorized on GitHub yet.
+SKIP_SSH_CHECK="${SKIP_SSH_CHECK:-}"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --skip-ssh-check)
+      SKIP_SSH_CHECK=1
+      shift
+      ;;
+    -h | --help)
+      echo "Usage: claudeconfig.sh [--skip-ssh-check]"
+      echo
+      echo "Applies Claude config for \$DOTPICKLES_ROLE (settings.json, marketplaces,"
+      echo "symlinks), then validates the active role's agent SSH key (fail-loud)."
+      echo
+      echo "  --skip-ssh-check  apply config but skip agent SSH key validation"
+      echo "                    (also: SKIP_SSH_CHECK=1). Use offline or mid-setup."
+      exit 0
+      ;;
+    *)
+      echo "Error: unknown argument: $1" >&2
+      echo "Run 'claudeconfig.sh --help' for usage." >&2
+      exit 2
+      ;;
+  esac
+done
+
 # Read a JSON or JSONC file, stripping comments and trailing commas
 # Uses node if available for robust JSONC parsing, falls back to sed
 read_json() {
@@ -334,6 +362,45 @@ configure_marketplaces() {
 }
 
 configure_marketplaces
+
+# Validate the active role's agent SSH identity (fail loud). Apply has already
+# completed above, so this only affects the exit code -- config is never left
+# half-written. Delegates to bin/check-agent-ssh-key, which validates local key
+# files, Keychain, GitHub registration, live SSH auth, and (work role) per-org
+# SAML SSO. The agent email is read from the role's gitconfig include so there's
+# one source of truth. Skipped when the role has no agent identity, or when
+# --skip-ssh-check / SKIP_SSH_CHECK=1 is set.
+validate_agent_ssh_key() {
+  echo "Validating agent SSH key..."
+
+  if [ -n "$SKIP_SSH_CHECK" ]; then
+    echo "  ⏭  skipped (--skip-ssh-check)"
+    return 0
+  fi
+
+  local agent_include="$DIR/home/.gitconfig.d/claude-agent-$ROLE"
+  if [ ! -f "$agent_include" ]; then
+    echo "  ⏭  role '$ROLE' has no agent identity ($agent_include); nothing to validate"
+    return 0
+  fi
+
+  local agent_email
+  agent_email=$(git config --file "$agent_include" user.email 2> /dev/null || true)
+  if [ -z "$agent_email" ]; then
+    echo "  ✗ $agent_include has no user.email; cannot determine the agent identity to validate" >&2
+    exit 1
+  fi
+
+  echo "  Role '$ROLE' agent identity: $agent_email"
+  if ! "$DIR/bin/check-agent-ssh-key" "$ROLE" --email "$agent_email"; then
+    echo >&2
+    echo "✗ Agent SSH key validation failed (see above)." >&2
+    echo "  Fix the reported issue, or re-run with --skip-ssh-check to apply without validating." >&2
+    exit 1
+  fi
+}
+
+validate_agent_ssh_key
 
 echo ""
 echo "✓ Claude Code configuration complete"

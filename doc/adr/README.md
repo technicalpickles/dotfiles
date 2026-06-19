@@ -36,3 +36,5 @@
 - [34. local-ssh-allowed-signers-for-commit-verification](0034-local-ssh-allowed-signers-for-commit-verification.md)
 - [35. canonical-dotpickles-role-names](0035-canonical-dotpickles-role-names.md)
 - [36. fail-loud-role-resolution](0036-fail-loud-role-resolution.md)
+- [37. validate-agent-ssh-identity-in-claudeconfig](0037-validate-agent-ssh-identity-in-claudeconfig.md)
+- [38. pin-bash-tool-shell-via-shell-env](0038-pin-bash-tool-shell-via-shell-env.md)

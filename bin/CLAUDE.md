@@ -26,4 +26,4 @@ Spotlight is kept enabled (Alfred requires it) but specific directories are excl
 - `bin/tmux-smart-open`: Open URLs/files on double-click in tmux
 - `bin/tmux-auto-rename-session`: Auto-name sessions after their directory
 - `bin/setup-agent-ssh-key`: Generate a per-role agent SSH identity (see [ADR 0031](../doc/adr/0031-role-scoped-agent-git-identity.md)). Accepts `--email <addr>` to override the default `joshua.nichols+<role>-agent@gmail.com` (e.g. for the work role: `--email josh.nichols+agent@gusto.com`).
-- `bin/check-agent-ssh-key`: Validate an agent SSH identity setup (local files, Keychain, GitHub registration, Claude settings). Pass the same `--email` used at setup time.
+- `bin/check-agent-ssh-key`: Validate an agent SSH identity setup (local files, Keychain, GitHub registration, Claude settings, and -- for the work role -- per-org SAML SSO authorization). Pass the same `--email` used at setup time.

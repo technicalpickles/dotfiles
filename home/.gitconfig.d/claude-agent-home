@@ -16,7 +16,15 @@
 	email = joshua.nichols+personal-agent@gmail.com
 	signingkey = ~/.ssh/agents/personal/id_ed25519.pub
 [core]
-	sshCommand = ssh -i ~/.ssh/agents/personal/id_ed25519 -o IdentitiesOnly=yes -o IdentityAgent=SSH_AUTH_SOCK
+	# -F /dev/null makes ssh ignore ~/.ssh/config entirely. Without it, the
+	# `Host *` block's `IdentityFile ~/.ssh/id_ed25519` (the human laptop key)
+	# leaks in as a second candidate identity: IdentityFile is additive, and
+	# IdentitiesOnly=yes does not drop it. ssh could then auth to GitHub as the
+	# human, or hard-fail headless if the agent can't sign the laptop key
+	# ("sign_and_send_pubkey: ... communication with agent failed"). With -F we
+	# use ONLY the agent key. IdentityAgent=SSH_AUTH_SOCK still resolves (env
+	# var, not config) and points at the agent holding the unlocked agent key.
+	sshCommand = ssh -F /dev/null -i ~/.ssh/agents/personal/id_ed25519 -o IdentitiesOnly=yes -o IdentityAgent=SSH_AUTH_SOCK
 [commit]
 	gpgsign = true
 [gpg]

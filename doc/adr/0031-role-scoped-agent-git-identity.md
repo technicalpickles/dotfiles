@@ -119,7 +119,7 @@ in the repo, surfaced via `link_directory_contents home`):
     email = joshua.nichols+personal-agent@gmail.com
     signingkey = ~/.ssh/agents/personal/id_ed25519.pub
 [core]
-    sshCommand = ssh -i ~/.ssh/agents/personal/id_ed25519 -o IdentitiesOnly=yes -o IdentityAgent=SSH_AUTH_SOCK
+    sshCommand = ssh -F /dev/null -i ~/.ssh/agents/personal/id_ed25519 -o IdentitiesOnly=yes -o IdentityAgent=SSH_AUTH_SOCK
 [commit]
     gpgsign = true
 [gpg]
@@ -135,11 +135,21 @@ still defeats 1Password's default.
 
 Three subtleties worth noting:
 
-- `IdentityAgent=SSH_AUTH_SOCK` is required in `core.sshCommand`. Without
-  it, ssh still talks to 1Password's agent socket (from `Host *` in
-  `ssh/config.d/auth`), which doesn't know about the agent key. The
-  literal string `SSH_AUTH_SOCK` is specially recognized by ssh and
-  resolved to the env variable's value, pointing back at fish-ssh-agent.
+- `-F /dev/null` and `IdentityAgent=SSH_AUTH_SOCK` together isolate the
+  SSH transport to the agent key alone. `IdentityAgent=SSH_AUTH_SOCK`
+  redirects ssh away from 1Password's agent socket (the `Host *`
+  `IdentityAgent` in `ssh/config.d/auth`) back to fish-ssh-agent, which
+  holds the unlocked agent key; the literal string `SSH_AUTH_SOCK` is
+  specially recognized by ssh and resolved to the env variable's value.
+  But `Host *` in `~/.ssh/config` also sets `IdentityFile ~/.ssh/id_ed25519`
+  (the human laptop key), and `IdentityFile` is _additive_ — `IdentitiesOnly=yes`
+  does not drop it, so the laptop key stayed a second candidate identity.
+  That caused agent git ops to authenticate to GitHub as the human, or to
+  hard-fail headless when the agent couldn't sign the laptop key
+  (`sign_and_send_pubkey: ... communication with agent failed`). `-F /dev/null`
+  makes ssh skip `~/.ssh/config` entirely, so only the explicit `-i` agent
+  key is used. Safe because no `github.com`-specific `Host` block lives in
+  `ssh/config.d/`, and `-F` does not change the default `known_hosts` path.
 - `gpg.ssh.program = ssh-keygen` is required. The global gitconfig sets
   this to `op-ssh-sign` (1Password's signing helper), which only knows
   about keys in the 1Password vault. Without this override, signing a

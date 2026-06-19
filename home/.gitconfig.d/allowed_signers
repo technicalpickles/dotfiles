@@ -18,3 +18,6 @@ joshua.nichols@gmail.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMq3iskSznOUrNVpvTS
 
 # Personal-agent identity (Claude Code, ~/.ssh/agents/personal/id_ed25519, ADR 0031)
 joshua.nichols+personal-agent@gmail.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFD+X13rkqG4oVpGXa1PevJVl/SgYWzZvrTyyc9CYSxT
+
+# Work-agent identity (Claude Code, ~/.ssh/agents/work/id_ed25519, ADR 0031)
+josh.nichols+agent@gusto.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPgo5t6/sQx4hNroS9kRzw0QusOrZnttne4seC8B/BGt

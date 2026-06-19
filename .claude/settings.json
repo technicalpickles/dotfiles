@@ -1,5 +1,8 @@
 {
   "enabledPlugins": {
     "superpowers-developing-for-claude-code@superpowers-marketplace": true
+  },
+  "permissions": {
+    "allow": ["Bash(bin/prettier:*)"]
   }
 }
