@@ -49,7 +49,7 @@ brew 'wget'
 brew 'shellcheck'
 brew 'mise'
 brew 'starship'
-brew 'specstoryai/tap/specstory'
+#brew 'specstoryai/tap/specstory'
 
 # benchmarking
 brew "hyperfine"
