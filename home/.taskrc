@@ -1,0 +1,41 @@
+# Taskwarrior config — global
+data.location=~/.task
+news.version=3.4.2
+
+# Add uuid.short column so stable IDs are visible in output.
+# Integer IDs recycle when tasks complete; UUIDs are permanent.
+report.list.columns=id,uuid.short,start.age,entry.age,depends.indicator,priority,project,tags,recur.indicator,scheduled.countdown,due,until.remaining,description.count,urgency
+report.list.labels=ID,UUID,Active,Age,D,P,Project,Tags,R,Sch,Due,Until,Description,Urg
+report.next.columns=id,uuid.short,start.age,entry.age,depends,priority,project,tags,recur,scheduled.countdown,due.relative,until.remaining,description,urgency
+report.next.labels=ID,UUID,Active,Age,Deps,P,Project,Tag,Recur,S,Due,Until,Description,Urg
+
+# --- token-dense report (added 2026-05-08) ---
+
+# Default to the dense report when running `task` with no arguments.
+default.command=dense
+
+# Allow-list which verbose categories print. Notably excludes:
+#   `override` - suppresses "Configuration override rc.foo=bar" echo lines
+#   `blank` - suppresses extra blank lines around output
+#   `affected` - suppresses "Created task N." / "1 task added." footers
+#   `footnote`, `label`, `news` - other low-signal categories
+# Keeps `header` for column labels and `new-id` so post-add still shows the new task ID.
+verbose=header,new-id,edit,context,project,special,sync,recur
+
+# Wider default width so descriptions don't multi-line wrap at terminal width.
+defaultwidth=200
+
+# Dense report: one-line-per-task, urgency-sorted, pending only.
+report.dense.description=Token-dense pending tasks
+report.dense.columns=uuid.short,project,tags,due.relative,description.truncated_count
+report.dense.labels=ID,Proj,Tag,Due,Desc
+report.dense.sort=urgency-
+report.dense.filter=status:pending
+
+# --- TaskChampion sync (added 2026-06-20) ---
+
+# Sync credentials (server URL, client_id, encryption secret) live in a
+# separate file generated from 1Password by dotfiles/taskrc.sh. It is NOT in
+# this repo and never committed; the encryption secret stays Mac-side. If the
+# file is absent (e.g. taskrc.sh hasn't run), task simply has no sync config.
+include ~/.config/task/sync.rc

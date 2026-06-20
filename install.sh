@@ -76,6 +76,7 @@ echo
 
 ./gitconfig.sh
 ./sshconfig.sh
+./taskrc.sh
 
 if running_macos; then
   echo "🍎 configuring macOS defaults"
