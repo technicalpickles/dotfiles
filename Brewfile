@@ -38,6 +38,7 @@ brew 'yq'
 brew 'zoxide'
 brew 'dysk'
 brew 'choose-rust'
+brew 'gpg' # we don't use it ourselves, but other tools use it to verify
 
 # networky
 brew 'mtr'
@@ -59,5 +60,8 @@ cask 'dash'
 cask 'finicky'
 cask 'hammerspoon'
 cask 'obsidian'
+
+cask 'claude'
+cask 'claude-devtools'
 
 # trailing newline so make sure there's not a syntax error when joining with Brewfile.*
