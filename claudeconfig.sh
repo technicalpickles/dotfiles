@@ -21,25 +21,25 @@ fi
 SKIP_SSH_CHECK="${SKIP_SSH_CHECK:-}"
 while [ $# -gt 0 ]; do
   case "$1" in
-    --skip-ssh-check)
-      SKIP_SSH_CHECK=1
-      shift
-      ;;
-    -h | --help)
-      echo "Usage: claudeconfig.sh [--skip-ssh-check]"
-      echo
-      echo "Applies Claude config for \$DOTPICKLES_ROLE (settings.json, marketplaces,"
-      echo "symlinks), then validates the active role's agent SSH key (fail-loud)."
-      echo
-      echo "  --skip-ssh-check  apply config but skip agent SSH key validation"
-      echo "                    (also: SKIP_SSH_CHECK=1). Use offline or mid-setup."
-      exit 0
-      ;;
-    *)
-      echo "Error: unknown argument: $1" >&2
-      echo "Run 'claudeconfig.sh --help' for usage." >&2
-      exit 2
-      ;;
+  --skip-ssh-check)
+    SKIP_SSH_CHECK=1
+    shift
+    ;;
+  -h | --help)
+    echo "Usage: claudeconfig.sh [--skip-ssh-check]"
+    echo
+    echo "Applies Claude config for \$DOTPICKLES_ROLE (settings.json, marketplaces,"
+    echo "symlinks), then validates the active role's agent SSH key (fail-loud)."
+    echo
+    echo "  --skip-ssh-check  apply config but skip agent SSH key validation"
+    echo "                    (also: SKIP_SSH_CHECK=1). Use offline or mid-setup."
+    exit 0
+    ;;
+  *)
+    echo "Error: unknown argument: $1" >&2
+    echo "Run 'claudeconfig.sh --help' for usage." >&2
+    exit 2
+    ;;
   esac
 done
 
@@ -47,7 +47,7 @@ done
 # Uses node if available for robust JSONC parsing, falls back to sed
 read_json() {
   local file="$1"
-  if command -v node > /dev/null 2>&1; then
+  if command -v node >/dev/null 2>&1; then
     # Node handles JSONC natively with JSON5-like parsing
     node -e "
       const fs = require('fs');
@@ -67,16 +67,16 @@ read_json() {
     "
   else
     # Fallback: simple sed-based stripping (less robust)
-    sed -E 's|//[^"]*$||g' < "$file" \
-      | tr '\n' '\f' \
-      | sed -E 's|,([[:space:]\f]*[}\]])|\1|g' \
-      | tr '\f' '\n' \
-      | jq '.'
+    sed -E 's|//[^"]*$||g' <"$file" |
+      tr '\n' '\f' |
+      sed -E 's|,([[:space:]\f]*[}\]])|\1|g' |
+      tr '\f' '\n' |
+      jq '.'
   fi
 }
 
 # Detect role (uses existing DOTPICKLES_ROLE from environment)
-ROLE="${DOTPICKLES_ROLE:-home}"
+ROLE="${DOTPICKLES_ROLE:-personal}"
 echo "Configuring Claude Code for role: $ROLE"
 
 # Ensure ~/.claude exists and symlink managed files
@@ -131,7 +131,7 @@ generate_settings() {
   local local_settings="{}"
   if [ -f "$settings_file" ]; then
     for key in "${local_keys[@]}"; do
-      if jq -e ".$key" "$settings_file" > /dev/null 2>&1; then
+      if jq -e ".$key" "$settings_file" >/dev/null 2>&1; then
         local_settings=$(echo "$local_settings" | jq --argjson val "$(jq ".$key" "$settings_file")" ". + {\"$key\": \$val}")
       fi
     done
@@ -273,8 +273,8 @@ generate_settings() {
   ')
 
   # Write to temp file and validate
-  echo "$final_settings" > "$temp_file"
-  if ! jq empty "$temp_file" 2> /dev/null; then
+  echo "$final_settings" >"$temp_file"
+  if ! jq empty "$temp_file" 2>/dev/null; then
     echo "Error: Generated invalid JSON"
     rm "$temp_file"
     exit 1
@@ -320,11 +320,11 @@ configure_marketplaces() {
   local updated=false
 
   for entry in "${marketplaces[@]}"; do
-    IFS=':' read -r marketplace_id github_repo <<< "$entry"
+    IFS=':' read -r marketplace_id github_repo <<<"$entry"
     local install_location="$marketplaces_dir/$marketplace_id"
 
     # Check if marketplace already exists in JSON
-    if echo "$current_marketplaces" | jq -e ".[\"$marketplace_id\"]" > /dev/null 2>&1; then
+    if echo "$current_marketplaces" | jq -e ".[\"$marketplace_id\"]" >/dev/null 2>&1; then
       echo "  ✓ $marketplace_id (already configured)"
     else
       echo "  + Adding $marketplace_id..."
@@ -344,7 +344,7 @@ configure_marketplaces() {
     # Clone marketplace repo if not present
     if [ ! -d "$install_location" ]; then
       echo "  + Cloning $marketplace_id from $github_repo..."
-      if git clone "https://github.com/$github_repo.git" "$install_location" 2> /dev/null; then
+      if git clone "https://github.com/$github_repo.git" "$install_location" 2>/dev/null; then
         echo "    ✓ Cloned successfully"
       else
         echo "    ✗ Failed to clone (continuing anyway)"
@@ -356,7 +356,7 @@ configure_marketplaces() {
 
   # Write updated marketplaces JSON if changes were made
   if [ "$updated" = true ]; then
-    echo "$current_marketplaces" | jq '.' > "$known_marketplaces_file"
+    echo "$current_marketplaces" | jq '.' >"$known_marketplaces_file"
     echo "  ✓ Updated known_marketplaces.json"
   fi
 }
@@ -385,7 +385,7 @@ validate_agent_ssh_key() {
   fi
 
   local agent_email
-  agent_email=$(git config --file "$agent_include" user.email 2> /dev/null || true)
+  agent_email=$(git config --file "$agent_include" user.email 2>/dev/null || true)
   if [ -z "$agent_email" ]; then
     echo "  ✗ $agent_include has no user.email; cannot determine the agent identity to validate" >&2
     exit 1

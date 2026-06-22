@@ -32,8 +32,14 @@ fi
 op_role="${DOTPICKLES_ROLE:-home}"
 op_source="config/1password/agent.toml.${op_role}"
 op_target="$HOME/.config/1Password/ssh/agent.toml"
-op_socket="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
-if [ -S "$op_socket" ]; then
+# Gate on 1Password being installed (its app container dir), not running. The
+# agent socket only exists once 1Password is launched with the SSH agent
+# enabled, which is usually false during install -- so gating on the socket
+# silently skipped the allowlist on exactly the fresh-install runs that need
+# it. 1Password reads agent.toml whenever it next starts, so the symlink is
+# safe to create ahead of the agent coming up. See ADR 0033.
+op_app_dir="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password"
+if [ -d "$op_app_dir" ]; then
   if [ -f "$DIR/$op_source" ]; then
     echo "🔑 setting up 1Password SSH agent allowlist (role: $op_role)"
     mkdir -p "$HOME/.config/1Password/ssh"
@@ -42,7 +48,7 @@ if [ -S "$op_socket" ]; then
     echo "🔑 no 1Password agent.toml for role '$op_role', skipping (expected $op_source)"
   fi
 else
-  echo "🔑 1Password agent socket not found, skipping agent.toml setup"
+  echo "🔑 1Password not installed, skipping agent.toml setup"
 fi
 
 # Ensure ~/.ssh/config starts with Include
