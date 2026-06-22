@@ -38,7 +38,7 @@ fi
 
 signing=false
 case "$DOTPICKLES_ROLE" in
-  personal)
+  home)
     echo "  → using personal identify for git"
     git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/personal-identity
 
