@@ -8,7 +8,7 @@ The central architectural pattern is **role-based adaptation**. The role is dete
 - **Brewfile selection**: `Brewfile` + `Brewfile.$ROLE` are merged during brew bundle
 - **Shell environment**: Various configs conditionally load based on role
 
-The canonical role values are `home`, `work`, and `container` (see [ADR 0035](adr/0035-canonical-dotpickles-role-names.md)). Detection defaults to `work` for hostnames matching `josh-nichols-*`, `container` inside containers, otherwise `home`. The same hostname check is duplicated across [install.sh](../install.sh), [config/fish/config.fish](../config/fish/config.fish), and [home/.zshenv](../home/.zshenv) because bash, fish, and zsh can't share one snippet; the canonical-name list and a fail-loud guard ([ADR 0036](adr/0036-fail-loud-role-resolution.md)) keep the copies from drifting silently.
+The canonical role values are `home`, `work`, and `container` (see [ADR 0035](adr/0035-canonical-dotpickles-role-names.md)). Detection defaults to `work` for hostnames matching `josh-nichols-*`, `container` inside containers, otherwise `home`. The same hostname check is duplicated across [install.sh](../install.sh), [config/fish/conf.d/dotpickles-role.fish](../config/fish/conf.d/dotpickles-role.fish), and [home/.zshenv](../home/.zshenv) because bash, fish, and zsh can't share one snippet; the canonical-name list and a fail-loud guard ([ADR 0036](adr/0036-fail-loud-role-resolution.md)) keep the copies from drifting silently. The fish copy lives in `conf.d/` (not `config.fish`) on purpose: fish sources `conf.d/*.fish` before `config.fish`, and the starship prompt reads `DOTPICKLES_ROLE` at init time, so the role must be set first.
 
 ## Symlink-Based File Management
 
