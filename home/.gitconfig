@@ -10,7 +10,7 @@
   path = ~/.gitconfig.d/color
 
 [includeIf "gitdir:/usr/local/Homebrew/"]
-	path = ~/.gitconfig.d/personal-identity
+	path = ~/.gitconfig.d/home-identity
 
 [core]
 	excludesfile = ~/.gitignore

@@ -66,7 +66,7 @@ See [ADR 0009](adr/0009-use-envsense-for-environment-detection.md).
 Homebrew packages are managed through **merged Brewfiles**:
 
 - [Brewfile](../Brewfile): Common packages (fish, git, nvim, fzf, jq, etc.)
-- `Brewfile.$ROLE`: Role-specific additions (personal or work)
+- `Brewfile.$ROLE`: Role-specific additions (home or work)
 
 The `brew_bundle()` function in [functions.sh:99-103](../functions.sh#L99-L103) concatenates these files and pipes to `brew bundle`.
 

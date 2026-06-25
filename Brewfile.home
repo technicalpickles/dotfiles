@@ -1,4 +1,5 @@
 brew 'orbstack'
+brew 'taskwarrior-tui'
 
 cask 'discord'
 cask 'google-chrome'

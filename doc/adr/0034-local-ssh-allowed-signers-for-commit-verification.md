@@ -45,7 +45,7 @@ The file lists one line per identity (`<email> <keytype> <key-blob>`):
 
 It is a plain data file, not a gitconfig fragment, and the dir is included
 per-file (not globbed), so it is never parsed as config. Public keys are safe
-to commit; the email is already present in `personal-identity`.
+to commit; the email is already present in `home-identity`.
 
 ### Why a single fleet-wide file rather than role-scoped
 

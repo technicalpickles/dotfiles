@@ -8,7 +8,7 @@ This directory contains the configuration templates for Claude Code settings and
 claude/
 ├── roles/
 │   ├── base.jsonc         # Core settings, base permissions, sandbox scalars
-│   ├── personal.jsonc     # Personal role overrides (empty placeholder)
+│   ├── home.jsonc         # Home role: agent git identity env, sandbox rules
 │   └── work.jsonc         # Work role: AWS/Bedrock env, work permissions
 ├── stacks/
 │   ├── beans.jsonc        # Beans issue tracker

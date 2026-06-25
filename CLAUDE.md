@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This is a personal dotfiles repository managing shell configs, git settings, and macOS preferences. It uses a **role-based configuration system** (personal/work) that adapts settings based on hostname or `DOTPICKLES_ROLE`.
+This is a personal dotfiles repository managing shell configs, git settings, and macOS preferences. It uses a **role-based configuration system** (home/work) that adapts settings based on hostname or `DOTPICKLES_ROLE`.
 
 See [doc/architecture.md](doc/architecture.md) for how the systems fit together.
 

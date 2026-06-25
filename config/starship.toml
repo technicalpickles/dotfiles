@@ -172,7 +172,7 @@ detect_folders = ["node_modules"]
 [env_var.STARSHIP_CTX]
 format = "[](fg:purple bg:none)[$env_value]($style)[](fg:purple bg:none)"
 style = "fg:#E4E4E4 bg:purple bold"
-default = "personal"
+default = "home"
 
 ## RAINBOW PALETTE (Inspired by Tide's Rainbow Theme)
 
