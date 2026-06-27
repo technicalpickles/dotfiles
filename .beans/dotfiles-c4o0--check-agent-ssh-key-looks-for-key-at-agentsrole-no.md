@@ -1,11 +1,11 @@
 ---
 # dotfiles-c4o0
 title: check-agent-ssh-key looks for key at agents/<role> not the real identity
-status: in-progress
+status: completed
 type: bug
 priority: high
 created_at: 2026-06-27T01:57:54Z
-updated_at: 2026-06-27T01:57:54Z
+updated_at: 2026-06-27T03:03:18Z
 ---
 
 claudeconfig.sh's SSH validation failed for the home role: check-agent-ssh-key derived the key path from the role (~/.ssh/agents/home) instead of the actual identity (~/.ssh/agents/personal). Email already had a --email override read from the gitconfig include; the key path did not, so it told the user to run 'setup-agent-ssh-key home' (creating a wrong, non-enrolled identity).

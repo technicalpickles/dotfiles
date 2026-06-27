@@ -1,11 +1,11 @@
 ---
 # dotfiles-y9zc
 title: Re-apply personal->home role rename reverted by ee2ff1c
-status: in-progress
+status: completed
 type: bug
 priority: high
 created_at: 2026-06-23T19:00:46Z
-updated_at: 2026-06-23T19:03:31Z
+updated_at: 2026-06-27T03:03:18Z
 ---
 
 Commit ee2ff1c ("more personal vs home checks") reverted the rename e3e5027 landed, re-breaking the home role per ADR 0035. Re-applied on top of HEAD (preserving ee2ff1c other changes).

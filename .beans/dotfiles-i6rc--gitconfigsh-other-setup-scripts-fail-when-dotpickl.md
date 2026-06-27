@@ -1,11 +1,11 @@
 ---
 # dotfiles-i6rc
 title: gitconfig.sh + other setup scripts fail when DOTPICKLES_ROLE unset in shell
-status: in-progress
+status: completed
 type: bug
 priority: high
 created_at: 2026-06-27T01:52:27Z
-updated_at: 2026-06-27T01:52:27Z
+updated_at: 2026-06-27T03:03:18Z
 ---
 
 Running ./gitconfig.sh standalone with DOTPICKLES_ROLE unset in the shell hit '*) Unexpected role:' (empty) and bailed. Unlike claudeconfig.sh it had no default and assumed the env var was pre-exported by install.sh. Fix: centralize detection in functions.sh (sourced by all setup scripts) so the role is detected+exported at source time. Respects an already-set value (env or .env).
