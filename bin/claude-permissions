@@ -102,36 +102,72 @@ def get_permission_sources() -> list[PermissionSource]:
         exists=(home / ".claude" / "settings.json").exists()
     ))
 
-    # 2. Dotfiles templates (role-based)
-    dotfiles = home / "workspace" / "dotfiles"
-    for template in [
-        dotfiles / "claude" / "permissions.json",
-        dotfiles / "claude" / "permissions.personal.json",
-        dotfiles / "claude" / "permissions.work.json",
-    ]:
-        sources.append(PermissionSource(
-            path=template,
-            scope="dotfiles-template",
-            exists=template.exists()
-        ))
+    # 2. Dotfiles role + stack templates (JSONC). Settings.json is assembled
+    #    from claude/roles/<role>.jsonc + claude/stacks/*.jsonc by
+    #    claudeconfig.sh, so those are the real permission sources. Located
+    #    relative to this script so it resolves wherever the repo is cloned.
+    dotfiles = Path(__file__).resolve().parent.parent
+    for template_dir in [dotfiles / "claude" / "roles", dotfiles / "claude" / "stacks"]:
+        for template in sorted(template_dir.glob("*.jsonc")):
+            sources.append(PermissionSource(
+                path=template,
+                scope="dotfiles-template",
+                exists=True
+            ))
 
-    # 3. Project-local settings in workspace (deterministic sorted order)
-    workspace = home / "workspace"
-    if workspace.exists():
-        for project_dir in sorted(workspace.iterdir()):
-            if not project_dir.is_dir():
-                continue
-            if project_dir.name.startswith('.'):
-                continue
-
-            settings_file = project_dir / ".claude" / "settings.local.json"
+    # 3. Project-local settings. Projects live under ~/github.com/<org>/<repo>
+    #    (ghq-style layout), so glob two levels deep. Only repos that actually
+    #    have a local settings file are listed (sorted for determinism).
+    projects_root = home / "github.com"
+    if projects_root.exists():
+        for settings_file in sorted(projects_root.glob("*/*/.claude/settings.local.json")):
             sources.append(PermissionSource(
                 path=settings_file,
                 scope="project-local",
-                exists=settings_file.exists()
+                exists=True
             ))
 
     return sources
+
+
+def _strip_jsonc_comments(text: str) -> str:
+    """Strip // line and /* */ block comments, ignoring those inside strings.
+
+    Role/stack files are JSONC. A naive regex would mangle a // or /* that
+    appears inside a permission value (e.g. a future WebFetch domain), so walk
+    the text tracking string state instead.
+    """
+    out = []
+    i, n = 0, len(text)
+    in_string = False
+    while i < n:
+        c = text[i]
+        if in_string:
+            out.append(c)
+            if c == "\\" and i + 1 < n:  # keep escaped char verbatim
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if c == '"':
+                in_string = False
+            i += 1
+        elif c == '"':
+            in_string = True
+            out.append(c)
+            i += 1
+        elif c == "/" and i + 1 < n and text[i + 1] == "/":
+            i += 2
+            while i < n and text[i] != "\n":
+                i += 1
+        elif c == "/" and i + 1 < n and text[i + 1] == "*":
+            i += 2
+            while i + 1 < n and not (text[i] == "*" and text[i + 1] == "/"):
+                i += 1
+            i += 2
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out)
 
 
 def load_permissions(source: PermissionSource) -> PermissionSource:
@@ -143,7 +179,9 @@ def load_permissions(source: PermissionSource) -> PermissionSource:
         with open(source.path) as f:
             content = f.read()
 
-        # Handle trailing commas (common in hand-edited JSON)
+        # Strip JSONC comments (role/stack files), then trailing commas
+        # (common in hand-edited JSON).
+        content = _strip_jsonc_comments(content)
         content = re.sub(r',(\s*[\]\}])', r'\1', content)
         data = json.loads(content)
 
