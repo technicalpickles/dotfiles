@@ -66,6 +66,10 @@ its default, silently showing the wrong role.
 
 ### Role name vs agent identity name
 
+> **Amended by [ADR 0039](0039-align-agent-key-dir-with-role.md):** the key
+> directory was later moved to `~/.ssh/agents/home/` to match the role. Only the
+> _email_ stays `personal-agent` now. The rest of this section stands.
+
 The dotfiles _role_ is distinct from the git _identity_ a role uses. The `home`
 role signs as the GitHub-enrolled `personal-agent` identity (email
 `joshua.nichols+personal-agent@gmail.com`, key under `~/.ssh/agents/personal/`,

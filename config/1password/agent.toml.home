@@ -1,10 +1,10 @@
-# 1Password SSH agent allowlist for the personal role.
+# 1Password SSH agent allowlist for the home role.
 #
 # 1Password's SSH agent offers every key in the unlocked vault by default.
 # Listing items here makes it an allowlist: only these keys are exposed to
 # ssh, regardless of what else lives in the vault.
 #
-# ~/.ssh/agents/personal/id_ed25519 is stored in the vault for backup only
+# ~/.ssh/agents/home/id_ed25519 is stored in the vault for backup only
 # (see ADR 0031) and is intentionally excluded -- the on-disk + Keychain path
 # is what claude-agent uses, not the 1Password agent.
 #

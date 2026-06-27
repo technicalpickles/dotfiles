@@ -58,17 +58,16 @@ the enrollment checklist (local files, Keychain, GitHub registration,
 Claude settings). Exits 0 if all pass, 1 if any fail.
 
 Arguments:
-  role             Dotfiles role the identity belongs to (e.g. personal, work)
+  role             Dotfiles role the identity belongs to (e.g. home, work)
 
 Options:
   --email <email>  Override the agent email address. Must match what was
                    passed to setup-agent-ssh-key. Defaults to
                    joshua.nichols+<role>-agent@gmail.com.
-  --key <path>     Path to the agent key (private or .pub). Use when the
-                   identity name differs from the role (e.g. the 'home' role
-                   signs as the 'personal' identity, key under
-                   ~/.ssh/agents/personal). Defaults to
-                   ~/.ssh/agents/<role>/id_ed25519.
+  --key <path>     Path to the agent key (private or .pub). claudeconfig.sh
+                   passes this from the role's gitconfig include (the source of
+                   truth) so the check never has to guess the key location.
+                   Defaults to ~/.ssh/agents/<role>/id_ed25519.
 EOF
 }
 
@@ -122,11 +121,12 @@ if [[ ! "$ROLE" =~ ^[a-z][a-z0-9_-]*$ ]]; then
   die "Invalid role name: '$ROLE'"
 fi
 
-# The agent *identity* is distinct from the dotfiles *role* (ADR 0035): the
-# `home` role signs as the `personal` identity, so the key lives at
-# ~/.ssh/agents/personal, not ~/.ssh/agents/home. Prefer the key path passed via
-# --key (claudeconfig.sh reads it from the role's gitconfig include, the source
-# of truth) and fall back to the role-named dir only for standalone runs.
+# The agent key path is the role's gitconfig include's business, not ours to
+# guess: prefer the path passed via --key (claudeconfig.sh reads it from that
+# include, the source of truth) and fall back to the role-named dir only for
+# standalone runs. The key dir tracks the role (~/.ssh/agents/home, ADR 0039),
+# but the identity *email* can still differ from the role default, which is why
+# the include stays authoritative.
 if [[ -n "$KEY_OVERRIDE" ]]; then
   key_expanded="${KEY_OVERRIDE/#\~\//$HOME/}"
   KEY_PATH="${key_expanded%.pub}" # accept either the private or public path
