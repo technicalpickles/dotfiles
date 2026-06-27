@@ -391,8 +391,19 @@ validate_agent_ssh_key() {
     exit 1
   fi
 
+  # The agent key path comes from the same include (signingkey), since the
+  # identity name can differ from the role (e.g. home -> personal). This keeps
+  # the gitconfig include the one source of truth; without it check-agent-ssh-key
+  # would guess ~/.ssh/agents/$ROLE and miss the real key. See ADR 0035.
+  local agent_key
+  agent_key=$(git config --file "$agent_include" user.signingkey 2> /dev/null || true)
+
   echo "  Role '$ROLE' agent identity: $agent_email"
-  if ! "$DIR/bin/check-agent-ssh-key" "$ROLE" --email "$agent_email"; then
+  local -a check_args=("$ROLE" --email "$agent_email")
+  if [ -n "$agent_key" ]; then
+    check_args+=(--key "$agent_key")
+  fi
+  if ! "$DIR/bin/check-agent-ssh-key" "${check_args[@]}"; then
     echo >&2
     echo "✗ Agent SSH key validation failed (see above)." >&2
     echo "  Fix the reported issue, or re-run with --skip-ssh-check to apply without validating." >&2

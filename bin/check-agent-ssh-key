@@ -64,11 +64,17 @@ Options:
   --email <email>  Override the agent email address. Must match what was
                    passed to setup-agent-ssh-key. Defaults to
                    joshua.nichols+<role>-agent@gmail.com.
+  --key <path>     Path to the agent key (private or .pub). Use when the
+                   identity name differs from the role (e.g. the 'home' role
+                   signs as the 'personal' identity, key under
+                   ~/.ssh/agents/personal). Defaults to
+                   ~/.ssh/agents/<role>/id_ed25519.
 EOF
 }
 
 ROLE=""
 EMAIL_OVERRIDE=""
+KEY_OVERRIDE=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --help | -h)
@@ -82,6 +88,15 @@ while [[ $# -gt 0 ]]; do
       ;;
     --email=*)
       EMAIL_OVERRIDE="${1#--email=}"
+      shift
+      ;;
+    --key)
+      [[ $# -lt 2 ]] && die "--key requires a value"
+      KEY_OVERRIDE="$2"
+      shift 2
+      ;;
+    --key=*)
+      KEY_OVERRIDE="${1#--key=}"
       shift
       ;;
     --*)
@@ -107,9 +122,23 @@ if [[ ! "$ROLE" =~ ^[a-z][a-z0-9_-]*$ ]]; then
   die "Invalid role name: '$ROLE'"
 fi
 
-KEY_DIR="$HOME/.ssh/agents/$ROLE"
-KEY_PATH="$KEY_DIR/id_ed25519"
+# The agent *identity* is distinct from the dotfiles *role* (ADR 0035): the
+# `home` role signs as the `personal` identity, so the key lives at
+# ~/.ssh/agents/personal, not ~/.ssh/agents/home. Prefer the key path passed via
+# --key (claudeconfig.sh reads it from the role's gitconfig include, the source
+# of truth) and fall back to the role-named dir only for standalone runs.
+if [[ -n "$KEY_OVERRIDE" ]]; then
+  key_expanded="${KEY_OVERRIDE/#\~\//$HOME/}"
+  KEY_PATH="${key_expanded%.pub}" # accept either the private or public path
+  KEY_DIR="$(dirname "$KEY_PATH")"
+else
+  KEY_DIR="$HOME/.ssh/agents/$ROLE"
+  KEY_PATH="$KEY_DIR/id_ed25519"
+fi
 PUB_PATH="$KEY_PATH.pub"
+# Identity name (e.g. "personal") for setup hints, which operate on the identity
+# dir, not the role. Equals ROLE when no override is given.
+IDENTITY="$(basename "$KEY_DIR")"
 EMAIL="${EMAIL_OVERRIDE:-joshua.nichols+${ROLE}-agent@gmail.com}"
 SETTINGS="$HOME/.claude/settings.json"
 REQUIRED_SCOPES=("user:email" "read:public_key" "read:ssh_signing_key")
@@ -139,7 +168,7 @@ if [[ -f "$KEY_PATH" && -f "$PUB_PATH" ]]; then
     check_fail "Key file perms wrong" "private=$key_mode (want 600), public=$pub_mode (want 644)"
   fi
 else
-  check_fail "Key files missing" "Run: bin/setup-agent-ssh-key $ROLE"
+  check_fail "Key files missing" "Run: bin/setup-agent-ssh-key $IDENTITY"
 fi
 
 # Everything below needs the pub key to compute fingerprint
