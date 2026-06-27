@@ -175,3 +175,31 @@ op_ensure_signed_in() {
     op signin
   fi
 }
+
+# Detect and export DOTPICKLES_ROLE if it isn't already set. This is the single
+# source of truth for the install/setup scripts: any script that sources
+# functions.sh gets the role without re-implementing the hostname check, so a
+# standalone run (e.g. ./gitconfig.sh) can't fall through to "Unexpected role".
+# The interactive shells set it themselves (home/.zshenv,
+# config/fish/conf.d/dotpickles-role.fish) because they can't source bash.
+# Canonical names: home / work / container. See ADR 0035.
+dotpickles_detect_role() {
+  if [ -n "${DOTPICKLES_ROLE:-}" ]; then
+    return
+  fi
+
+  local detected_hostname
+  detected_hostname=$(hostnamectl hostname 2> /dev/null || hostname)
+
+  if [ -f /.dockerenv ] || grep -q 'docker\|lxc\|containerd' /proc/1/cgroup 2> /dev/null || [ -n "${DOCKER_BUILD:-}" ]; then
+    DOTPICKLES_ROLE=container
+  elif [[ "$detected_hostname" =~ ^josh-nichols- ]]; then
+    DOTPICKLES_ROLE=work
+  else
+    DOTPICKLES_ROLE=home
+  fi
+  export DOTPICKLES_ROLE
+}
+
+# Run at source time so DOTPICKLES_ROLE is guaranteed set for every consumer.
+dotpickles_detect_role

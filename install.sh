@@ -22,24 +22,11 @@ if [[ -f .env ]]; then
   source .env
 fi
 
-if [[ -z "${DOTPICKLES_ROLE}" ]]; then
-  if hostname=$(hostnamectl hostname 2> /dev/null); then
-    :
-  else
-    hostname=$(hostname)
-  fi
-  if [[ "$hostname" =~ ^josh-nichols- ]]; then
-    DOTPICKLES_ROLE="work"
-  else
-    DOTPICKLES_ROLE="home"
-  fi
-fi
-
-export DOTPICKLES_ROLE
-echo "role: $DOTPICKLES_ROLE"
-
 # shellcheck source=./functions.sh
+# Sourcing functions.sh detects and exports DOTPICKLES_ROLE if unset (respecting
+# any value from the environment or .env above). See functions.sh / ADR 0035.
 source ./functions.sh
+echo "role: $DOTPICKLES_ROLE"
 
 # Guard: non-interactive without --yes is an error
 if [ "${DOTPICKLES_YES:-}" != "1" ] && [ ! -t 0 ]; then
