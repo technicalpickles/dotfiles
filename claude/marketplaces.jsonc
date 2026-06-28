@@ -19,8 +19,6 @@
     "pickled-claude-plugins": {
       "repo": "technicalpickles/pickled-claude-plugins",
     },
-    // Cloned globally by claudeconfig.sh; not referenced by any profile below.
-    "claude-notifications-go": { "repo": "777genius/claude-notifications-go" },
   },
 
   // Named plugin bundles. Each entry is "<plugin-name>@<marketplace-key>".
