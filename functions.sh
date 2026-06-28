@@ -175,3 +175,36 @@ op_ensure_signed_in() {
     op signin
   fi
 }
+
+# Read a JSON or JSONC file to stdout, stripping comments and trailing commas.
+# Uses node if available for robust JSONC parsing, falls back to sed + jq.
+# Shared by claudeconfig.sh and claude-project-setup.sh.
+read_json() {
+  local file="$1"
+  if command -v node > /dev/null 2>&1; then
+    # Node handles JSONC natively with JSON5-like parsing
+    node -e "
+      const fs = require('fs');
+      const file = '$file';
+      const content = fs.readFileSync(file, 'utf8');
+      // Strip comments and trailing commas
+      const stripped = content
+        .replace(/\/\/.*$/gm, '')           // Remove // comments
+        .replace(/\/\*[\s\S]*?\*\//g, '')   // Remove /* */ comments
+        .replace(/,(\s*[}\]])/g, '\$1');    // Remove trailing commas
+      try {
+        console.log(JSON.stringify(JSON.parse(stripped)));
+      } catch (e) {
+        process.stderr.write('Error parsing ' + file + ': ' + e.message + '\n');
+        process.exit(1);
+      }
+    "
+  else
+    # Fallback: simple sed-based stripping (less robust)
+    sed -E 's|//[^"]*$||g' < "$file" \
+      | tr '\n' '\f' \
+      | sed -E 's|,([[:space:]\f]*[}\]])|\1|g' \
+      | tr '\f' '\n' \
+      | jq '.'
+  fi
+}

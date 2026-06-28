@@ -38,3 +38,5 @@
 - [36. fail-loud-role-resolution](0036-fail-loud-role-resolution.md)
 - [37. validate-agent-ssh-identity-in-claudeconfig](0037-validate-agent-ssh-identity-in-claudeconfig.md)
 - [38. pin-bash-tool-shell-via-shell-env](0038-pin-bash-tool-shell-via-shell-env.md)
+- [39. project-level-claude-plugin-bootstrap](0039-project-level-claude-plugin-bootstrap.md)
+- [40. claude-code-remote-role](0040-claude-code-remote-role.md)

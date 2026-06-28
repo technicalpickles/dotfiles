@@ -1,0 +1,17 @@
+{
+  // Claude Code on the web / cloud, detected via CLAUDE_CODE_REMOTE=true (see
+  // ADR 0040). This role intentionally strips everything home/work assume:
+  //
+  //   - No sandbox. The cloud container is already isolated by Anthropic
+  //     (IS_SANDBOX=yes), so the dotfiles-managed allowlist (macOS hosts/paths
+  //     merged from stacks) would only get in the way. Disabling it also makes
+  //     those macOS-only sandbox entries inert, so there are no broken paths.
+  //
+  //   - No agent SSH identity (no env.GIT_CONFIG_GLOBAL). Cloud commits/pushes go
+  //     through the GitHub integration, not an agent key. Because there is no
+  //     home/.gitconfig.d/claude-agent-claude-code-remote file, claudeconfig.sh's
+  //     agent SSH validation self-skips ("role has no agent identity").
+  "sandbox": {
+    "enabled": false,
+  },
+}
