@@ -38,41 +38,45 @@ fi
 
 signing=false
 case "$DOTPICKLES_ROLE" in
-personal)
-  echo "  → using personal identify for git"
-  git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/personal-identity
+  home | container | claude-code-remote)
+    # home is the personal-machine identity. container and claude-code-remote
+    # reuse it as a basic identity; the 1Password signing block below is macOS-only
+    # so it's a no-op on Linux containers / the cloud runner (where commits go
+    # through the GitHub integration anyway).
+    echo "  → using personal identity for git"
+    git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/personal-identity
 
-  if running_macos && test -d '/Applications/1Password.app/'; then
-    echo "  → enabling 1password ssh key signing"
+    if running_macos && test -d '/Applications/1Password.app/'; then
+      echo "  → enabling 1password ssh key signing"
+      signing=true
+
+      op_ensure_signed_in
+
+      git config --file ~/.gitconfig.local gpg.ssh.program "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+      signing_key=$(op item list --tags 'ssh signing','home' --format=json | op item get - --fields 'public key')
+      if [[ -n "$signing_key" ]]; then
+        git config --file ~/.gitconfig.local user.signingkey "$signing_key"
+      else
+        echo "uh oh, couldn't find an SSH key in 1password to use" >&2
+        exit 1
+      fi
+    fi
+    ;;
+  work)
+    echo " → using work identify for git"
+    git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/work-identity
+
+    echo "  → enabling work ssh key signing"
     signing=true
 
-    op_ensure_signed_in
-
-    git config --file ~/.gitconfig.local gpg.ssh.program "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
-    signing_key=$(op item list --tags 'ssh signing','home' --format=json | op item get - --fields 'public key')
-    if [[ -n "$signing_key" ]]; then
-      git config --file ~/.gitconfig.local user.signingkey "$signing_key"
-    else
-      echo "uh oh, couldn't find an SSH key in 1password to use" >&2
-      exit 1
+    if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
+      git config --file ~/.gitconfig.local user.signingkey "$HOME/.ssh/id_ed25519.pub"
     fi
-  fi
-  ;;
-work)
-  echo " → using work identify for git"
-  git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/work-identity
-
-  echo "  → enabling work ssh key signing"
-  signing=true
-
-  if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
-    git config --file ~/.gitconfig.local user.signingkey "$HOME/.ssh/id_ed25519.pub"
-  fi
-  ;;
-*)
-  echo "Unexpected role: $DOTPICKLES_ROLE"
-  exit 1
-  ;;
+    ;;
+  *)
+    echo "Unexpected role: $DOTPICKLES_ROLE"
+    exit 1
+    ;;
 esac
 
 if [ "$signing" = true ]; then

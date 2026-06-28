@@ -22,13 +22,20 @@ if [[ -f .env ]]; then
   source .env
 fi
 
+# Determine role (consistent with home/.zshenv and fish dotpickles-role.fish).
+# Precedence: claude-code-remote (cloud is also a container, so it must win) ->
+# container -> work (hostname) -> home. See doc/adr/0035 + 0040.
 if [[ -z "${DOTPICKLES_ROLE}" ]]; then
   if hostname=$(hostnamectl hostname 2> /dev/null); then
     :
   else
     hostname=$(hostname)
   fi
-  if [[ "$hostname" =~ ^josh-nichols- ]]; then
+  if [[ "$CLAUDE_CODE_REMOTE" == "true" ]]; then
+    DOTPICKLES_ROLE="claude-code-remote"
+  elif [[ -f /.dockerenv ]] || grep -q 'docker\|lxc\|containerd' /proc/1/cgroup 2> /dev/null || [[ -n "$DOCKER_BUILD" ]]; then
+    DOTPICKLES_ROLE="container"
+  elif [[ "$hostname" =~ ^josh-nichols- ]]; then
     DOTPICKLES_ROLE="work"
   else
     DOTPICKLES_ROLE="home"

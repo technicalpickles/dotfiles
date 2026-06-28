@@ -6,10 +6,13 @@ This directory contains the configuration templates for Claude Code settings and
 
 ```
 claude/
+├── marketplaces.jsonc     # Shared marketplaces + plugin profiles (see below)
 ├── roles/
-│   ├── base.jsonc         # Core settings, base permissions, sandbox scalars
-│   ├── personal.jsonc     # Personal role overrides (empty placeholder)
-│   └── work.jsonc         # Work role: AWS/Bedrock env, work permissions
+│   ├── base.jsonc              # Core settings, base permissions, sandbox scalars
+│   ├── home.jsonc              # Home role: agent git identity, sandbox extras
+│   ├── work.jsonc             # Work role: AWS/Bedrock env, work permissions
+│   ├── container.jsonc        # Local container placeholder
+│   └── claude-code-remote.jsonc # Claude Code on the web: sandbox off, no agent id
 ├── stacks/
 │   ├── beans.jsonc        # Beans issue tracker
 │   ├── buildkite.jsonc    # Buildkite CI
@@ -211,6 +214,22 @@ These keys in `~/.claude/settings.json` are preserved across regenerations:
 
 - `enabledPlugins`: plugin activation state
 - `extraKnownMarketplaces`: managed by `configure_marketplaces()` in claudeconfig.sh
+
+## Marketplaces and per-project plugins
+
+`marketplaces.jsonc` is the single source of truth for marketplaces (alias ->
+GitHub repo) and named plugin `profiles` (`core`, `dev`; default `dev`). Two
+consumers read it:
+
+- `claudeconfig.sh` clones the marketplaces globally (`configure_marketplaces()`).
+- `claude-project-setup.sh [DIR] [--profile NAME] [--dry-run]` writes a repo's
+  **committed** `.claude/settings.json` (`extraKnownMarketplaces` + `enabledPlugins`)
+  so Claude Code on the web picks the plugins up. It merges into existing settings
+  (permissions/hooks survive). See [ADR 0039](../doc/adr/0039-project-level-claude-plugin-bootstrap.md).
+
+Plugin keys are `<plugin>@<marketplace-alias>`; the alias is the key in
+`marketplaces`, and plugin names must match each repo's
+`.claude-plugin/marketplace.json`.
 
 ## Files NOT to Edit
 

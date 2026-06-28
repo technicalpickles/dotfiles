@@ -1,0 +1,45 @@
+{
+  // Single source of truth for Claude Code marketplaces + plugin bundles.
+  //
+  // Consumed by:
+  //   - claudeconfig.sh         -> configure_marketplaces() clones these globally
+  //   - claude-project-setup.sh -> writes a repo's committed .claude/settings.json
+  //                                (extraKnownMarketplaces + enabledPlugins) so
+  //                                Claude Code on the web picks the plugins up.
+  //
+  // Marketplace KEYS here are the local aliases we choose. They are free-choice,
+  // but enabledPlugins references them as "<plugin>@<key>", so the key in
+  // "marketplaces" and the suffix in a profile entry must match. The plugin names
+  // come from each repo's .claude-plugin/marketplace.json "plugins[].name".
+  "marketplaces": {
+    // obra/superpowers-marketplace is the umbrella that bundles superpowers,
+    // elements-of-style, superpowers-chrome, developing-for-claude-code, etc.
+    // (NOT bare obra/superpowers, which is a single-plugin marketplace.)
+    "superpowers-marketplace": { "repo": "obra/superpowers-marketplace" },
+    "pickled-claude-plugins": {
+      "repo": "technicalpickles/pickled-claude-plugins",
+    },
+    // Cloned globally by claudeconfig.sh; not referenced by any profile below.
+    "claude-notifications-go": { "repo": "777genius/claude-notifications-go" },
+  },
+
+  // Named plugin bundles. Each entry is "<plugin-name>@<marketplace-key>".
+  "profiles": {
+    // Core workflows only.
+    "core": [
+      "superpowers@superpowers-marketplace",
+      "elements-of-style@superpowers-marketplace",
+    ],
+    // General-purpose coding set (default for personal repos).
+    "dev": [
+      "superpowers@superpowers-marketplace",
+      "elements-of-style@superpowers-marketplace",
+      "git@pickled-claude-plugins",
+      "ci-cd-tools@pickled-claude-plugins",
+      "dev-tools@pickled-claude-plugins",
+      "working-in-monorepos@pickled-claude-plugins",
+    ],
+  },
+
+  "defaultProfile": "dev",
+}
