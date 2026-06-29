@@ -1,0 +1,10 @@
+{
+  // Local containers (Docker/lxc/containerd), detected in home/.zshenv. This is
+  // a placeholder so DOTPICKLES_ROLE=container resolves to a real role file and
+  // doesn't trip claudeconfig.sh's fail-loud missing-role guard (ADR 0036).
+  //
+  // No overrides yet: containers inherit base settings + stacks. The sandbox
+  // stays on (unlike claude-code-remote) since a local container isn't already
+  // isolated the way Claude Code's cloud runner is. Add env/sandbox here if a
+  // concrete container workflow needs it.
+}
