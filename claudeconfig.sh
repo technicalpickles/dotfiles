@@ -43,37 +43,8 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# Read a JSON or JSONC file, stripping comments and trailing commas
-# Uses node if available for robust JSONC parsing, falls back to sed
-read_json() {
-  local file="$1"
-  if command -v node > /dev/null 2>&1; then
-    # Node handles JSONC natively with JSON5-like parsing
-    node -e "
-      const fs = require('fs');
-      const file = '$file';
-      const content = fs.readFileSync(file, 'utf8');
-      // Strip comments and trailing commas
-      const stripped = content
-        .replace(/\/\/.*$/gm, '')           // Remove // comments
-        .replace(/\/\*[\s\S]*?\*\//g, '')   // Remove /* */ comments
-        .replace(/,(\s*[}\]])/g, '\$1');    // Remove trailing commas
-      try {
-        console.log(JSON.stringify(JSON.parse(stripped)));
-      } catch (e) {
-        process.stderr.write('Error parsing ' + file + ': ' + e.message + '\n');
-        process.exit(1);
-      }
-    "
-  else
-    # Fallback: simple sed-based stripping (less robust)
-    sed -E 's|//[^"]*$||g' < "$file" \
-      | tr '\n' '\f' \
-      | sed -E 's|,([[:space:]\f]*[}\]])|\1|g' \
-      | tr '\f' '\n' \
-      | jq '.'
-  fi
-}
+# read_json (JSONC parser) now lives in functions.sh, shared with
+# claude-project-setup.sh.
 
 # Detect role (uses existing DOTPICKLES_ROLE from environment)
 ROLE="${DOTPICKLES_ROLE:-home}"
@@ -303,13 +274,17 @@ configure_marketplaces() {
   # Ensure directories exist
   mkdir -p "$marketplaces_dir"
 
-  # Define marketplaces with their GitHub repos
-  # Format: "marketplace-id:github-repo"
-  local marketplaces=(
-    "pickled-claude-plugins:technicalpickles/pickled-claude-plugins"
-    "superpowers-marketplace:obra/superpowers"
-    "claude-notifications-go:777genius/claude-notifications-go"
-  )
+  # Marketplaces come from the shared manifest (single source of truth, also
+  # read by claude-project-setup.sh). Format per line: "marketplace-id:owner/repo".
+  local manifest="$DIR/claude/marketplaces.jsonc"
+  if [ ! -f "$manifest" ]; then
+    echo "Error: $manifest not found"
+    exit 1
+  fi
+  local marketplaces=()
+  while IFS= read -r entry; do
+    marketplaces+=("$entry")
+  done < <(read_json "$manifest" | jq -r '.marketplaces | to_entries[] | "\(.key):\(.value.repo)"')
 
   # Read existing marketplaces or start with empty object
   local current_marketplaces="{}"

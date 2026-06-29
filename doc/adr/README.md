@@ -39,3 +39,5 @@
 - [37. validate-agent-ssh-identity-in-claudeconfig](0037-validate-agent-ssh-identity-in-claudeconfig.md)
 - [38. pin-bash-tool-shell-via-shell-env](0038-pin-bash-tool-shell-via-shell-env.md)
 - [39. align-agent-key-dir-with-role](0039-align-agent-key-dir-with-role.md)
+- [40. claude-code-remote-role](0040-claude-code-remote-role.md)
+- [41. project-level-claude-plugin-bootstrap](0041-project-level-claude-plugin-bootstrap.md)
