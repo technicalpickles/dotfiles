@@ -182,7 +182,9 @@ op_ensure_signed_in() {
 # standalone run (e.g. ./gitconfig.sh) can't fall through to "Unexpected role".
 # The interactive shells set it themselves (home/.zshenv,
 # config/fish/conf.d/dotpickles-role.fish) because they can't source bash.
-# Canonical names: home / work / container. See ADR 0035.
+# Canonical names: home / work / container / claude-code-remote. See ADR 0035, 0040.
+# Precedence: claude-code-remote (cloud is also a container, so it must win) ->
+# container -> work (hostname) -> home.
 dotpickles_detect_role() {
   if [ -n "${DOTPICKLES_ROLE:-}" ]; then
     return
@@ -191,7 +193,9 @@ dotpickles_detect_role() {
   local detected_hostname
   detected_hostname=$(hostnamectl hostname 2> /dev/null || hostname)
 
-  if [ -f /.dockerenv ] || grep -q 'docker\|lxc\|containerd' /proc/1/cgroup 2> /dev/null || [ -n "${DOCKER_BUILD:-}" ]; then
+  if [ "${CLAUDE_CODE_REMOTE:-}" = "true" ]; then
+    DOTPICKLES_ROLE=claude-code-remote
+  elif [ -f /.dockerenv ] || grep -q 'docker\|lxc\|containerd' /proc/1/cgroup 2> /dev/null || [ -n "${DOCKER_BUILD:-}" ]; then
     DOTPICKLES_ROLE=container
   elif [[ "$detected_hostname" =~ ^josh-nichols- ]]; then
     DOTPICKLES_ROLE=work
@@ -203,3 +207,36 @@ dotpickles_detect_role() {
 
 # Run at source time so DOTPICKLES_ROLE is guaranteed set for every consumer.
 dotpickles_detect_role
+
+# Read a JSON or JSONC file to stdout, stripping comments and trailing commas.
+# Uses node if available for robust JSONC parsing, falls back to sed + jq.
+# Shared by claudeconfig.sh and claude-project-setup.sh.
+read_json() {
+  local file="$1"
+  if command -v node > /dev/null 2>&1; then
+    # Node handles JSONC natively with JSON5-like parsing
+    node -e "
+      const fs = require('fs');
+      const file = '$file';
+      const content = fs.readFileSync(file, 'utf8');
+      // Strip comments and trailing commas
+      const stripped = content
+        .replace(/\/\/.*$/gm, '')           // Remove // comments
+        .replace(/\/\*[\s\S]*?\*\//g, '')   // Remove /* */ comments
+        .replace(/,(\s*[}\]])/g, '\$1');    // Remove trailing commas
+      try {
+        console.log(JSON.stringify(JSON.parse(stripped)));
+      } catch (e) {
+        process.stderr.write('Error parsing ' + file + ': ' + e.message + '\n');
+        process.exit(1);
+      }
+    "
+  else
+    # Fallback: simple sed-based stripping (less robust)
+    sed -E 's|//[^"]*$||g' < "$file" \
+      | tr '\n' '\f' \
+      | sed -E 's|,([[:space:]\f]*[}\]])|\1|g' \
+      | tr '\f' '\n' \
+      | jq '.'
+  fi
+}
