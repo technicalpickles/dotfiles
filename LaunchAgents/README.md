@@ -33,13 +33,13 @@ Refreshes QMD semantic search index for the Obsidian vault.
 
 **What it does:**
 
-- Runs `qmd update && qmd embed` to refresh text and vector indexes
+- Runs `qmd update && qmd embed` (via the `bin/qmd` wrapper) to refresh text and vector indexes
 - Runs every 15 minutes (at :00, :15, :30, :45)
 - Logs to `/tmp/com.technicalpickles.qmd-refresh.{out,err}`
 
 **Prerequisites:**
 
-- QMD available via: `npx @tobilu/qmd`
+- QMD runs through `bin/qmd` (on PATH via `~/.pickles/bin`), which execs `@tobilu/qmd` under a pinned Node version with `mise exec`. Override the version with `QMD_NODE_VERSION` (default `24`).
 - Collection configured: `qmd collection add ~/Vaults/pickled-knowledge --name second-brain`
 
 ## Setup

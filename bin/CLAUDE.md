@@ -7,6 +7,7 @@ Scripts and utilities. Most are wrappers or helpers used by other scripts and ho
 - `bin/prettier`: Wraps npm prettier with custom ignore and config paths
 - `bin/adr`: Wrapper for adr-tools (`bin/adr new "title"`, `bin/adr list`)
 - `bin/shell`: Helper for shell-related operations
+- `bin/qmd`: Runs the qmd semantic-search CLI (`@tobilu/qmd` via npx) under a pinned Node version with `mise exec`. Locates mise itself so it works under launchd (no PATH/mise activation). Used by the qmd-refresh LaunchAgent. Override version with `QMD_NODE_VERSION` (default `24`).
 
 ## Spotlight Management
 

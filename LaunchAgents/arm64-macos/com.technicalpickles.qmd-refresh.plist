@@ -8,7 +8,7 @@
     <array>
         <string>/bin/bash</string>
         <string>-c</string>
-        <string>$HOME/.local/share/mise/shims/npx @tobilu/qmd update &amp;&amp; $HOME/.local/share/mise/shims/npx @tobilu/qmd embed</string>
+        <string>$HOME/.pickles/bin/qmd update &amp;&amp; $HOME/.pickles/bin/qmd embed</string>
     </array>
     <key>StartCalendarInterval</key>
     <array>

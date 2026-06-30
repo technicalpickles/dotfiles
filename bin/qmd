@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+#
+# qmd wrapper -- runs the qmd semantic-search CLI (@tobilu/qmd, on npm) under a
+# pinned Node version via `mise exec`.
+#
+# Why a wrapper:
+#   - qmd isn't installed globally; it's run through npx. Pinning the Node
+#     version keeps the runtime reproducible instead of inheriting whatever
+#     node happens to be active.
+#   - The qmd-refresh LaunchAgent runs under launchd, where PATH and mise
+#     activation don't exist. This script locates mise itself so it resolves
+#     the same from an interactive shell and from launchd.
+#
+# Override the Node version or package with QMD_NODE_VERSION / QMD_PACKAGE.
+
+set -euo pipefail
+
+QMD_NODE_VERSION="${QMD_NODE_VERSION:-24}"
+QMD_PACKAGE="${QMD_PACKAGE:-@tobilu/qmd}"
+
+# Locate mise: interactive shells have it on PATH; launchd does not.
+mise_bin="$(command -v mise || true)"
+if [[ -z "$mise_bin" ]]; then
+  for candidate in /opt/homebrew/bin/mise /usr/local/bin/mise "$HOME/.local/bin/mise"; do
+    if [[ -x "$candidate" ]]; then
+      mise_bin="$candidate"
+      break
+    fi
+  done
+fi
+
+if [[ -z "$mise_bin" ]]; then
+  echo "qmd: could not find mise (checked PATH, homebrew, ~/.local/bin)" >&2
+  exit 1
+fi
+
+exec "$mise_bin" exec "node@${QMD_NODE_VERSION}" -- npx "$QMD_PACKAGE" "$@"
