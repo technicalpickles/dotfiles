@@ -42,6 +42,26 @@ Refreshes QMD semantic search index for the Obsidian vault.
 - QMD runs through `bin/qmd` (on PATH via `~/.pickles/bin`), which execs `@tobilu/qmd` under a pinned Node version with `mise exec`. Override the version with `QMD_NODE_VERSION` (default `24`).
 - Collection configured: `qmd collection add ~/Vaults/pickled-knowledge --name second-brain`
 
+### `arm64-macos/com.technicalpickles.qmd-mcp.plist`
+
+Runs QMD as an HTTP MCP server so Claude (and other agents) can search the vault.
+
+**Platform:** arm64 macOS only (gated by `running_arm64_macos`; see "Platform-gated agents" below).
+
+**What it does:**
+
+- Runs `qmd mcp --http --port 8181` (via the `bin/qmd` wrapper), bound to `localhost` only
+- `KeepAlive` + `RunAtLoad`: stays up and restarts if it dies (long-lived query server)
+- Sets `QMD_METAL_KEEP_RESIDENCY=1` (qmd doctor recommends this for long-lived Metal processes)
+- Health check: `curl http://localhost:8181/health`; MCP endpoint is `POST /mcp`
+- Logs to `/tmp/com.technicalpickles.qmd-mcp.{out,err}`
+
+**Claude registration** (not managed here -- lives in `~/.claude.json` via the CLI):
+
+```bash
+claude mcp add --transport http qmd http://localhost:8181/mcp --scope user
+```
+
 ## Setup
 
 The `install.sh` script automatically symlinks all `.plist` files from this directory to `~/Library/LaunchAgents/`. Plists in platform-gated subdirectories (e.g. `arm64-macos/`) are linked only when the host matches.
