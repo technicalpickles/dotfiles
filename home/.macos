@@ -48,6 +48,12 @@ defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
 # Disable auto-correct
 defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
 
+# Disable smart dashes (straight -- to em dash) as they’re annoying when typing code
+defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
+
+# Disable inline text completion suggestions
+defaults write NSGlobalDomain NSAutomaticTextCompletionEnabled -bool false
+
 # Disable press-and-hold for accented characters
 defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
 
