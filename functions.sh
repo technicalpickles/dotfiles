@@ -221,7 +221,7 @@ read_json() {
       const content = fs.readFileSync(file, 'utf8');
       // Strip comments and trailing commas
       const stripped = content
-        .replace(/\/\/.*$/gm, '')           // Remove // comments
+        .replace(/(^|\s)\/\/.*$/gm, '\$1')  // Remove // line comments (not // inside strings, e.g. http:// URLs)
         .replace(/\/\*[\s\S]*?\*\//g, '')   // Remove /* */ comments
         .replace(/,(\s*[}\]])/g, '\$1');    // Remove trailing commas
       try {

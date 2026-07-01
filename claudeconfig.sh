@@ -338,6 +338,63 @@ configure_marketplaces() {
 
 configure_marketplaces
 
+# Register MCP servers into ~/.claude.json (user scope) from the shared
+# manifest. Claude owns ~/.claude.json's format, so we drive the `claude mcp`
+# CLI rather than hand-editing the file. Add-if-missing (idempotent), matching
+# configure_marketplaces. To change an existing server, remove it first
+# (`claude mcp remove <name> -s user`) and re-run.
+configure_mcp_servers() {
+  echo "Configuring MCP servers..."
+
+  local manifest="$DIR/claude/mcp-servers.jsonc"
+  if [ ! -f "$manifest" ]; then
+    echo "Error: $manifest not found"
+    exit 1
+  fi
+
+  local servers_json
+  servers_json=$(read_json "$manifest" | jq -c '.servers // {}')
+
+  local names
+  names=$(echo "$servers_json" | jq -r 'keys[]')
+  if [ -z "$names" ]; then
+    echo "  ℹ no MCP servers declared"
+    return 0
+  fi
+
+  local name
+  while IFS= read -r name; do
+    if claude mcp get "$name" > /dev/null 2>&1; then
+      echo "  ✓ $name (already registered)"
+      continue
+    fi
+
+    local transport url
+    transport=$(echo "$servers_json" | jq -r --arg n "$name" '.[$n].transport // "http"')
+    url=$(echo "$servers_json" | jq -r --arg n "$name" '.[$n].url // ""')
+
+    case "$transport" in
+      http | sse)
+        if [ -z "$url" ]; then
+          echo "  ✗ $name: transport '$transport' requires a url; skipping" >&2
+          continue
+        fi
+        echo "  + Registering $name ($transport -> $url)..."
+        if claude mcp add --transport "$transport" "$name" "$url" --scope user > /dev/null 2>&1; then
+          echo "    ✓ Added to user config"
+        else
+          echo "    ✗ Failed to register $name (continuing anyway)" >&2
+        fi
+        ;;
+      *)
+        echo "  ✗ $name: unsupported transport '$transport' (only http/sse); skipping" >&2
+        ;;
+    esac
+  done <<< "$names"
+}
+
+configure_mcp_servers
+
 # Validate the active role's agent SSH identity (fail loud). Apply has already
 # completed above, so this only affects the exit code -- config is never left
 # half-written. Delegates to bin/check-agent-ssh-key, which validates local key
