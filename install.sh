@@ -28,8 +28,10 @@ fi
 source ./functions.sh
 echo "role: $DOTPICKLES_ROLE"
 
-# Guard: non-interactive without --yes is an error
-if [ "${DOTPICKLES_YES:-}" != "1" ] && [ ! -t 0 ]; then
+# Guard: non-interactive without --yes is an error, unless we're in an
+# automated container build (DOCKER_BUILD, same signal functions.sh uses
+# to detect the "container" role).
+if [ "${DOTPICKLES_YES:-}" != "1" ] && [ -z "${DOCKER_BUILD:-}" ] && [ ! -t 0 ]; then
   echo "Error: not running interactively. Use --yes/-y for unattended mode." >&2
   exit 1
 fi
