@@ -16,6 +16,8 @@ Pre-commit hooks via `lefthook`: Prettier formats staged files, TypeScript check
 
 There are no traditional unit tests. "Testing" means `npm run lint` + manual install verification.
 
+**Pushing needs the sandbox off.** `git push` and `gh` commands fail under the command sandbox (`nc: authentication method negotiation failed`) because SSH auth goes through the 1Password agent socket, which the sandbox blocks. Re-run the push/`gh` call with the sandbox disabled.
+
 ## Architecture Decision Records
 
 This repo uses ADRs to document why architectural choices were made. Before making significant changes, check [doc/adr/](doc/adr/) for existing decisions.
