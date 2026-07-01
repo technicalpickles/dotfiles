@@ -13,8 +13,7 @@ Fish is the primary shell. Config is modular via `conf.d/` autoloading.
 - `editor.fish`: Sets `EDITOR` based on `envsense` environment detection (Cursor vs Claude Code vs terminal)
 - `ghostty.fish`: Ghostty-specific setup
 - `cursor_agent.fish`, `obsidian.fish`: IDE-specific behaviors
-- `atuin.fish`: Shell history with atuin
-- Tool inits: starship, homebrew, bat, git-duet, mise, etc.
+- Tool inits: starship, homebrew, bat, git-duet, pyenv, rustup, uv, zoxide, etc. (mise inits in `config.fish`, not conf.d)
 
 ## Load Order Gotcha
 
