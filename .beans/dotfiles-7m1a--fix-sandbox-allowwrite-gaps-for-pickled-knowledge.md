@@ -1,11 +1,11 @@
 ---
 # dotfiles-7m1a
 title: Fix sandbox allowWrite gaps for pickled-knowledge vault and superpowers-chrome cache
-status: in-progress
+status: completed
 type: bug
 priority: normal
 created_at: 2026-07-09T20:02:45Z
-updated_at: 2026-07-09T20:04:54Z
+updated_at: 2026-07-09T20:05:01Z
 ---
 
 Found via cq query of the last week's Claude Code session transcripts: 13 sandbox EPERM failures, two of which are genuine allowlist gaps.
