@@ -145,13 +145,10 @@ const config: FinickyConfig = {
       browser: 'us.zoom.xos',
     },
 
-    // Google Meet works better in Chrome
+    // Google Meet - open in Chrome installed app
     {
       match: ['meet.google.com/*', '*.meet.google.com/*'],
-      browser: {
-        name: 'Google Chrome',
-        profile: workChromeProfile,
-      },
+      browser: 'Google Meet',
     },
 
     // Google Calendar - open in Chrome installed app
