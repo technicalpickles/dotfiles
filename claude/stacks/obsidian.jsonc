@@ -3,15 +3,17 @@
     "allow": [
       "Skill(second-brain:distill-conversation)",
       "Read(~/.claude/second-brain.md)",
-      "Read(/Users/technicalpickles/Documents/pickled-knowledge/**/*.md)",
-      "Write(/Users/technicalpickles/Documents/pickled-knowledge/**/*.md)",
-      "Edit(/Users/technicalpickles/Documents/pickled-knowledge/**/*.md)",
+      "Read(~/Vaults/pickled-knowledge/**/*.md)",
+      "Write(~/Vaults/pickled-knowledge/**/*.md)",
+      "Edit(~/Vaults/pickled-knowledge/**/*.md)",
     ],
   },
 
   "sandbox": {
     "filesystem": {
-      "allowWrite": ["~/.cache/qmd/"],
+      // ~/Vaults/pickled-knowledge is the Obsidian vault itself; sb note
+      // create (@techpickles/sb) writes new notes directly into its inbox.
+      "allowWrite": ["~/.cache/qmd/", "~/Vaults/pickled-knowledge"],
     },
   },
 }
