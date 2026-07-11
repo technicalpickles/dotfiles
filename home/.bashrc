@@ -4,6 +4,13 @@ case $- in
   *) return ;;
 esac
 
+# mise-managed tool paths (~/.local/bin, ~/bin, ~/.cargo/bin, etc. -- see
+# config/mise/conf.d/path.toml) and runtime shims. fish and zsh already do
+# this (config/fish/config.fish, home/.zshenv); bash never did.
+if command -v mise > /dev/null 2>&1; then
+  eval "$(mise activate bash)"
+fi
+
 # Path to your oh-my-bash installation.
 export OSH="$HOME/.oh-my-bash"
 
