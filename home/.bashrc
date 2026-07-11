@@ -7,6 +7,16 @@ esac
 # mise-managed tool paths (~/.local/bin, ~/bin, ~/.cargo/bin, etc. -- see
 # config/mise/conf.d/path.toml) and runtime shims. fish and zsh already do
 # this (config/fish/config.fish, home/.zshenv); bash never did.
+#
+# ~/.local/bin needs to be on PATH *before* the command -v check below: when
+# mise itself is installed there (as in sandboxes without a system package),
+# `command -v mise` can't find it and activation silently never runs. zsh
+# sidesteps this with an unconditional PATH fixup at the end of .zshenv;
+# mirror that here instead of depending on mise to bootstrap its own PATH.
+if [[ -d "$HOME/.local/bin" ]]; then
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+
 if command -v mise > /dev/null 2>&1; then
   eval "$(mise activate bash)"
 fi
