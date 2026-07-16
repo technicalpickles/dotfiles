@@ -38,11 +38,11 @@ fi
 
 signing=false
 case "$DOTPICKLES_ROLE" in
-  home | container | claude-code-remote)
-    # home is the personal-machine identity. container and claude-code-remote
-    # reuse it as a basic identity; the 1Password signing block below is macOS-only
-    # so it's a no-op on Linux containers / the cloud runner (where commits go
-    # through the GitHub integration anyway).
+  home | container | claude-code-remote | coi-host)
+    # home is the personal-machine identity. container, claude-code-remote, and
+    # coi-host reuse it as a basic identity; the 1Password signing block below is
+    # macOS-only so it's a no-op on Linux containers / the cloud runner (where
+    # commits go through the GitHub integration anyway) / the COI incus host VM.
     echo "  → using home identity for git"
     git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/home-identity
 

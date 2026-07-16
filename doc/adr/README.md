@@ -42,3 +42,4 @@
 - [40. claude-code-remote-role](0040-claude-code-remote-role.md)
 - [41. project-level-claude-plugin-bootstrap](0041-project-level-claude-plugin-bootstrap.md)
 - [42. simplify-bash-prompt-to-starship-only](0042-simplify-bash-prompt-to-starship-only.md)
+- [43. canonical-dotpickles-role-names](0043-canonical-dotpickles-role-names.md)

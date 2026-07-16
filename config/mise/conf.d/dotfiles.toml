@@ -6,4 +6,9 @@ node = "lts"
 # pitchfork = "latest" # no darwin/amd64 build; breaks mise on Intel Macs (commented 2026-06-07)
 pkl = "0.30.0"
 python = "3.13"
+# starship lives here, not in Brewfile, because it needs to work on Linux too.
+# The upstream curl | sh installer calls `sudo -v`, which fails on a
+# NOPASSWD-only host with no tty (no credential to validate). mise installs
+# the same version with no sudo.
+starship = "latest"
 uv = "latest"

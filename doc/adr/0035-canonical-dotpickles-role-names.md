@@ -4,7 +4,14 @@ Date: 2026-06-12
 
 ## Status
 
-Accepted
+Superseded by [ADR-0043](0043-canonical-dotpickles-role-names.md)
+
+**Reason for superseding:** This ADR's own canonical list drifted before it was
+even a month old: it omits `claude-code-remote`, which `functions.sh` had
+already been emitting since ADR 0040 landed two weeks after this one. ADR 0043
+restates the list (adding `claude-code-remote` and the new `coi-host` role) and
+documents explicit-only roles (set by a caller instead of detected), a mode
+this ADR didn't account for.
 
 ## Context
 
