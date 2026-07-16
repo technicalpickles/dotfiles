@@ -40,6 +40,10 @@ brew 'dysk'
 brew 'choose-rust'
 brew 'gpg' # we don't use it ourselves, but other tools use it to verify
 
+# images
+brew 'imagemagick'
+brew 'webp' # cwebp/dwebp
+
 # networky
 brew 'mtr'
 brew 'nmap'
