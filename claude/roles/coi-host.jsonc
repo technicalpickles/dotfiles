@@ -7,6 +7,19 @@
   // a real role file and doesn't trip claudeconfig.sh's fail-loud missing-role
   // guard (ADR 0031).
   //
-  // No overrides yet. Add env/sandbox here if a concrete COI-host workflow
-  // needs them.
+  // Agent identity: deliberately reuses the home agent identity rather than
+  // minting a coi-host one. This VM is an extension of the user's personal
+  // machine, and a separate identity would need its own GitHub enrollment on
+  // every VM rebuild, which fights the rebuild-from-scratch goal this VM
+  // exists to prove. The private key is copied into the VM by pickled-coi's
+  // vm/auth.sh (copying was chosen over the alternatives).
+  //
+  // See claude/roles/home.jsonc for the full GIT_CONFIG_GLOBAL explanation.
+  "env": {
+    "GIT_CONFIG_GLOBAL": "~/.gitconfig.d/claude-agent-home",
+  },
+
+  // No other overrides yet. Add sandbox rules here if a concrete COI-host
+  // workflow needs them -- don't copy home's sandbox block as-is, its
+  // allowWrite is a macOS Library path and its allowedHosts are Mac-specific.
 }
