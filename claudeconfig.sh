@@ -68,6 +68,12 @@ setup_claude_directory() {
     ln -s "$claude_md" "$claude_md_target"
     echo "  ✓ CLAUDE.md symlinked"
   fi
+
+  # Symlink ccline (statusline) config -- only config.toml/models.toml are
+  # user-managed; the binary and stock themes/ stay unmanaged in ~/.claude/ccline.
+  mkdir -p "$HOME/.claude/ccline"
+  link "claude/ccline/config.toml" "$HOME/.claude/ccline/config.toml"
+  link "claude/ccline/models.toml" "$HOME/.claude/ccline/models.toml"
 }
 
 setup_claude_directory
