@@ -12,6 +12,11 @@
   // session logs
   "showThinkingSummaries": true,
 
+  // Push notifications for agent turn completion, and suppressing the
+  // workflow usage warning. These settings persist across claudeconfig.sh.
+  "agentPushNotifEnabled": true,
+  "skipWorkflowUsageWarning": true,
+
   // Pin the shell so the system prompt tells the truth about it.
   //
   // The Bash tool only ever runs bash or zsh. Its resolver reads $SHELL and,
