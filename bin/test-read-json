@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Test for read_json's JSONC parser (functions.sh).
+#
+# read_json uses a single string-aware python3 parser. This checks it on every
+# real repo jsonc file plus synthetic fixtures, including regression cases for
+# two bugs the earlier regex-based parsers had:
+#   - a trailing comma with a COMMENT between it and the closing brace
+#     (the old python fallback stripped comments and commas in one pass, so
+#      the comma was checked before the following comment was removed)
+#   - a "/**/" glob inside a string value, e.g. "~/Vaults/x/**/*.md"
+#     (the old node path matched "/**/" as an empty /* */ block comment and
+#      silently ate it, corrupting real permission globs)
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+pass=0
+fail=0
+
+ok() {
+  echo -e "${GREEN}ok${NC} - $*"
+  pass=$((pass + 1))
+}
+
+bad() {
+  echo -e "${RED}FAIL${NC} - $*"
+  fail=$((fail + 1))
+}
+
+read_json_() {
+  bash -c "source '$DOTFILES_DIR/functions.sh' >/dev/null 2>&1; read_json '$1'"
+}
+
+fixture_dir="$(mktemp -d)"
+trap 'rm -rf "$fixture_dir"' EXIT
+
+echo "=== parses every real repo jsonc file ==="
+files=("$DOTFILES_DIR"/claude/roles/*.jsonc "$DOTFILES_DIR"/claude/stacks/*.jsonc "$DOTFILES_DIR/claude/mcp-servers.jsonc")
+for f in "${files[@]}"; do
+  [[ -f "$f" ]] || continue
+  err_file="$fixture_dir/err"
+  if read_json_ "$f" > /dev/null 2> "$err_file"; then
+    ok "parses $(basename "$f")"
+  else
+    bad "failed on $(basename "$f"): $(cat "$err_file")"
+  fi
+done
+
+echo "=== edge cases in one fixture ==="
+fixture="$fixture_dir/edge-cases.jsonc"
+cat > "$fixture" << 'EOF'
+{
+  // comment with a "quoted phrase" inside it
+  "a": 1,
+  "b": "keep http://example.com/path intact",
+  "c": [1, 2, 3,],
+  "d": {
+    "e": 4,
+  },
+}
+EOF
+out="$fixture_dir/out"
+if read_json_ "$fixture" > "$out" 2> "$fixture_dir/err"; then
+  ok "parses quote-in-comment + url-in-string + trailing commas"
+  [[ "$(jq -r '.b' "$out")" == "keep http://example.com/path intact" ]] \
+    && ok "// inside a string value survives" \
+    || bad "// inside a string value was corrupted: $(jq -r '.b' "$out")"
+  [[ "$(jq -r '.a' "$out")" == 1 && "$(jq -r '.d.e' "$out")" == 4 && "$(jq -r '.c | length' "$out")" == 3 ]] \
+    && ok "trailing commas removed (array and object)" \
+    || bad "trailing comma handling wrong"
+else
+  bad "fixture failed: $(cat "$fixture_dir/err")"
+fi
+
+echo "=== regression: trailing comma with a comment before the brace ==="
+# The exact shape of claude/roles/coi-host.jsonc: a member, a trailing comma
+# after its closing brace, then a comment, then the outer brace.
+reg1="$fixture_dir/comma-then-comment.jsonc"
+cat > "$reg1" << 'EOF'
+{
+  "env": {
+    "X": "y",
+  },
+
+  // a comment sitting between the trailing comma and the closing brace
+}
+EOF
+if out1="$(read_json_ "$reg1" 2> "$fixture_dir/err")"; then
+  [[ "$(echo "$out1" | jq -r '.env.X')" == "y" ]] \
+    && ok "comma-then-comment-then-brace parses" \
+    || bad "parsed but wrong value: $out1"
+else
+  bad "comma-then-comment-then-brace failed: $(cat "$fixture_dir/err")"
+fi
+
+echo "=== regression: /**/ glob inside a string value ==="
+# The exact shape of claude/stacks/obsidian.jsonc: a glob whose "/**/" must NOT
+# be eaten as a block comment.
+reg2="$fixture_dir/glob.jsonc"
+cat > "$reg2" << 'EOF'
+{
+  "allow": ["Read(~/Vaults/pickled-knowledge/**/*.md)"]
+}
+EOF
+if out2="$(read_json_ "$reg2" 2> "$fixture_dir/err")"; then
+  got="$(echo "$out2" | jq -r '.allow[0]')"
+  [[ "$got" == "Read(~/Vaults/pickled-knowledge/**/*.md)" ]] \
+    && ok "/**/ inside a string survives intact" \
+    || bad "/**/ glob was corrupted, got: $got"
+else
+  bad "glob fixture failed: $(cat "$fixture_dir/err")"
+fi
+
+echo ""
+echo "$pass passed, $fail failed"
+[[ "$fail" -eq 0 ]]
