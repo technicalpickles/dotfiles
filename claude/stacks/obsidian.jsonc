@@ -4,7 +4,6 @@
       "Skill(second-brain:distill-conversation)",
       "Read(~/.claude/second-brain.md)",
       "Read(~/Vaults/pickled-knowledge/**/*.md)",
-      "Write(~/Vaults/pickled-knowledge/**/*.md)",
       "Edit(~/Vaults/pickled-knowledge/**/*.md)",
     ],
   },
