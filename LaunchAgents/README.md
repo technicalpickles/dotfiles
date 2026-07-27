@@ -25,6 +25,24 @@ Disables Spotlight indexing on all volumes at startup.
 
 **Note:** This requires sudo privileges. You may need to configure passwordless sudo for mdutil, or Spotlight will re-enable on reboot.
 
+### `com.technicalpickles.karabiner-wake-fix.plist`
+
+Forces Karabiner's Core-Service daemon to restart immediately on wake instead of waiting
+through its own ~10s internal reconnect delay (observed as a dead gap in
+`/var/log/karabiner/core_service.log` between event tap teardown and device_grabber
+restart -- see [ADR 0045](../doc/adr/0045-sudoers.d-templates-for-launchagent-root-actions.md)
+and [upstream issue #3808](https://github.com/pqrs-org/Karabiner-Elements/issues/3808)).
+
+**Role:** home only (Karabiner is a home-role tool; installed by `karabinerconfig.sh`, not managed by hand).
+
+**What it does:**
+
+- Runs `sleepwatcher -w bin/karabiner-wake-fix.sh` (`KeepAlive` + `RunAtLoad`, stays resident watching for wake)
+- On wake, the script runs `sudo launchctl kickstart -k system/org.pqrs.service.daemon.Karabiner-Core-Service`
+- Logs to `/tmp/com.technicalpickles.karabiner-wake-fix.{out,err}`
+
+**Requires sudo:** uses the scoped `NOPASSWD` sudoers rule installed by `karabinerconfig.sh` at `/etc/sudoers.d/karabiner-wake-fix` (see ADR 0045) -- passwordless for that exact `launchctl kickstart` command only.
+
 ### `arm64-macos/com.technicalpickles.qmd-refresh.plist`
 
 Refreshes QMD semantic search index for the Obsidian vault.

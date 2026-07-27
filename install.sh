@@ -73,6 +73,8 @@ echo
 ./taskrc.sh
 
 if running_macos; then
+  ./karabinerconfig.sh
+
   echo "🍎 configuring macOS defaults"
   ~/.macos
   echo

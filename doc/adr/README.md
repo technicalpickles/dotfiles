@@ -43,3 +43,4 @@
 - [41. project-level-claude-plugin-bootstrap](0041-project-level-claude-plugin-bootstrap.md)
 - [42. simplify-bash-prompt-to-starship-only](0042-simplify-bash-prompt-to-starship-only.md)
 - [43. canonical-dotpickles-role-names](0043-canonical-dotpickles-role-names.md)
+- [45. sudoers.d-templates-for-launchagent-root-actions](0045-sudoers.d-templates-for-launchagent-root-actions.md)

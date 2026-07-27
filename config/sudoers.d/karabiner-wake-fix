@@ -1,0 +1,6 @@
+# Allows bin/karabiner-wake-fix.sh (run from a user LaunchAgent, no
+# terminal available) to restart Karabiner's root daemon without a password
+# prompt. Scoped to this exact command -- see LaunchAgents/README.md's "Sudo
+# password required" section and
+# doc/adr/0045-sudoers.d-templates-for-launchagent-root-actions.md.
+technicalpickles ALL=(ALL) NOPASSWD: /bin/launchctl kickstart -k system/org.pqrs.service.daemon.Karabiner-Core-Service
