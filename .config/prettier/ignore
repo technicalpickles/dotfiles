@@ -1,16 +1,22 @@
 # Git submodules
-home/.hammerspoon/Spoons/ControlEscape.spoon
-vendor/vim-pathogen
-vendor/vim-plug
-vendor/sbp
-config/cheat/cheatsheets/community
-config/cheat/cheatsheets/personal
+#
+# paths below are prefixed with **/ because this ignore file lives at
+# .config/prettier/, and gitignore anchoring resolves any pattern
+# containing a non-trailing / relative to the ignore file's own
+# directory, not the repo root -- an unprefixed path here would silently
+# never match
+**/home/.hammerspoon/Spoons/ControlEscape.spoon
+**/vendor/vim-pathogen
+**/vendor/vim-plug
+**/vendor/sbp
+**/config/cheat/cheatsheets/community
+**/config/cheat/cheatsheets/personal
 
 # automatically pulled
-home/.vim/plugged
+**/home/.vim/plugged
 
 # stuff that doesn't need formatting
-config/fish/fish_plugins
+**/config/fish/fish_plugins
 
 # auto-generated issue-tracker files (beans); change constantly and contain
 # markdown-emphasis-like text (*, _) that prettier rewrites, breaking CI on
@@ -20,5 +26,10 @@ config/fish/fish_plugins
 # stuff without prettier support
 *.fish
 .editorconfig
-home/.gitconfig
-config/ghostty/config
+**/home/.gitconfig
+**/config/ghostty/config
+
+# live app data, not hand-authored -- Karabiner-Elements rewrites this file
+# in place (4-space indent) whenever its settings change, since
+# ~/.config/karabiner is symlinked straight to this repo path
+**/karabiner/karabiner.json
