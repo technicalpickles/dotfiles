@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.technicalpickles.qmd-mcp</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>$HOME/.pickles/bin/qmd mcp --http --port 8181</string>
+    </array>
+    <!-- Long-lived query server: keep it running and restart if it dies. -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <!-- qmd doctor recommends opting back into Metal residency sets for
+         long-lived processes (default disables them for clean short-run exit). -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>QMD_METAL_KEEP_RESIDENCY</key>
+        <string>1</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/tmp/com.technicalpickles.qmd-mcp.out</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/com.technicalpickles.qmd-mcp.err</string>
+</dict>
+</plist>

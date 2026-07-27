@@ -5,8 +5,10 @@
       // Plugin cache read access (reduces per-skill permission prompts)
       "Read(~/.claude/plugins/cache/**)",
       "Read(~/.claude/plugins/marketplaces/pickled-claude-plugins)",
-      // superpowers-chrome puts stuff here
-      "Read(~/Library/Caches/superpowers/**)",
+      // superpowers-chrome browser profiles/sessions. Always XDG ~/.cache
+      // even on macOS (see chrome-launcher-helpers.js getXdgCacheHome()) --
+      // not the ~/Library/Caches path this used to point at.
+      "Read(~/.cache/superpowers/**)",
       "Skill(buildkite-status)",
       "Skill(checkout-pr)",
       "Skill(ci-cd-tools:buildkite-status)",
@@ -32,5 +34,12 @@
       "Skill(working-in-monorepos:working-in-monorepos)",
       "Skill(working-in-scratch-areas)",
     ],
+  },
+
+  "sandbox": {
+    "filesystem": {
+      // superpowers-chrome creates its browser-profiles dir on first launch.
+      "allowWrite": ["~/.cache/superpowers"],
+    },
   },
 }

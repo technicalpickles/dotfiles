@@ -1,0 +1,24 @@
+{
+  // Single source of truth for MCP servers registered into ~/.claude.json
+  // (user scope, available in all projects).
+  //
+  // Consumed by:
+  //   - claudeconfig.sh -> configure_mcp_servers() registers each via the
+  //     `claude mcp` CLI. Claude owns ~/.claude.json's format, so we drive the
+  //     CLI rather than hand-editing the file.
+  //
+  // Registration is add-if-missing (idempotent), matching marketplaces. To
+  // change an existing server's url/transport, remove it first, then re-run:
+  //   claude mcp remove <name> -s user && ./claudeconfig.sh
+  //
+  // Each entry key is the server name. Supported transports: "http", "sse"
+  // (both url-based). Stdio servers aren't modeled here yet.
+  "servers": {
+    // qmd semantic search over the Obsidian vault. Served by the
+    // com.technicalpickles.qmd-mcp LaunchAgent (localhost:8181, arm64 macOS).
+    "qmd": {
+      "transport": "http",
+      "url": "http://localhost:8181/mcp",
+    },
+  },
+}

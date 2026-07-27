@@ -5,22 +5,7 @@ status: completed
 type: bug
 priority: high
 created_at: 2026-06-12T01:53:13Z
-updated_at: 2026-06-12T01:57:50Z
+updated_at: 2026-06-27T03:03:32Z
 ---
 
-DOTPICKLES_ROLE=home had no matching claude/roles/home.jsonc (only personal.jsonc). claudeconfig.sh silently skipped the role merge, so ~/.claude/settings.json got no env block, GIT_CONFIG_GLOBAL was never set, and Claude git commits fell through to op-ssh-sign -> 1Password prompt every commit. Fixed by completing the personal->home role rename and adding a loud-fail guard.
-
-## Checklist
-
-- [x] git mv claude/roles/personal.jsonc -> home.jsonc
-- [x] git mv home/.gitconfig.d/claude-agent-personal -> claude-agent-home
-- [x] Update GIT_CONFIG_GLOBAL ref + comments in home.jsonc
-- [x] Update comment in claude-agent-home (kept personal-agent identity)
-- [x] Fix stale personal default in home/.zshenv
-- [x] Fix stale DOTPICKLES_ROLE:personal in fish_variables (gitignored, local only)
-- [x] claudeconfig.sh: default ROLE home + loud-fail guard for missing role file
-- [x] Regenerate ~/.claude/settings.json (env.GIT_CONFIG_GLOBAL now present)
-- [x] Relink not needed (~/.gitconfig.d is a symlinked dir)
-- [x] Verified: ssh-keygen signs non-interactively, commit authored as personal-agent, no 1Password prompt
-
-Note: local git log --show-signature shows No signature because gpg.ssh.allowedSignersFile is unset; GitHub still shows Verified via enrolled key. Optional follow-up if local verification matters.
+Superseded by dotfiles-y9zc. The personal->home rename this bean described was reverted by commit ee2ff1c, then re-applied and verified in y9zc (commit a924a05) plus the follow-on fixes (i6rc role detection, c4o0 key-path validation, qybw agents/personal->home). Agent git identity now works: home role loads claude-agent-home, signs as the personal-agent email with the key at ~/.ssh/agents/home, no 1Password prompt.

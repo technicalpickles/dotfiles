@@ -43,37 +43,8 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# Read a JSON or JSONC file, stripping comments and trailing commas
-# Uses node if available for robust JSONC parsing, falls back to sed
-read_json() {
-  local file="$1"
-  if command -v node > /dev/null 2>&1; then
-    # Node handles JSONC natively with JSON5-like parsing
-    node -e "
-      const fs = require('fs');
-      const file = '$file';
-      const content = fs.readFileSync(file, 'utf8');
-      // Strip comments and trailing commas
-      const stripped = content
-        .replace(/\/\/.*$/gm, '')           // Remove // comments
-        .replace(/\/\*[\s\S]*?\*\//g, '')   // Remove /* */ comments
-        .replace(/,(\s*[}\]])/g, '\$1');    // Remove trailing commas
-      try {
-        console.log(JSON.stringify(JSON.parse(stripped)));
-      } catch (e) {
-        process.stderr.write('Error parsing ' + file + ': ' + e.message + '\n');
-        process.exit(1);
-      }
-    "
-  else
-    # Fallback: simple sed-based stripping (less robust)
-    sed -E 's|//[^"]*$||g' < "$file" \
-      | tr '\n' '\f' \
-      | sed -E 's|,([[:space:]\f]*[}\]])|\1|g' \
-      | tr '\f' '\n' \
-      | jq '.'
-  fi
-}
+# read_json (JSONC parser) now lives in functions.sh, shared with
+# claude-project-setup.sh.
 
 # Detect role (uses existing DOTPICKLES_ROLE from environment)
 ROLE="${DOTPICKLES_ROLE:-home}"
@@ -97,6 +68,12 @@ setup_claude_directory() {
     ln -s "$claude_md" "$claude_md_target"
     echo "  ✓ CLAUDE.md symlinked"
   fi
+
+  # Symlink ccline (statusline) config -- only config.toml/models.toml are
+  # user-managed; the binary and stock themes/ stay unmanaged in ~/.claude/ccline.
+  mkdir -p "$HOME/.claude/ccline"
+  link "claude/ccline/config.toml" "$HOME/.claude/ccline/config.toml"
+  link "claude/ccline/models.toml" "$HOME/.claude/ccline/models.toml"
 }
 
 setup_claude_directory
@@ -303,13 +280,17 @@ configure_marketplaces() {
   # Ensure directories exist
   mkdir -p "$marketplaces_dir"
 
-  # Define marketplaces with their GitHub repos
-  # Format: "marketplace-id:github-repo"
-  local marketplaces=(
-    "pickled-claude-plugins:technicalpickles/pickled-claude-plugins"
-    "superpowers-marketplace:obra/superpowers"
-    "claude-notifications-go:777genius/claude-notifications-go"
-  )
+  # Marketplaces come from the shared manifest (single source of truth, also
+  # read by claude-project-setup.sh). Format per line: "marketplace-id:owner/repo".
+  local manifest="$DIR/claude/marketplaces.jsonc"
+  if [ ! -f "$manifest" ]; then
+    echo "Error: $manifest not found"
+    exit 1
+  fi
+  local marketplaces=()
+  while IFS= read -r entry; do
+    marketplaces+=("$entry")
+  done < <(read_json "$manifest" | jq -r '.marketplaces | to_entries[] | "\(.key):\(.value.repo)"')
 
   # Read existing marketplaces or start with empty object
   local current_marketplaces="{}"
@@ -363,6 +344,63 @@ configure_marketplaces() {
 
 configure_marketplaces
 
+# Register MCP servers into ~/.claude.json (user scope) from the shared
+# manifest. Claude owns ~/.claude.json's format, so we drive the `claude mcp`
+# CLI rather than hand-editing the file. Add-if-missing (idempotent), matching
+# configure_marketplaces. To change an existing server, remove it first
+# (`claude mcp remove <name> -s user`) and re-run.
+configure_mcp_servers() {
+  echo "Configuring MCP servers..."
+
+  local manifest="$DIR/claude/mcp-servers.jsonc"
+  if [ ! -f "$manifest" ]; then
+    echo "Error: $manifest not found"
+    exit 1
+  fi
+
+  local servers_json
+  servers_json=$(read_json "$manifest" | jq -c '.servers // {}')
+
+  local names
+  names=$(echo "$servers_json" | jq -r 'keys[]')
+  if [ -z "$names" ]; then
+    echo "  ℹ no MCP servers declared"
+    return 0
+  fi
+
+  local name
+  while IFS= read -r name; do
+    if claude mcp get "$name" > /dev/null 2>&1; then
+      echo "  ✓ $name (already registered)"
+      continue
+    fi
+
+    local transport url
+    transport=$(echo "$servers_json" | jq -r --arg n "$name" '.[$n].transport // "http"')
+    url=$(echo "$servers_json" | jq -r --arg n "$name" '.[$n].url // ""')
+
+    case "$transport" in
+      http | sse)
+        if [ -z "$url" ]; then
+          echo "  ✗ $name: transport '$transport' requires a url; skipping" >&2
+          continue
+        fi
+        echo "  + Registering $name ($transport -> $url)..."
+        if claude mcp add --transport "$transport" "$name" "$url" --scope user > /dev/null 2>&1; then
+          echo "    ✓ Added to user config"
+        else
+          echo "    ✗ Failed to register $name (continuing anyway)" >&2
+        fi
+        ;;
+      *)
+        echo "  ✗ $name: unsupported transport '$transport' (only http/sse); skipping" >&2
+        ;;
+    esac
+  done <<< "$names"
+}
+
+configure_mcp_servers
+
 # Validate the active role's agent SSH identity (fail loud). Apply has already
 # completed above, so this only affects the exit code -- config is never left
 # half-written. Delegates to bin/check-agent-ssh-key, which validates local key
@@ -391,8 +429,19 @@ validate_agent_ssh_key() {
     exit 1
   fi
 
+  # The agent key path comes from the same include (signingkey), since the
+  # identity name can differ from the role (e.g. home -> personal). This keeps
+  # the gitconfig include the one source of truth; without it check-agent-ssh-key
+  # would guess ~/.ssh/agents/$ROLE and miss the real key. See ADR 0035.
+  local agent_key
+  agent_key=$(git config --file "$agent_include" user.signingkey 2> /dev/null || true)
+
   echo "  Role '$ROLE' agent identity: $agent_email"
-  if ! "$DIR/bin/check-agent-ssh-key" "$ROLE" --email "$agent_email"; then
+  local -a check_args=("$ROLE" --email "$agent_email")
+  if [ -n "$agent_key" ]; then
+    check_args+=(--key "$agent_key")
+  fi
+  if ! "$DIR/bin/check-agent-ssh-key" "${check_args[@]}"; then
     echo >&2
     echo "✗ Agent SSH key validation failed (see above)." >&2
     echo "  Fix the reported issue, or re-run with --skip-ssh-check to apply without validating." >&2

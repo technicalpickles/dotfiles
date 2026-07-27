@@ -25,6 +25,24 @@ Disables Spotlight indexing on all volumes at startup.
 
 **Note:** This requires sudo privileges. You may need to configure passwordless sudo for mdutil, or Spotlight will re-enable on reboot.
 
+### `com.technicalpickles.karabiner-wake-fix.plist`
+
+Forces Karabiner's Core-Service daemon to restart immediately on wake instead of waiting
+through its own ~10s internal reconnect delay (observed as a dead gap in
+`/var/log/karabiner/core_service.log` between event tap teardown and device_grabber
+restart -- see [ADR 0045](../doc/adr/0045-sudoers.d-templates-for-launchagent-root-actions.md)
+and [upstream issue #3808](https://github.com/pqrs-org/Karabiner-Elements/issues/3808)).
+
+**Role:** home only (Karabiner is a home-role tool; installed by `karabinerconfig.sh`, not managed by hand).
+
+**What it does:**
+
+- Runs `sleepwatcher -w bin/karabiner-wake-fix.sh` (`KeepAlive` + `RunAtLoad`, stays resident watching for wake)
+- On wake, the script runs `sudo launchctl kickstart -k system/org.pqrs.service.daemon.Karabiner-Core-Service`
+- Logs to `/tmp/com.technicalpickles.karabiner-wake-fix.{out,err}`
+
+**Requires sudo:** uses the scoped `NOPASSWD` sudoers rule installed by `karabinerconfig.sh` at `/etc/sudoers.d/karabiner-wake-fix` (see ADR 0045) -- passwordless for that exact `launchctl kickstart` command only.
+
 ### `arm64-macos/com.technicalpickles.qmd-refresh.plist`
 
 Refreshes QMD semantic search index for the Obsidian vault.
@@ -33,14 +51,34 @@ Refreshes QMD semantic search index for the Obsidian vault.
 
 **What it does:**
 
-- Runs `qmd update && qmd embed` to refresh text and vector indexes
+- Runs `qmd update && qmd embed` (via the `bin/qmd` wrapper) to refresh text and vector indexes
 - Runs every 15 minutes (at :00, :15, :30, :45)
 - Logs to `/tmp/com.technicalpickles.qmd-refresh.{out,err}`
 
 **Prerequisites:**
 
-- QMD available via: `npx @tobilu/qmd`
-- Collection configured: `qmd collection add ~/Vaults/pickled-knowledge/pickled-knowledge --name second-brain`
+- QMD runs through `bin/qmd` (on PATH via `~/.pickles/bin`), which execs `@tobilu/qmd` under a pinned Node version with `mise exec`. Override the version with `QMD_NODE_VERSION` (default `24`).
+- Collection configured: `qmd collection add ~/Vaults/pickled-knowledge --name second-brain`
+
+### `arm64-macos/com.technicalpickles.qmd-mcp.plist`
+
+Runs QMD as an HTTP MCP server so Claude (and other agents) can search the vault.
+
+**Platform:** arm64 macOS only (gated by `running_arm64_macos`; see "Platform-gated agents" below).
+
+**What it does:**
+
+- Runs `qmd mcp --http --port 8181` (via the `bin/qmd` wrapper), bound to `localhost` only
+- `KeepAlive` + `RunAtLoad`: stays up and restarts if it dies (long-lived query server)
+- Sets `QMD_METAL_KEEP_RESIDENCY=1` (qmd doctor recommends this for long-lived Metal processes)
+- Health check: `curl http://localhost:8181/health`; MCP endpoint is `POST /mcp`
+- Logs to `/tmp/com.technicalpickles.qmd-mcp.{out,err}`
+
+**Claude registration** (not managed here -- lives in `~/.claude.json` via the CLI):
+
+```bash
+claude mcp add --transport http qmd http://localhost:8181/mcp --scope user
+```
 
 ## Setup
 

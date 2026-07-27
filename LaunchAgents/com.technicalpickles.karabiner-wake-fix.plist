@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.technicalpickles.karabiner-wake-fix</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/opt/sleepwatcher/sbin/sleepwatcher</string>
+        <string>-w</string>
+        <string>/Users/technicalpickles/.pickles/bin/karabiner-wake-fix.sh</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/com.technicalpickles.karabiner-wake-fix.out</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/com.technicalpickles.karabiner-wake-fix.err</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+</dict>
+</plist>

@@ -175,3 +175,150 @@ op_ensure_signed_in() {
     op signin
   fi
 }
+
+# Detect and export DOTPICKLES_ROLE if it isn't already set. This is the single
+# source of truth for the install/setup scripts: any script that sources
+# functions.sh gets the role without re-implementing the hostname check, so a
+# standalone run (e.g. ./gitconfig.sh) can't fall through to "Unexpected role".
+# The interactive shells set it themselves (home/.zshenv,
+# config/fish/conf.d/dotpickles-role.fish) because they can't source bash.
+# Canonical names: home / work / container / claude-code-remote. See ADR 0035, 0040.
+# Precedence: claude-code-remote (cloud is also a container, so it must win) ->
+# container -> work (hostname) -> home.
+dotpickles_detect_role() {
+  if [ -n "${DOTPICKLES_ROLE:-}" ]; then
+    return
+  fi
+
+  local detected_hostname
+  detected_hostname=$(hostnamectl hostname 2> /dev/null || hostname)
+
+  if [ "${CLAUDE_CODE_REMOTE:-}" = "true" ]; then
+    DOTPICKLES_ROLE=claude-code-remote
+  elif [ -f /.dockerenv ] || grep -q 'docker\|lxc\|containerd' /proc/1/cgroup 2> /dev/null || [ -n "${DOCKER_BUILD:-}" ]; then
+    DOTPICKLES_ROLE=container
+  elif [[ "$detected_hostname" =~ ^josh-nichols- ]]; then
+    DOTPICKLES_ROLE=work
+  else
+    DOTPICKLES_ROLE=home
+  fi
+  export DOTPICKLES_ROLE
+}
+
+# Run at source time so DOTPICKLES_ROLE is guaranteed set for every consumer.
+dotpickles_detect_role
+
+# Read a JSON or JSONC file to stdout, stripping comments and trailing commas.
+# Shared by claudeconfig.sh and claude-project-setup.sh.
+#
+# Uses a single python3 parser rather than the node path it once had. The node
+# path stripped comments with regexes that were not string-aware, so a glob like
+# "~/Vaults/x/**/*.md" got its "/**/" eaten as an empty /* */ block comment,
+# silently corrupting real permission values. python3 is present on both macOS
+# and Ubuntu noble, and one string-aware implementation removes the whole class
+# of "two parsers that disagree" bug. See bin/test-read-json.
+read_json() {
+  local file="$1"
+  if ! command -v python3 > /dev/null 2>&1; then
+    echo "read_json: python3 is required to parse $file" >&2
+    return 1
+  fi
+  python3 - "$file" << 'PYEOF'
+import json
+import sys
+
+
+def strip_comments(text):
+    """Remove // and /* */ comments, but never inside string literals, so a
+    URL like "http://x" or a glob like "a/**/b" survives untouched."""
+    out = []
+    i, n = 0, len(text)
+    in_string = False
+    while i < n:
+        c = text[i]
+        if in_string:
+            out.append(c)
+            if c == "\\" and i + 1 < n:
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if c == '"':
+                in_string = False
+            i += 1
+            continue
+        if c == '"':
+            in_string = True
+            out.append(c)
+            i += 1
+            continue
+        if c == "/" and i + 1 < n and text[i + 1] == "/":
+            i += 2
+            while i < n and text[i] != "\n":
+                i += 1
+            continue
+        if c == "/" and i + 1 < n and text[i + 1] == "*":
+            i += 2
+            while i + 1 < n and not (text[i] == "*" and text[i + 1] == "/"):
+                i += 1
+            i += 2
+            continue
+        out.append(c)
+        i += 1
+    return "".join(out)
+
+
+def strip_trailing_commas(text):
+    """Remove a comma that is followed (after whitespace) by } or ]. Runs on
+    already comment-free text, so a comment can never sit between the comma and
+    the closing brace and hide it. Still string-aware, so a comma inside a
+    string value is left alone."""
+    out = []
+    i, n = 0, len(text)
+    in_string = False
+    while i < n:
+        c = text[i]
+        if in_string:
+            out.append(c)
+            if c == "\\" and i + 1 < n:
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if c == '"':
+                in_string = False
+            i += 1
+            continue
+        if c == '"':
+            in_string = True
+            out.append(c)
+            i += 1
+            continue
+        if c == ",":
+            j = i + 1
+            while j < n and text[j] in " \t\r\n":
+                j += 1
+            if j < n and text[j] in "}]":
+                i += 1
+                continue
+            out.append(c)
+            i += 1
+            continue
+        out.append(c)
+        i += 1
+    return "".join(out)
+
+
+file = sys.argv[1]
+with open(file, "r") as f:
+    content = f.read()
+
+stripped = strip_trailing_commas(strip_comments(content))
+
+try:
+    data = json.loads(stripped)
+except json.JSONDecodeError as e:
+    sys.stderr.write("Error parsing " + file + ": " + str(e) + "\n")
+    sys.exit(1)
+
+print(json.dumps(data, separators=(",", ":")))
+PYEOF
+}

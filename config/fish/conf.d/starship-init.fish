@@ -12,7 +12,7 @@
 
 if status --is-interactive
     if type -q starship
-        set -l ctx (set -q DOTPICKLES_ROLE; and echo $DOTPICKLES_ROLE; or echo personal)
+        set -l ctx (set -q DOTPICKLES_ROLE; and echo $DOTPICKLES_ROLE; or echo home)
         if test -f /.dockerenv; or test -n "$REMOTE_CONTAINERS"; or test -n "$CODESPACES"
             set -gx STARSHIP_CTX "$ctx | devcontainer"
         else

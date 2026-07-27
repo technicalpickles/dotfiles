@@ -1,3 +1,7 @@
+brew 'orbstack'
+brew 'sleepwatcher'
+brew 'taskwarrior-tui'
+
 cask 'discord'
 cask 'google-chrome'
 cask 'slack'

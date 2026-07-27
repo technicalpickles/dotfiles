@@ -1,5 +1,13 @@
 # QMD Refresh LaunchAgent Implementation Plan
 
+> **SUPERSEDED (2026-06-27):** Kept for history. The shipped implementation diverged from this plan:
+>
+> - Runs qmd via `npx @tobilu/qmd` (not a bun-installed `qmd` binary)
+> - Plist lives at `LaunchAgents/arm64-macos/com.technicalpickles.qmd-refresh.plist` (arm64-gated), refreshes every 15 min with `RunAtLoad`
+> - Collection points at `~/Vaults/pickled-knowledge` (this plan's nested `pickled-knowledge/pickled-knowledge` path was wrong)
+>
+> Source of truth is now `LaunchAgents/README.md` and the plist itself.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Add a LaunchAgent to dotfiles that automatically refreshes the QMD semantic search index hourly.

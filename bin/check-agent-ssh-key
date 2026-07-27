@@ -58,17 +58,22 @@ the enrollment checklist (local files, Keychain, GitHub registration,
 Claude settings). Exits 0 if all pass, 1 if any fail.
 
 Arguments:
-  role             Dotfiles role the identity belongs to (e.g. personal, work)
+  role             Dotfiles role the identity belongs to (e.g. home, work)
 
 Options:
   --email <email>  Override the agent email address. Must match what was
                    passed to setup-agent-ssh-key. Defaults to
                    joshua.nichols+<role>-agent@gmail.com.
+  --key <path>     Path to the agent key (private or .pub). claudeconfig.sh
+                   passes this from the role's gitconfig include (the source of
+                   truth) so the check never has to guess the key location.
+                   Defaults to ~/.ssh/agents/<role>/id_ed25519.
 EOF
 }
 
 ROLE=""
 EMAIL_OVERRIDE=""
+KEY_OVERRIDE=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --help | -h)
@@ -82,6 +87,15 @@ while [[ $# -gt 0 ]]; do
       ;;
     --email=*)
       EMAIL_OVERRIDE="${1#--email=}"
+      shift
+      ;;
+    --key)
+      [[ $# -lt 2 ]] && die "--key requires a value"
+      KEY_OVERRIDE="$2"
+      shift 2
+      ;;
+    --key=*)
+      KEY_OVERRIDE="${1#--key=}"
       shift
       ;;
     --*)
@@ -107,9 +121,24 @@ if [[ ! "$ROLE" =~ ^[a-z][a-z0-9_-]*$ ]]; then
   die "Invalid role name: '$ROLE'"
 fi
 
-KEY_DIR="$HOME/.ssh/agents/$ROLE"
-KEY_PATH="$KEY_DIR/id_ed25519"
+# The agent key path is the role's gitconfig include's business, not ours to
+# guess: prefer the path passed via --key (claudeconfig.sh reads it from that
+# include, the source of truth) and fall back to the role-named dir only for
+# standalone runs. The key dir tracks the role (~/.ssh/agents/home, ADR 0039),
+# but the identity *email* can still differ from the role default, which is why
+# the include stays authoritative.
+if [[ -n "$KEY_OVERRIDE" ]]; then
+  key_expanded="${KEY_OVERRIDE/#\~\//$HOME/}"
+  KEY_PATH="${key_expanded%.pub}" # accept either the private or public path
+  KEY_DIR="$(dirname "$KEY_PATH")"
+else
+  KEY_DIR="$HOME/.ssh/agents/$ROLE"
+  KEY_PATH="$KEY_DIR/id_ed25519"
+fi
 PUB_PATH="$KEY_PATH.pub"
+# Identity name (e.g. "personal") for setup hints, which operate on the identity
+# dir, not the role. Equals ROLE when no override is given.
+IDENTITY="$(basename "$KEY_DIR")"
 EMAIL="${EMAIL_OVERRIDE:-joshua.nichols+${ROLE}-agent@gmail.com}"
 SETTINGS="$HOME/.claude/settings.json"
 REQUIRED_SCOPES=("user:email" "read:public_key" "read:ssh_signing_key")
@@ -139,7 +168,7 @@ if [[ -f "$KEY_PATH" && -f "$PUB_PATH" ]]; then
     check_fail "Key file perms wrong" "private=$key_mode (want 600), public=$pub_mode (want 644)"
   fi
 else
-  check_fail "Key files missing" "Run: bin/setup-agent-ssh-key $ROLE"
+  check_fail "Key files missing" "Run: bin/setup-agent-ssh-key $IDENTITY"
 fi
 
 # Everything below needs the pub key to compute fingerprint

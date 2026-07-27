@@ -4,7 +4,14 @@ Date: 2026-06-12
 
 ## Status
 
-Accepted
+Superseded by [ADR-0043](0043-canonical-dotpickles-role-names.md)
+
+**Reason for superseding:** This ADR's own canonical list drifted before it was
+even a month old: it omits `claude-code-remote`, which `functions.sh` had
+already been emitting since ADR 0040 landed two weeks after this one. ADR 0043
+restates the list (adding `claude-code-remote` and the new `coi-host` role) and
+documents explicit-only roles (set by a caller instead of detected), a mode
+this ADR didn't account for.
 
 ## Context
 
@@ -47,9 +54,28 @@ Every role-keyed consumer must use exactly these names. Known consumers:
 - `Brewfile.<role>`
 - `claude/roles/<role>.jsonc`
 - `config/1password/agent.toml.<role>` ([ADR 0033](0033-1password-ssh-agent-allowlist.md))
-- the role default in `claudeconfig.sh`, `sshconfig.sh`, `install.sh`
+- the role default / branch in `claudeconfig.sh`, `sshconfig.sh`, `install.sh`, `gitconfig.sh`
+- the starship prompt context fallback in `config/fish/conf.d/starship-init.fish`
+
+`gitconfig.sh` (a `case "$DOTPICKLES_ROLE"` branch) and the starship prompt
+fallback were both missed by the original rename and only caught later:
+`gitconfig.sh` would hit its `*)` "Unexpected role" exit on a `home` machine, and
+the prompt showed a stale `personal` because its fallback string was never updated.
+
+### Fish: set the role in conf.d, not config.fish
+
+Fish sources `conf.d/*.fish` before `config.fish`. The starship prompt
+(`conf.d/starship-init.fish`) reads `DOTPICKLES_ROLE` at init time, so the role
+must be set by an earlier-sorting conf.d file. It lives in
+`conf.d/dotpickles-role.fish` (sorts before `starship-init`). Setting it in
+`config.fish` is too late: the prompt builds with the role unset and falls back to
+its default, silently showing the wrong role.
 
 ### Role name vs agent identity name
+
+> **Amended by [ADR 0039](0039-align-agent-key-dir-with-role.md):** the key
+> directory was later moved to `~/.ssh/agents/home/` to match the role. Only the
+> _email_ stays `personal-agent` now. The rest of this section stands.
 
 The dotfiles _role_ is distinct from the git _identity_ a role uses. The `home`
 role signs as the GitHub-enrolled `personal-agent` identity (email

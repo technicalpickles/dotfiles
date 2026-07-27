@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+
+# sketchybar entry point.
+#
+# ============================================================================
+# STATUS: STOPPED.
+# ============================================================================
+# The service is not running and not set to auto-launch. These files are kept
+# as a starting point if we ever revisit. To run again:
+#     brew services start sketchybar
+# Auto-hide of the native menu bar was also part of this experiment; toggle
+# in System Settings -> Control Center -> "Automatically hide and show the
+# menu bar" (the defaults-write approach does not work on macOS 15+).
+#
+# ============================================================================
+# WHY THIS EXISTS
+# ============================================================================
+# Tried sketchybar 2.23.0 on macOS 15.7.5 as a Bartender replacement. The
+# goal was to wrangle the random menu bar icons into a single scriptable,
+# conditional bar with a "classic Mac" look: clock + state-only-when-relevant
+# (battery when low, calendar when soon, Tailscale only when down).
+#
+# ============================================================================
+# WHY IT'S STOPPED
+# ============================================================================
+# Aliases (the mechanism for mirroring native menu bar items inside
+# sketchybar) are display-only. They show the icon via Screen Recording but
+# do NOT forward clicks. Confirmed by the maintainer in
+# https://github.com/FelixKratz/SketchyBar/issues/510 -- click forwarding
+# requires a separate Accessibility-API binary the maintainer hasn't
+# published. So the most appealing pattern (auto-hide native bar + clickable
+# mirrored icons in sketchybar) is structurally not possible. For the things
+# we actually click (1Password unlock, Control Center sliders, Tailscale
+# node menu), the native bar was still required.
+#
+# Full writeup with usage patterns, alternatives, and macOS Sequoia quirks:
+#   ~/Documents/pickled-knowledge/📫 Inbox/202605091145 sketchybar-evaluation-in-dotfiles-repo.md
+#
+# ============================================================================
+# IF YOU REVISIT
+# ============================================================================
+# The most realistic pattern for this machine: sketchybar at the bottom
+# (position=bottom), no aliases, only scripted state items (calendar
+# countdown, Tailscale up/down, battery alerts). Native menu bar stays as
+# the click surface. Pair with a tiling WM (Aerospace) if you want workspace
+# context up top.
+#
+# Better Bartender alternatives to evaluate first: Hidden Bar (free, MIT,
+# minimal), Ice (jordanbaird-ice, free, more features), or just keep
+# Bartender 5.
+#
+# ============================================================================
+# CONFIG STRUCTURE
+# ============================================================================
+# items/<name>.sh    -- one-time item registration (--add ... --set ...)
+# plugins/<name>.sh  -- per-event update script (run when subscribed events fire)
+# colors.sh          -- shared palette
+#
+# Conditional visibility is the design principle: items use drawing=off by
+# default and the plugin enables drawing only when there's something worth
+# saying. Combined with `updates=when_shown`, hidden items cost ~0 CPU.
+#
+# Reload during edits with: sketchybar --reload
+# Tail logs with:           tail -f /usr/local/var/log/sketchybar/sketchybar.*.log
+
+export CONFIG_DIR="$HOME/.config/sketchybar"
+export PLUGIN_DIR="$CONFIG_DIR/plugins"
+export ITEM_DIR="$CONFIG_DIR/items"
+
+# shellcheck source=./colors.sh
+source "$CONFIG_DIR/colors.sh"
+
+sketchybar --bar \
+  position=top \
+  height=28 \
+  blur_radius=20 \
+  color="$BAR_COLOR" \
+  padding_left=8 \
+  padding_right=8 \
+  margin=0 \
+  corner_radius=0 \
+  y_offset=0 \
+  topmost=window \
+  sticky=on \
+  notch_width=210
+
+sketchybar --default \
+  icon.font="SF Pro:Semibold:13.0" \
+  icon.color="$ICON_COLOR" \
+  icon.padding_left=6 \
+  icon.padding_right=4 \
+  label.font="SF Pro:Semibold:13.0" \
+  label.color="$LABEL_COLOR" \
+  label.padding_left=2 \
+  label.padding_right=8 \
+  background.color="$ITEM_BG" \
+  background.corner_radius=0 \
+  background.height=22 \
+  updates=when_shown
+
+# Items are sourced in visual order. Right-side items are added in reverse
+# (rightmost first) per sketchybar convention.
+source "$ITEM_DIR/front_app.sh"
+
+source "$ITEM_DIR/clock.sh"
+source "$ITEM_DIR/battery.sh"
+source "$ITEM_DIR/volume.sh"
+source "$ITEM_DIR/network.sh"
+source "$ITEM_DIR/calendar.sh"
+source "$ITEM_DIR/aliases.sh"
+
+sketchybar --update

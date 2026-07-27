@@ -51,19 +51,6 @@ if [[ -f ~/.fzf.bash ]]; then
   source "$HOME/.fzf.bash"
 fi
 
-current_file="${BASH_SOURCE[0]}"
-if [[ -L "${current_file}" ]]; then
-  dotfiles=$(dirname "$(dirname "$(readlink "${current_file}")")")
-
-  # shellcheck source=../home/.bash_profile.d/prompt.sh
-  . "${dotfiles}/home/.bash_profile.d/prompt.sh"
-
-# 	if [[ -d "${dotfiles}/vendor/sbp" ]]; then
-# 		SBP_PATH="${dotfiles}/vendor/sbp"
-# 		. "${SBP_PATH}/sbp.bash"
-# 	fi
-fi
-
 lm_studio_path="$HOME/.cache/lm-studio/bin"
 if [[ -d "$lm_studio_path" ]]; then
   export PATH="$PATH:$lm_studio_path"
@@ -85,11 +72,15 @@ else
   fi
 fi
 
-if [[ $- == *i* ]]; then
+if [[ $- == *i* ]] && which welcome2u > /dev/null 2>&1; then
   welcome2u
 fi
 
-. "$HOME/.local/bin/env"
+# Load local environment customizations if present (e.g. uv)
+if [[ -f "$HOME/.local/bin/env" ]]; then
+  # shellcheck disable=SC1091
+  . "$HOME/.local/bin/env"
+fi
 
 # Added by LM Studio CLI (lms)
 export PATH="$PATH:/Users/josh.nichols/.lmstudio/bin"

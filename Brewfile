@@ -4,13 +4,11 @@ brew 'fish'
 brew 'direnv'
 brew 'thefuck'
 brew 'tmux'
-brew 'reattach-to-user-namespace'
 brew 'sesh'
 
 # git
 brew 'git-lfs'
 brew 'git'
-brew 'git-delta'
 brew 'git-extras'
 
 # nvim
@@ -30,19 +28,21 @@ brew 'fzf'
 brew 'gh'
 brew 'jq'
 brew 'pandoc'
-brew 'less'
-brew 'moreutils'
 brew 'procs'
 brew 'pstree'
 brew 'ripgrep'
 brew 'rtk'
-brew 'the_silver_searcher'
 brew 'tree'
 brew 'watch'
 brew 'yq'
 brew 'zoxide'
 brew 'dysk'
 brew 'choose-rust'
+brew 'gpg' # we don't use it ourselves, but other tools use it to verify
+
+# images
+brew 'imagemagick'
+brew 'webp' # cwebp/dwebp
 
 # networky
 brew 'mtr'
@@ -51,28 +51,20 @@ brew 'socat'
 brew 'wget'
 
 # programming languages
-brew 'rbspy'
 brew 'shellcheck'
 brew 'mise'
-brew 'starship'
-brew 'specstoryai/tap/specstory'
+#brew 'specstoryai/tap/specstory'
 
 # benchmarking
 brew "hyperfine"
 
-# container stuff
-brew "container-diff"
-
-cask 'jordanbaird-ice'
 cask 'cleanshot'
 cask 'dash'
 cask 'finicky'
 cask 'hammerspoon'
-# cask 'hookshot'  # removed from homebrew, install manually if needed
-cask 'macbreakz'
 cask 'obsidian'
-cask "hazel"
 
-# fonts
+cask 'claude'
+cask 'claude-devtools'
 
 # trailing newline so make sure there's not a syntax error when joining with Brewfile.*

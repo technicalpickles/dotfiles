@@ -4,7 +4,7 @@ set -euo pipefail
 # setup-agent-ssh-key <role>
 #
 # Generate a dedicated SSH key for a Claude Code agent identity scoped to a
-# dotfiles role (personal, work). See ADR 0031 for background.
+# dotfiles role (home, work). See ADR 0031 for background.
 #
 # Creates ~/.ssh/agents/<role>/id_ed25519, stores the passphrase in macOS
 # Keychain, then prints a checklist of manual GitHub-side steps (add as
@@ -36,7 +36,7 @@ Usage: setup-agent-ssh-key <role> [--email <email>]
 Generate a dedicated SSH key for a Claude Code agent identity.
 
 Arguments:
-  role             Dotfiles role the identity belongs to (e.g. personal, work)
+  role             Dotfiles role the identity belongs to (e.g. home, work)
 
 Options:
   --email <email>  Override the agent email address. Defaults to

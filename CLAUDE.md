@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This is a personal dotfiles repository managing shell configs, git settings, and macOS preferences. It uses a **role-based configuration system** (personal/work) that adapts settings based on hostname or `DOTPICKLES_ROLE`.
+This is a personal dotfiles repository managing shell configs, git settings, and macOS preferences. It uses a **role-based configuration system** (home/work) that adapts settings based on hostname or `DOTPICKLES_ROLE`.
 
 See [doc/architecture.md](doc/architecture.md) for how the systems fit together.
 
@@ -15,6 +15,8 @@ npm run typecheck # TypeScript type check only
 Pre-commit hooks via `lefthook`: Prettier formats staged files, TypeScript checks `.ts` files.
 
 There are no traditional unit tests. "Testing" means `npm run lint` + manual install verification.
+
+**Pushing needs the sandbox off.** `git push` and `gh` commands fail under the command sandbox (`nc: authentication method negotiation failed`) because SSH auth goes through the 1Password agent socket, which the sandbox blocks. Re-run the push/`gh` call with the sandbox disabled.
 
 ## Architecture Decision Records
 
@@ -51,7 +53,7 @@ Common glyphs in this repo: (U+E0B6), (U+E0B4), (U+E0B0), (U+E0B2)
 
 - [doc/architecture.md](doc/architecture.md) -- role system, git config, symlinks, SSH, shell env
 - [doc/spotlight-exclusions.md](doc/spotlight-exclusions.md) -- Spotlight exclusion management
-- [claude/CLAUDE.md](claude/CLAUDE.md) -- Claude Code settings and permissions
+- [claude/README.md](claude/README.md) -- Claude Code settings and permissions (roles + stacks merging)
 - [ssh/CLAUDE.md](ssh/CLAUDE.md) -- SSH config fragments and per-host TERM overrides
 - [bin/CLAUDE.md](bin/CLAUDE.md) -- custom binaries and spotlight scripts
 - [config/fish/CLAUDE.md](config/fish/CLAUDE.md) -- fish shell config structure

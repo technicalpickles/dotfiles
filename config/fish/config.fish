@@ -1,8 +1,5 @@
-if string match --quiet --regex '^josh-nichols-' (hostname)
-    set -gx DOTPICKLES_ROLE work
-else
-    set -gx DOTPICKLES_ROLE home
-end
+# DOTPICKLES_ROLE is set in conf.d/dotpickles-role.fish (loaded before this file
+# and before the starship prompt, which needs the role at init time).
 
 if test -f ~/.gusto/init.fish
     source ~/.gusto/init.fish

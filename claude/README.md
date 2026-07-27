@@ -6,10 +6,14 @@ This directory contains the configuration templates for Claude Code settings and
 
 ```
 claude/
+├── marketplaces.jsonc     # Shared marketplaces + plugin profiles (see below)
+├── mcp-servers.jsonc      # MCP servers registered into ~/.claude.json (see below)
 ├── roles/
-│   ├── base.jsonc         # Core settings, base permissions, sandbox scalars
-│   ├── personal.jsonc     # Personal role overrides (empty placeholder)
-│   └── work.jsonc         # Work role: AWS/Bedrock env, work permissions
+│   ├── base.jsonc                # Core settings, base permissions, sandbox scalars
+│   ├── home.jsonc                # Home role: agent git identity env, sandbox rules
+│   ├── work.jsonc                # Work role: AWS/Bedrock env, work permissions
+│   ├── container.jsonc           # Local container placeholder
+│   └── claude-code-remote.jsonc  # Claude Code on the web: sandbox off, no agent id
 ├── stacks/
 │   ├── beans.jsonc        # Beans issue tracker
 │   ├── buildkite.jsonc    # Buildkite CI
@@ -211,6 +215,48 @@ These keys in `~/.claude/settings.json` are preserved across regenerations:
 
 - `enabledPlugins`: plugin activation state
 - `extraKnownMarketplaces`: managed by `configure_marketplaces()` in claudeconfig.sh
+
+## Marketplaces and per-project plugins
+
+`marketplaces.jsonc` is the single source of truth for marketplaces (alias ->
+GitHub repo) and named plugin `profiles` (`core`, `dev`; default `dev`). Two
+consumers read it:
+
+- `claudeconfig.sh` clones the marketplaces globally (`configure_marketplaces()`).
+- `claude-project-setup.sh [DIR] [--profile NAME] [--dry-run]` writes a repo's
+  **committed** `.claude/settings.json` (`extraKnownMarketplaces` + `enabledPlugins`)
+  so Claude Code on the web picks the plugins up. It merges into existing settings
+  (permissions/hooks survive). See [ADR 0041](../doc/adr/0041-project-level-claude-plugin-bootstrap.md).
+
+Plugin keys are `<plugin>@<marketplace-alias>`; the alias is the key in
+`marketplaces`, and plugin names must match each repo's
+`.claude-plugin/marketplace.json`.
+
+## MCP servers
+
+`mcp-servers.jsonc` is the single source of truth for MCP servers registered
+into `~/.claude.json` (user scope, available in all projects). `claudeconfig.sh`
+-> `configure_mcp_servers()` reads it and registers each via the `claude mcp`
+CLI (Claude owns `~/.claude.json`'s format, so we drive the CLI instead of
+hand-editing the file).
+
+Registration is **add-if-missing** (idempotent), like marketplaces. Supported
+transports: `http` and `sse` (both url-based).
+
+```jsonc
+"servers": {
+  "qmd": { "transport": "http", "url": "http://localhost:8181/mcp" },
+}
+```
+
+To change an existing server's url/transport, remove it first, then re-run:
+
+```bash
+claude mcp remove user < name > -s && ./claudeconfig.sh
+```
+
+(The qmd server itself is run by the `com.technicalpickles.qmd-mcp` LaunchAgent;
+see `LaunchAgents/README.md`.)
 
 ## Files NOT to Edit
 
