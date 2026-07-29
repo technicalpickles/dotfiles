@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+#
+# xtweet -- read a tweet by URL or ID via xurl (the X API CLI), without
+# hand-translating the web URL into an API path first.
+#
+# xurl only understands API paths (/2/tweets/:id), not web URLs
+# (x.com/user/status/:id) -- it forwards whatever you give it verbatim, so
+# a pasted status link 404s/453s instead of resolving. This pulls the
+# numeric ID out of a pasted URL (or accepts a bare ID) and calls the
+# right endpoint.
+#
+# Usage:
+#   xtweet <url-or-id> [url-or-id ...]
+#   xtweet -j <url-or-id>   # raw JSON instead of formatted output
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+usage: xtweet [-j] <tweet-url-or-id> [tweet-url-or-id ...]
+
+Read one or more tweets via xurl, accepting either a full x.com/twitter.com
+status URL or a bare numeric tweet ID.
+
+Options:
+  -j, --json    Print raw API JSON instead of formatted output
+  -h, --help    Show this help and exit
+
+Examples:
+  xtweet https://x.com/benjaminsehl/status/2082158002958741746
+  xtweet 2082158002958741746
+  xtweet -j 2082158002958741746
+EOF
+}
+
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+  esac
+done
+
+if [[ $# -eq 0 ]]; then
+  usage >&2
+  exit 1
+fi
+
+raw_json=false
+if [[ "${1:-}" == "-j" || "${1:-}" == "--json" ]]; then
+  raw_json=true
+  shift
+fi
+
+if [[ $# -eq 0 ]]; then
+  usage >&2
+  exit 1
+fi
+
+for arg in "$@"; do
+  if [[ "$arg" =~ ^[0-9]+$ ]]; then
+    id="$arg"
+  elif [[ "$arg" =~ /status(es)?/([0-9]+) ]]; then
+    id="${BASH_REMATCH[2]}"
+  else
+    echo "xtweet: couldn't find a tweet ID in: $arg" >&2
+    exit 1
+  fi
+
+  response="$(xurl "/2/tweets/${id}?tweet.fields=created_at,public_metrics,text&expansions=author_id&user.fields=username,name")"
+
+  if [[ "$raw_json" == true ]]; then
+    echo "$response"
+    continue
+  fi
+
+  if echo "$response" | jq -e '.errors' >/dev/null 2>&1; then
+    echo "xtweet: API error for $id:" >&2
+    echo "$response" | jq -r '.errors[] | "  \(.code // "?"): \(.message // .title // .)"' >&2
+    continue
+  fi
+
+  echo "$response" | jq -r '
+    .includes.users[0] as $u |
+    .data as $t |
+    "\($u.name) (@\($u.username)) -- \($t.created_at)\n\($t.text)\n\(.data.public_metrics | "❤ \(.like_count)  🔁 \(.retweet_count)  💬 \(.reply_count)  👁 \(.impression_count)")\n"
+  '
+done
