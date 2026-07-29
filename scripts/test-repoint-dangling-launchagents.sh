@@ -96,4 +96,28 @@ else
 fi
 echo
 
+# --- Test 4: dangling symlink, plist exists at BOTH top level and arm64-macos/ -> arm64-macos wins ---
+echo "--- Test 4: dangling symlink, plist in both locations, arm64-macos takes precedence ---"
+export DIR="$TEST_DIR/repo4"
+export HOME="$TEST_DIR/home4"
+mkdir -p "$DIR/LaunchAgents/arm64-macos" "$HOME/Library/LaunchAgents"
+echo "<plist/>" > "$DIR/LaunchAgents/com.example.qux.plist"
+echo "<plist/>" > "$DIR/LaunchAgents/arm64-macos/com.example.qux.plist"
+ln -s "$DIR/LaunchAgents/old-location/com.example.qux.plist" "$HOME/Library/LaunchAgents/com.example.qux.plist"
+
+# Force the arm64 branch, same technique as Test 2.
+(
+  # shellcheck disable=SC2329 # invoked indirectly, from repoint_dangling_launchagents
+  running_arm64_macos() { return 0; }
+  repoint_dangling_launchagents
+)
+
+resolved="$(readlink "$HOME/Library/LaunchAgents/com.example.qux.plist")"
+if [ "$resolved" = "$DIR/LaunchAgents/arm64-macos/com.example.qux.plist" ]; then
+  echo "PASS: dangling symlink repointed to arm64-macos plist (matches symlinks.sh link order)"
+else
+  echo "FAIL: expected repoint to $DIR/LaunchAgents/arm64-macos/com.example.qux.plist, got $resolved"
+fi
+echo
+
 echo "=== Done ==="

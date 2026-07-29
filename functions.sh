@@ -169,9 +169,11 @@ repoint_dangling_launchagents() {
     local name current_repo_path
     name="$(basename "$target")"
 
-    current_repo_path="$(find "$DIR/LaunchAgents" -maxdepth 1 -name "$name" -type f)"
-    if [ -z "$current_repo_path" ] && running_arm64_macos; then
+    if running_arm64_macos && [ -d "$DIR/LaunchAgents/arm64-macos" ]; then
       current_repo_path="$(find "$DIR/LaunchAgents/arm64-macos" -maxdepth 1 -name "$name" -type f)"
+    fi
+    if [ -z "$current_repo_path" ]; then
+      current_repo_path="$(find "$DIR/LaunchAgents" -maxdepth 1 -name "$name" -type f)"
     fi
 
     if [ -z "$current_repo_path" ]; then
