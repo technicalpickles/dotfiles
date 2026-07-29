@@ -120,4 +120,43 @@ else
 fi
 echo
 
+# --- Test 5: two dangling symlinks in one invocation, matched then unmatched ---
+# Regression test for a bug where `local name current_repo_path` (bare
+# re-declaration, no assignment) failed to reset current_repo_path between
+# loop iterations, so the second (unmatched) symlink silently inherited the
+# first (matched) symlink's resolved path instead of being reported as
+# unmatched. Glob order matters here: com.example.aaa sorts before
+# com.example.zzz, so aaa (matched) is processed first and zzz (unmatched)
+# second -- the exact order that exposed the bug.
+echo "--- Test 5: multiple dangling symlinks, matched then unmatched, in one call ---"
+export DIR="$TEST_DIR/repo5"
+export HOME="$TEST_DIR/home5"
+mkdir -p "$DIR/LaunchAgents" "$HOME/Library/LaunchAgents"
+echo "<plist/>" > "$DIR/LaunchAgents/com.example.aaa.plist"
+ln -s "$DIR/LaunchAgents/old-location/com.example.aaa.plist" "$HOME/Library/LaunchAgents/com.example.aaa.plist"
+ln -s "$DIR/LaunchAgents/gone/com.example.zzz.plist" "$HOME/Library/LaunchAgents/com.example.zzz.plist"
+
+output="$(repoint_dangling_launchagents 2>&1)"
+
+resolved_aaa="$(readlink "$HOME/Library/LaunchAgents/com.example.aaa.plist")"
+if [ "$resolved_aaa" = "$DIR/LaunchAgents/com.example.aaa.plist" ]; then
+  echo "PASS: matched symlink (aaa) repointed to its own repo plist"
+else
+  echo "FAIL: expected aaa repoint to $DIR/LaunchAgents/com.example.aaa.plist, got $resolved_aaa"
+fi
+
+resolved_zzz="$(readlink "$HOME/Library/LaunchAgents/com.example.zzz.plist")"
+if [ "$resolved_zzz" = "$DIR/LaunchAgents/gone/com.example.zzz.plist" ] && [ ! -e "$HOME/Library/LaunchAgents/com.example.zzz.plist" ]; then
+  echo "PASS: unmatched symlink (zzz) left dangling, not repointed to aaa's target"
+else
+  echo "FAIL: unmatched symlink (zzz) was repointed (got $resolved_zzz), expected to remain dangling at its original target"
+fi
+
+if echo "$output" | grep -q "com.example.zzz.plist -> dangling, no applicable repo plist found"; then
+  echo "PASS: warning printed for the unmatched symlink (zzz)"
+else
+  echo "FAIL: expected warning about zzz having no applicable repo plist, got: $output"
+fi
+echo
+
 echo "=== Done ==="

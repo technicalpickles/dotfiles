@@ -166,7 +166,8 @@ repoint_dangling_launchagents() {
     [ -e "$target" ] && continue # not dangling (valid symlink, real file, or no match)
     [ -L "$target" ] || continue # unmatched glob literal / not a symlink at all
 
-    local name current_repo_path
+    local name
+    local current_repo_path=""
     name="$(basename "$target")"
 
     if running_arm64_macos && [ -d "$DIR/LaunchAgents/arm64-macos" ]; then
