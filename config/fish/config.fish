@@ -79,7 +79,3 @@ set -gx EZA_CONFIG_DIR "$HOME/.config/eza"
 # fabro
 fish_add_path $HOME/.fabro/bin
 
-# Added by LM Studio CLI (lms)
-set -gx PATH $PATH /Users/josh.nichols/.lmstudio/bin
-# End of LM Studio CLI section
-

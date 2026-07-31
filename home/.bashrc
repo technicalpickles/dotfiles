@@ -137,6 +137,3 @@ if [[ -d "$OSH" ]]; then
   source "$OSH"/oh-my-bash.sh
 fi
 
-# Added by LM Studio CLI (lms)
-export PATH="$PATH:/Users/josh.nichols/.lmstudio/bin"
-# End of LM Studio CLI section
