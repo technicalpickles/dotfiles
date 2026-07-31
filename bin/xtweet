@@ -30,7 +30,7 @@
 set -euo pipefail
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 usage: xtweet [-j] [-q] [-r] <tweet-url-or-id> [tweet-url-or-id ...]
 
 Read one or more tweets via xurl, accepting either a full x.com/twitter.com
@@ -55,7 +55,7 @@ EOF
 
 for arg in "$@"; do
   case "$arg" in
-    -h|--help)
+    -h | --help)
       usage
       exit 0
       ;;
@@ -72,9 +72,18 @@ want_quotes=false
 want_replies=false
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -j|--json) raw_json=true; shift ;;
-    -q|--quotes) want_quotes=true; shift ;;
-    -r|--replies) want_replies=true; shift ;;
+    -j | --json)
+      raw_json=true
+      shift
+      ;;
+    -q | --quotes)
+      want_quotes=true
+      shift
+      ;;
+    -r | --replies)
+      want_replies=true
+      shift
+      ;;
     *) break ;;
   esac
 done
@@ -99,7 +108,7 @@ extract_id() {
 check_errors() {
   # Prints an error summary and returns 1 if the response has .errors, else 0.
   local response="$1" label="$2"
-  if echo "$response" | jq -e '.errors' >/dev/null 2>&1; then
+  if echo "$response" | jq -e '.errors' > /dev/null 2>&1; then
     echo "xtweet: API error for $label:" >&2
     echo "$response" | jq -r '.errors[] | "  \(.code // "?"): \(.message // .title // .)"' >&2
     return 1
@@ -160,12 +169,12 @@ quoted_id_of() {
   echo "$response" | jq -r --arg id "$id" '
     (if .data.id == $id then .data else (.includes.tweets[]? | select(.id == $id)) end) as $t |
     ($t.referenced_tweets // [])[] | select(.type == "quoted") | .id
-  ' 2>/dev/null | head -1
+  ' 2> /dev/null | head -1
 }
 
 is_embedded() {
   local response="$1" id="$2"
-  echo "$response" | jq -e --arg id "$id" '.includes.tweets[]? | select(.id == $id)' >/dev/null 2>&1
+  echo "$response" | jq -e --arg id "$id" '.includes.tweets[]? | select(.id == $id)' > /dev/null 2>&1
 }
 
 for arg in "$@"; do
@@ -224,7 +233,7 @@ for arg in "$@"; do
             else "" end
           )
         '
-        if echo "$replies" | jq -e '.meta.next_token' >/dev/null 2>&1; then
+        if echo "$replies" | jq -e '.meta.next_token' > /dev/null 2>&1; then
           echo "(more replies exist beyond max_results=100 -- not fetched)" >&2
         fi
       fi
