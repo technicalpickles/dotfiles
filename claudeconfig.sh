@@ -214,6 +214,18 @@ generate_settings() {
   sandbox_hosts=$(echo "$sandbox_hosts" | jq 'unique | sort')
   sandbox_write_paths=$(echo "$sandbox_write_paths" | jq 'unique | sort')
 
+  # allowedHosts entries must be bare hostnames (optionally with a port).
+  # A stray "domain:" prefix (WebFetch permission syntax) or a URL path makes
+  # Claude Code discard the entire allowedHosts array on its next rewrite of
+  # settings.json, silently emptying the network allowlist.
+  local bad_hosts
+  bad_hosts=$(echo "$sandbox_hosts" | jq -r '.[] | select(test("^[A-Za-z0-9*]([A-Za-z0-9._-]*)(:[0-9]+)?$") | not)')
+  if [ -n "$bad_hosts" ]; then
+    echo "Error: invalid sandbox.network.allowedHosts entries (bare hostnames only):"
+    echo "$bad_hosts" | sed 's/^/    /'
+    exit 1
+  fi
+
   # Assemble final JSON: settings + permissions + sandbox
   local final_settings
   final_settings=$(echo "$merged_settings" | jq \

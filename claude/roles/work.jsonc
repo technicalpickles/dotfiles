@@ -31,7 +31,24 @@
   // Work-specific sandbox (source: agent-safehouse)
   "sandbox": {
     "network": {
-      "allowedHosts": ["portal.sso.us-west-2.amazonaws.com"],
+      "allowedHosts": [
+        // AWS SSO login + STS/OIDC token exchange
+        "portal.sso.us-west-2.amazonaws.com",
+        "oidc.us-west-2.amazonaws.com",
+        "sts.us-west-2.amazonaws.com",
+        // Bedrock (Claude Code via Bedrock, plus direct model calls)
+        "bedrock.us-west-2.amazonaws.com",
+        "bedrock-runtime.us-west-2.amazonaws.com",
+        "api.ecr.us-west-2.amazonaws.com",
+        // Buildkite artifact downloads
+        "gusto-buildkite-artifacts-us-west-2.s3.us-west-2.amazonaws.com",
+        // Gusto internal services
+        "app.gusto-dev.com",
+        "devotel.uw2.staging.zp-int.com",
+        "flight-deck.prod.zp-int.com",
+        "gusto.runlayer.com",
+        "http-intake.logs.us5.datadoghq.com",
+      ],
     },
   },
 

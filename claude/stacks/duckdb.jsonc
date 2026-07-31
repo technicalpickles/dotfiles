@@ -1,0 +1,12 @@
+{
+  // DuckDB / MotherDuck. Used by cq (session transcript queries) and ad-hoc
+  // analysis; DuckDB fetches extensions over the network on first use.
+  "permissions": {
+    "allow": ["Bash(duckdb:*)"],
+  },
+  "sandbox": {
+    "network": {
+      "allowedHosts": ["duckdb.org", "motherduck.com"],
+    },
+  },
+}

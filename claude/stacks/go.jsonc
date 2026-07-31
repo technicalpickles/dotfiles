@@ -32,6 +32,9 @@
 
   // source: agent-safehouse
   "sandbox": {
+    "network": {
+      "allowedHosts": ["proxy.golang.org", "sum.golang.org"],
+    },
     "filesystem": {
       "allowWrite": [
         "~/go",

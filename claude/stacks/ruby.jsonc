@@ -49,6 +49,18 @@
 
   // source: agent-safehouse
   "sandbox": {
+    "network": {
+      "allowedHosts": [
+        "rubygems.org",
+        "index.rubygems.org",
+        "rubocop.org",
+        "docs.rubocop.org",
+        // private gem sources: Sidekiq Enterprise, graphql-pro, Gusto's mirror
+        "enterprise.contribsys.com",
+        "gems.graphql.pro",
+        "gemstash.zp-int.com",
+      ],
+    },
     "filesystem": {
       "allowWrite": [
         "~/.bundle",
