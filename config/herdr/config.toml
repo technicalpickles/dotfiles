@@ -1,0 +1,81 @@
+# herdr - terminal multiplexer / agent orchestrator
+# https://github.com/herdrdev/herdr
+#
+# symlinks.sh links this single file to ~/.config/herdr/config.toml. The
+# directory itself is deliberately NOT symlinked: herdr keeps live sockets,
+# session.json, plugins/, and logs there, and that runtime state has no
+# business in a git working tree.
+#
+# Regenerate a fully commented reference with:  herdr --default-config
+# Reload without restarting:                    prefix+shift+r
+# See every active binding:                     prefix+?
+
+[theme]
+name = "tokyo-night"
+auto_switch = false
+
+[ui]
+show_agent_labels_on_pane_borders = true
+
+# "priority" sorts the agent panel as an attention queue:
+# blocked -> done/unseen -> working -> idle. This also reorders what
+# next_agent/previous_agent walk, which is what makes them useful.
+agent_panel_sort = "priority"
+
+[keys]
+# Match tmux (~/.tmux.conf uses C-Space).
+# Note: if herdr ever runs *inside* tmux, both grab this and you'll be
+# double-pressing. The escape hatch is direct ctrl+alt+* chords.
+prefix = "ctrl+space"
+
+# ---------------------------------------------------------------------------
+# Agent attention cycling
+# ---------------------------------------------------------------------------
+# Unbound by default. Combined with agent_panel_sort = "priority" above,
+# next_agent walks blocked -> done -> working -> idle. From a non-agent pane
+# it lands on the single most-urgent agent.
+#
+# The explicit alternative, already bound: prefix+g opens the session
+# navigator, then bare `b` filters to blocked, `d` to done, `a` clears.
+next_agent = "prefix+a"
+previous_agent = "prefix+shift+a"
+
+# prefix+alt+1 = most urgent agent (with priority sort)
+focus_agent = "prefix+alt+1..9"
+
+# ---------------------------------------------------------------------------
+# tmux / pain-control muscle memory
+# ---------------------------------------------------------------------------
+# herdr's defaults already match tmux for: prefix+h/j/k/l pane focus,
+# prefix+- stacked split, prefix+c new tab, prefix+n/p tab cycle,
+# prefix+[ copy mode, prefix+z zoom, prefix+x close pane, prefix+R reload.
+# These add the aliases pain-control trained into my hands.
+
+# pain-control: | and % split side-by-side, " splits stacked
+split_vertical = ["prefix+v", "prefix+|", "prefix+percent"]
+split_horizontal = ["prefix+minus", "prefix+double_quote"]
+
+# pain-control binds both h and C-h for pane navigation
+focus_pane_left = ["prefix+h", "prefix+ctrl+h"]
+focus_pane_down = ["prefix+j", "prefix+ctrl+j"]
+focus_pane_up = ["prefix+k", "prefix+ctrl+k"]
+focus_pane_right = ["prefix+l", "prefix+ctrl+l"]
+
+# tmux-sensible binds C-p/C-n alongside p/n
+previous_tab = ["prefix+p", "prefix+ctrl+p"]
+next_tab = ["prefix+n", "prefix+ctrl+n"]
+
+# ---------------------------------------------------------------------------
+# Deliberately NOT remapped
+# ---------------------------------------------------------------------------
+# prefix+shift+h/j/k/l  herdr swaps panes here; tmux/pain-control resizes.
+#                       Leaving herdr's default. Resize lives behind
+#                       prefix+r (resize mode). This is the one real
+#                       muscle-memory trap in the migration.
+# prefix+s              herdr = settings; tmux = session chooser.
+#                       prefix+g (goto) is the closer analog.
+#
+# No herdr equivalent exists for: \ and _ (full-width splits),
+# < and > (swap window), prefix+Space (last-window; herdr's last_pane is
+# pane-level only), T/N (sesh + pickletown pickers), C (open Claude Code).
+# The pickers and C could be rebuilt as [[keys.command]] entries.

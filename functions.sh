@@ -62,8 +62,10 @@ find_targets() {
 link_directory_contents() {
   local directory="$1"
   # Items managed by their own installer scripts (e.g. fish.sh handles config/fish,
-  # sshconfig.sh handles config/1password's role-aware agent.toml symlink)
-  local -a skip=(config home config/fish config/1password)
+  # sshconfig.sh handles config/1password's role-aware agent.toml symlink).
+  # config/herdr is file-linked by symlinks.sh: herdr keeps live sockets,
+  # session.json, and logs in ~/.config/herdr, which must not land in the repo.
+  local -a skip=(config home config/fish config/1password config/herdr)
   for linkable in $(find_targets "${directory}"); do
     local should_skip=false
     for s in "${skip[@]}"; do
