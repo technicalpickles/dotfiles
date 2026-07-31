@@ -109,4 +109,3 @@ fi
 if command -v pickletown &> /dev/null; then
   alias pt=pickletown
 fi
-

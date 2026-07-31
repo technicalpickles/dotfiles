@@ -81,4 +81,3 @@ if [[ -f "$HOME/.local/bin/env" ]]; then
   # shellcheck disable=SC1091
   . "$HOME/.local/bin/env"
 fi
-
