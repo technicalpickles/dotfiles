@@ -21,11 +21,11 @@ else
     end
 end
 
-if which op >/dev/null && test -f ~/.config/op/plugins.sh
+if command -q op && test -f ~/.config/op/plugins.sh
     source ~/.config/op/plugins.sh
 end
 
-if which fnox >/dev/null
+if command -q fnox
     fnox activate fish | source
 end
 
