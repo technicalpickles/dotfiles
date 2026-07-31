@@ -21,11 +21,11 @@ else
     end
 end
 
-if which op >/dev/null && test -f ~/.config/op/plugins.sh
+if command -q op && test -f ~/.config/op/plugins.sh
     source ~/.config/op/plugins.sh
 end
 
-if which fnox >/dev/null
+if command -q fnox
     fnox activate fish | source
 end
 
@@ -78,8 +78,4 @@ set -gx EZA_CONFIG_DIR "$HOME/.config/eza"
 
 # fabro
 fish_add_path $HOME/.fabro/bin
-
-# Added by LM Studio CLI (lms)
-set -gx PATH $PATH /Users/josh.nichols/.lmstudio/bin
-# End of LM Studio CLI section
 
