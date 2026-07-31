@@ -1,22 +1,17 @@
-# Pitchfork daemon manager
-# Adds the cd hook that drives `auto = ["start", "stop"]` in pitchfork.toml
+# Pitchfork daemon manager -- shell integration intentionally NOT activated.
 # https://github.com/endevco/pitchfork
-if command -q pitchfork
-    # `pitchfork activate fish` emits the __pitchfork PWD handler and then calls it
-    # eagerly. That call is a ~60ms blocking round-trip to the supervisor and nothing
-    # in the shell reads its result, so strip it and fire the same call in the
-    # background instead (measured 583ms -> 467ms startup). Backgrounding the
-    # __pitchfork *function* instead of the binary only bought ~20ms -- fish forks
-    # the whole shell state for that, which costs about as much as it saves.
-    #
-    # The PWD handler stays synchronous: backgrounding it would let rapid cds land
-    # out of order and leave the supervisor tracking a stale directory.
-    #
-    # This duplicates activate's invocation, so if upstream changes the args this
-    # silently no-ops -- the PWD handler still fires on the first cd, so the worst
-    # case is the initial directory not being reported.
-    pitchfork activate fish | string match --invert --regex '^__pitchfork$' | source
-
-    pitchfork cd --shell-pid $fish_pid >/dev/null 2>&1 &
-    disown
-end
+#
+# `pitchfork activate fish` installs a PWD handler that calls `pitchfork cd` on
+# every directory change. Its only job is driving `auto = ["start", "stop"]`, and
+# that cost ~60-100ms on every single cd (about two thirds of a 153ms cd).
+#
+# It also tied daemon lifetime to shell presence, so any transient fish in a
+# project (agent session, script, one-off command) would start its daemons and
+# stop them again one autostop_delay later. pickleton's pt-serve bounced three
+# times in one afternoon that way.
+#
+# Daemons that should always be up now use `boot_start = true` instead, which the
+# supervisor honours at login via the LaunchAgent (`supervisor run --boot`). See
+# pickleton docs/pitchfork.md. Start things by hand with `pitchfork start <name>`.
+#
+# To re-enable: `pitchfork activate fish | source`
