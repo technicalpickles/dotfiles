@@ -21,4 +21,8 @@ When writing _for_ me or _as_ me (blog posts, docs, messages), use the `writing-
 - **graphify** (`~/.claude/skills/graphify/SKILL.md`) - any input to knowledge graph. Trigger: `/graphify`
   When the user types `/graphify`, invoke the Skill tool with `skill: "graphify"` before doing anything else.
 
+## Claude Code's own configuration
+
+This file, `~/.claude/settings.json`, `~/.claude/rules/*.md`, marketplaces, and MCP servers are managed by [dotfiles](~/github.com/technicalpickles/dotfiles)'s `claudeconfig.sh` from sources in `claude/` (`CLAUDE.md`, `rules/*.md`, `roles/*.jsonc`, `stacks/*.jsonc`, `marketplaces.jsonc`, `mcp-servers.jsonc`). To change any of these, edit the source there and re-run `./claudeconfig.sh` -- don't hand-edit files under `~/.claude/` directly, they get overwritten. See `claude/README.md`.
+
 @RTK.md

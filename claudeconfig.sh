@@ -74,6 +74,9 @@ setup_claude_directory() {
   mkdir -p "$HOME/.claude/ccline"
   link "claude/ccline/config.toml" "$HOME/.claude/ccline/config.toml"
   link "claude/ccline/models.toml" "$HOME/.claude/ccline/models.toml"
+
+  # Symlink rules/ (topic-specific global agent instructions, loaded like CLAUDE.md)
+  link "claude/rules" "$HOME/.claude/rules"
 }
 
 setup_claude_directory
