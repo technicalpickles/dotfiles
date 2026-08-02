@@ -92,3 +92,13 @@ key = "prefix+alt+p"
 type = "plugin_action"
 command = "jt.command-palette.open"
 description = "Command palette"
+
+# herdr-keymap, spike fork (github:technicalpickles/herdr-keymap@fuzzy-search,
+# linked from ~/github.com/technicalpickles/herdr-keymap): fuzzy-searches
+# herdr's own keybindings (defaults + overrides above), not plugin actions --
+# complements prefix+alt+p rather than replacing it.
+[[keys.command]]
+key = "prefix+m"
+type = "plugin_action"
+command = "tds.keymap.open_palette"
+description = "Keybindings palette"
