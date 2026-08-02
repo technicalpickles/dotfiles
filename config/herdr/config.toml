@@ -79,3 +79,16 @@ next_tab = ["prefix+n", "prefix+ctrl+n"]
 # < and > (swap window), prefix+Space (last-window; herdr's last_pane is
 # pane-level only), T/N (sesh + pickletown pickers), C (open Claude Code).
 # The pickers and C could be rebuilt as [[keys.command]] entries.
+
+# ---------------------------------------------------------------------------
+# Plugins
+# ---------------------------------------------------------------------------
+# herdr-command-palette (github:JanTvrdik/herdr-command-palette): fuzzy-pick
+# and run any installed plugin's action. herdr 0.7 doesn't bind keys from a
+# plugin manifest, so this lives here. prefix+p is taken by previous_tab
+# above, so this rides alt like focus_agent and lazygit-style popups do.
+[[keys.command]]
+key = "prefix+alt+p"
+type = "plugin_action"
+command = "jt.command-palette.open"
+description = "Command palette"
