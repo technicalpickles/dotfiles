@@ -24,6 +24,7 @@ Spotlight is kept enabled (Alfred requires it) but specific directories are excl
 
 - `bin/claude-spend-today`: Read today's Claude spend from ccusage cache (for tmux status bar)
 - `bin/claude-status-line`: Status line wrapper (fixes Opus context window size, formats model name, wraps claude-powerline with capsule style)
+- `bin/claude-ollama`: Launch Claude Code with ollama models. Auto-sets `CLAUDE_CODE_AUTO_COMPACT_WINDOW` to 80% of the model's context_length (queried from ollama API). Use `OLLAMA_MODEL` env or pass model as first arg.
 - `bin/claude-permissions`: Query Claude Code permissions across all known config locations
 - `bin/claude-with`: Run Claude with a named environment (isolated `CLAUDE_CONFIG_DIR` per env under `~/.local/share/claude-env/<name>/`)
 - `bin/analyze-claude-sessions`: Analyze Claude Code sessions (via cq) to identify projects and skill usage

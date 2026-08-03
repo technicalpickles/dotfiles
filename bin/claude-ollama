@@ -1,0 +1,137 @@
+#!/bin/bash
+# Claude Code launcher for ollama models
+# Automatically sets CLAUDE_CODE_AUTO_COMPACT_WINDOW based on the model's context window
+#
+# Usage:
+#   claude-ollama [model] [claude-args...]
+#   claude-ollama -m model [claude-args...]
+#   OLLAMA_MODEL=model claude-ollama [claude-args...]
+#
+# Examples:
+#   claude-ollama qwen3.5:cloud --resume
+#   claude-ollama -m gemini-3-flash-preview:cloud -p "fix the bug"
+#   claude-ollama --help
+
+set -euo pipefail
+
+# Parse arguments - extract model, pass rest to ollama launch
+MODEL=""
+CLAUDE_ARGS=()
+SHOW_HELP=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help)
+      SHOW_HELP=true
+      shift
+      ;;
+    -m|--model)
+      MODEL="$2"
+      shift 2
+      ;;
+    --)
+      # Stop processing, pass everything after to ollama launch
+      CLAUDE_ARGS+=("${@:2}")
+      break
+      ;;
+    -*)
+      # Any other flag goes to claude via ollama launch
+      CLAUDE_ARGS+=("$1")
+      shift
+      ;;
+    *)
+      # First non-flag argument is the model (if not already set)
+      if [[ -z "$MODEL" ]]; then
+        MODEL="$1"
+      else
+        CLAUDE_ARGS+=("$1")
+      fi
+      shift
+      ;;
+  esac
+done
+
+# Show help
+if [[ "$SHOW_HELP" == true ]]; then
+  cat << 'HELP'
+claude-ollama - Launch Claude Code with ollama models
+
+Usage:
+  claude-ollama [model] [claude-args...]
+  claude-ollama -m|--model <model> [claude-args...]
+  OLLAMA_MODEL=<model> claude-ollama [claude-args...]
+
+Arguments:
+  model           Ollama model name (e.g., qwen3.5:cloud)
+  claude-args     Arguments passed directly to claude (via ollama launch)
+
+Options:
+  -m, --model     Specify the ollama model
+  -h, --help      Show this help message
+
+Environment:
+  OLLAMA_MODEL          Default model to use
+  CLAUDE_COMPACTION_PCT Compaction threshold (default: 0.80)
+
+Examples:
+  claude-ollama qwen3.5:cloud --resume
+  claude-ollama -m gemini-3-flash-preview:cloud
+  claude-ollama -- -p "fix the bug"
+  OLLAMA_MODEL=minimax-m3:cloud claude-ollama
+
+The compaction window is set to 80% of the model's context_length
+(queried from the ollama API).
+HELP
+  exit 0
+fi
+
+# Default model (from arg, env, or fallback)
+MODEL="${MODEL:-${OLLAMA_MODEL:-qwen3.5:cloud}}"
+
+# Compaction percentage (trigger at 80% of model's context_length)
+COMPACTION_PCT="${CLAUDE_COMPACTION_PCT:-0.80}"
+
+# Get model's context_length from ollama API
+get_context_length() {
+  local model="$1"
+  local ctx
+
+  # Try /api/show first
+  ctx=$(curl -s -X POST http://localhost:11434/api/show -d "{\"name\":\"$model\"}" 2>/dev/null | \
+        jq -r '.model_info | to_entries[] | select(.key | test("context_length"; "i")) | .value' 2>/dev/null)
+
+  if [[ -n "$ctx" && "$ctx" != "null" ]]; then
+    echo "$ctx"
+    return 0
+  fi
+
+  # Fallback: try /api/tags
+  ctx=$(curl -s http://localhost:11434/api/tags 2>/dev/null | \
+        jq -r --arg model "$model" '.models[] | select(.name == $model) | .details.context_length // empty' 2>/dev/null | head -1)
+
+  if [[ -n "$ctx" && "$ctx" != "null" ]]; then
+    echo "$ctx"
+    return 0
+  fi
+
+  # Ultimate fallback
+  echo "262144"
+  return 1
+}
+
+CONTEXT_LENGTH=$(get_context_length "$MODEL")
+COMPACTION_WINDOW=$(echo "$CONTEXT_LENGTH * $COMPACTION_PCT" | bc | cut -d. -f1)
+
+echo "🦙 Ollama model: $MODEL"
+echo "📏 Context length: $CONTEXT_LENGTH"
+echo "🔄 Compaction window ($(echo "$COMPACTION_PCT * 100" | bc | cut -d. -f1)%): $COMPACTION_WINDOW"
+echo ""
+
+# Export for Claude Code
+export CLAUDE_CODE_AUTO_COMPACT_WINDOW="$COMPACTION_WINDOW"
+export OLLAMA_CONTEXT_LENGTH="$CONTEXT_LENGTH"
+export ANTHROPIC_AUTH_TOKEN="ollama"
+export ENABLE_CLAUDEAI_MCP_SERVERS=0
+
+# Launch ollama with claude integration
+exec ollama launch claude --model "$MODEL" -- "${CLAUDE_ARGS[@]}"
