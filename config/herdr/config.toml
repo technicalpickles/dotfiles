@@ -102,3 +102,19 @@ key = "prefix+m"
 type = "plugin_action"
 command = "tds.keymap.open_palette"
 description = "Keybindings palette"
+
+# herdr-nvim (github:ChmaraX/herdr-nvim): full-height nvim sidebar with a
+# fuzzy picker over recently-edited/repo files. Nvim side is configured in
+# ~/.config/nvim/lua/plugins/herdr-nvim.lua. Keys match the plugin's README
+# defaults; neither prefix+e nor prefix+o is bound above.
+[[keys.command]]
+key = "prefix+e"
+type = "plugin_action"
+command = "chmarax.herdr-nvim.toggle"
+description = "nvim sidebar"
+
+[[keys.command]]
+key = "prefix+o"
+type = "plugin_action"
+command = "chmarax.herdr-nvim.pick-file"
+description = "open file from agent output"
