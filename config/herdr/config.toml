@@ -81,10 +81,47 @@ next_tab = ["prefix+n", "prefix+ctrl+n"]
 # still be rebuilt as [[keys.command]] entries.
 
 # ---------------------------------------------------------------------------
+# Plugins
+# ---------------------------------------------------------------------------
+# herdr-command-palette (github:JanTvrdik/herdr-command-palette): fuzzy-pick
+# and run any installed plugin's action. herdr 0.7 doesn't bind keys from a
+# plugin manifest, so this lives here. prefix+p is taken by previous_tab
+# above, so this rides alt like focus_agent and lazygit-style popups do.
+[[keys.command]]
+key = "prefix+alt+p"
+type = "plugin_action"
+command = "jt.command-palette.open"
+description = "Command palette"
+
+# herdr-keymap, spike fork (github:technicalpickles/herdr-keymap@fuzzy-search,
+# linked from ~/github.com/technicalpickles/herdr-keymap): fuzzy-searches
+# herdr's own keybindings (defaults + overrides above), not plugin actions --
+# complements prefix+alt+p rather than replacing it.
+[[keys.command]]
+key = "prefix+m"
+type = "plugin_action"
+command = "tds.keymap.open_palette"
+description = "Keybindings palette"
+
+# herdr-nvim (github:ChmaraX/herdr-nvim): full-height nvim sidebar with a
+# fuzzy picker over recently-edited/repo files. Nvim side is configured in
+# ~/.config/nvim/lua/plugins/herdr-nvim.lua. Keys match the plugin's README
+# defaults; neither prefix+e nor prefix+o is bound above.
+[[keys.command]]
+key = "prefix+e"
+type = "plugin_action"
+command = "chmarax.herdr-nvim.toggle"
+description = "nvim sidebar"
+
+[[keys.command]]
+key = "prefix+o"
+type = "plugin_action"
+command = "chmarax.herdr-nvim.pick-file"
+description = "open file from agent output"
+
 # pickletown workspace picker (replaces new_workspace: the picker creates
 # from the pt inventory too, so a bare "new blank workspace" shortcut is
 # redundant)
-# ---------------------------------------------------------------------------
 [[keys.command]]
 key = "prefix+shift+n"
 type = "popup"

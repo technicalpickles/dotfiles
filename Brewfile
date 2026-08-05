@@ -5,6 +5,8 @@ brew 'direnv'
 brew 'thefuck'
 brew 'tmux'
 brew 'sesh'
+brew 'herdr'
+brew 'worktrunk'
 
 # git
 brew 'git-lfs'

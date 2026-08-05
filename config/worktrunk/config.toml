@@ -1,0 +1,11 @@
+# worktrunk - git worktree manager (wt)
+# https://worktrunk.dev
+#
+# Regenerate a fully commented reference with: wt config create
+# Full docs on this section:                   https://worktrunk.dev/config/#worktree-path-template
+
+# Centralize worktrees under ~/worktrees instead of worktrunk's default
+# sibling-directory layout (~/github.com/technicalpickles/dotfiles.branch-name).
+# Keeps ~/github.com clean and gives one place to bulk-inspect or clean up
+# worktrees across every repo.
+worktree-path = "~/worktrees/{{ repo }}/{{ branch | sanitize }}"
