@@ -77,5 +77,18 @@ next_tab = ["prefix+n", "prefix+ctrl+n"]
 #
 # No herdr equivalent exists for: \ and _ (full-width splits),
 # < and > (swap window), prefix+Space (last-window; herdr's last_pane is
-# pane-level only), T/N (sesh + pickletown pickers), C (open Claude Code).
-# The pickers and C could be rebuilt as [[keys.command]] entries.
+# pane-level only), T (sesh picker), C (open Claude Code). T and C could
+# still be rebuilt as [[keys.command]] entries.
+
+# ---------------------------------------------------------------------------
+# pickletown workspace picker (replaces new_workspace: the picker creates
+# from the pt inventory too, so a bare "new blank workspace" shortcut is
+# redundant)
+# ---------------------------------------------------------------------------
+[[keys.command]]
+key = "prefix+shift+n"
+type = "popup"
+command = "~/pickleton/herdr/bin/workspace-picker"
+description = "switch pickletown workspace"
+width = "80%"
+height = "70%"
