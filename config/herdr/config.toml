@@ -22,6 +22,11 @@ show_agent_labels_on_pane_borders = true
 # next_agent/previous_agent walk, which is what makes them useful.
 agent_panel_sort = "priority"
 
+# Agent name up top (with workspace) since that's what I scan for; tab on
+# its own second line. Default is ["state_icon", "workspace", "tab"] / ["agent"].
+[ui.sidebar.agents]
+rows = [["state_icon", "workspace", "agent"], ["tab"]]
+
 [keys]
 # Match tmux (~/.tmux.conf uses C-Space).
 # Note: if herdr ever runs *inside* tmux, both grab this and you'll be
