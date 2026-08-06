@@ -1,4 +1,5 @@
 [tools]
+bun = "1.3.14"
 fnox = "latest"
 go = "1.26"
 node = "lts"
