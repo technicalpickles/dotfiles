@@ -40,6 +40,7 @@ link config/herdr/config.toml "$HOME/.config/herdr/config.toml"
 # Link LaunchAgents if on macOS
 if running_macos; then
   mkdir -p "$HOME/Library/LaunchAgents"
+  repoint_dangling_launchagents
   echo "🚀 linking LaunchAgents"
   for agent in LaunchAgents/*.plist; do
     if [ -f "$agent" ]; then

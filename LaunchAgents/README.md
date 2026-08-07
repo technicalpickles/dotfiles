@@ -94,6 +94,8 @@ Agents that only make sense on a specific platform live in a subdirectory whose 
 
 To add a new gate, add a predicate to `functions.sh` and a matching loop in `symlinks.sh`. Drop plists in the corresponding subdirectory; nothing else changes.
 
+Moving a plist between gates (e.g. top-level -> `arm64-macos/`) leaves behind a dangling `~/Library/LaunchAgents` symlink pointing at the old path. `symlinks.sh` detects these and repoints them to the plist's new location, then force-reloads via `launchctl unload`/`load`. This reload is necessary because a reboot alone isn't enough: launchd caches the already-loaded job in memory and won't notice the plist moved until its next full re-scan, which can itself silently fail if the symlink is still dangling at that point.
+
 Manual installation:
 
 ```bash
