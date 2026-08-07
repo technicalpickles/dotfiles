@@ -1,0 +1,23 @@
+# Declares the herdr plugins herdr.sh installs/links on any machine.
+# See doc/adr/0046-declarative-herdr-plugin-manifest.md for why this exists
+# instead of being hardcoded into herdr.sh.
+#
+# Whenever you `herdr plugin install`/`herdr plugin link` something new,
+# add an entry here too -- nothing enforces that this file and herdr's own
+# installed-plugin state (~/.config/herdr/plugins.json, untracked) agree.
+
+[[plugin]]
+id = "chmarax.herdr-nvim"
+github = "ChmaraX/herdr-nvim"
+
+[[plugin]]
+id = "jt.command-palette"
+github = "JanTvrdik/herdr-command-palette"
+
+[[plugin]]
+id = "worktrunk"
+github = "devashish2203/herdr-worktrunk"
+
+[[plugin]]
+id = "tds.keymap"
+local = "~/github.com/technicalpickles/herdr-keymap"

@@ -39,6 +39,10 @@ When making significant architectural changes, create a new ADR.
 - `~/.claude/*` (settings.json, CLAUDE.md, rules/, marketplaces, MCP servers): Managed by [claudeconfig.sh](claudeconfig.sh) from templates in `claude/` -- edit `claude/CLAUDE.md`, `claude/rules/*.md`, `claude/roles/*.jsonc`, `claude/stacks/*.jsonc`, `claude/marketplaces.jsonc`, or `claude/mcp-servers.jsonc` instead, then re-run `./claudeconfig.sh`. See [claude/README.md](claude/README.md).
 - Any symlinked files -- edit the source in `home/` or `config/` instead
 
+## Herdr Plugins
+
+`config/herdr/plugins.toml` is the source of truth for which herdr plugins get installed (`./herdr.sh`, run standalone or via `./install.sh`). Whenever you `herdr plugin install`/`herdr plugin link` something new, add an entry to `plugins.toml` too -- nothing else keeps it in sync. See [ADR 0046](doc/adr/0046-declarative-herdr-plugin-manifest.md).
+
 ## Working with Nerd Fonts / Special Unicode Characters
 
 When editing files with Nerd Font glyphs (tmux config, starship prompt), do not insert glyphs directly -- they get corrupted. Use placeholder text and let the user paste the actual glyph, or define tmux user options:

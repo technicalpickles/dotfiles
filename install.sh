@@ -112,6 +112,7 @@ if ! running_codespaces; then
   ./fish.sh
   ./bash.sh
   ./skills.sh
+  ./herdr.sh
 fi
 
 echo "✅ Done"

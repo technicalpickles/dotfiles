@@ -45,3 +45,4 @@
 - [43. canonical-dotpickles-role-names](0043-canonical-dotpickles-role-names.md)
 - [44. tmux-url-and-hyperlink-opening](0044-tmux-url-and-hyperlink-opening.md)
 - [45. sudoers.d-templates-for-launchagent-root-actions](0045-sudoers.d-templates-for-launchagent-root-actions.md)
+- [46. declarative-herdr-plugin-manifest](0046-declarative-herdr-plugin-manifest.md)
