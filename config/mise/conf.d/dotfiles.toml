@@ -7,6 +7,12 @@ node = "lts"
 pitchfork = "latest"
 pkl = "0.30.0"
 python = "3.13"
+# rust here is a symlink install pointing at ~/.cargo/bin (mise ls shows
+# "(symlink)"), so `mise reshim` generates a shim for every cargo-installed
+# binary: cq, bowerbird, himalaya, ortie, rtk, plus rustc/cargo themselves.
+# Without a global version those shims all die with "No version is set for
+# shim: <name>" wherever the shims dir sorts ahead of ~/.cargo/bin on PATH.
+rust = "stable"
 # starship lives here, not in Brewfile, because it needs to work on Linux too.
 # The upstream curl | sh installer calls `sudo -v`, which fails on a
 # NOPASSWD-only host with no tty (no credential to validate). mise installs
