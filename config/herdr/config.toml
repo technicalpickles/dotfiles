@@ -41,7 +41,7 @@ prefix = "ctrl+space"
 # next_agent walks blocked -> done -> working -> idle. From a non-agent pane
 # it lands on the single most-urgent agent.
 #
-# The explicit alternative, already bound: prefix+g opens the session
+# The explicit alternative, already bound: prefix+s opens the session
 # navigator, then bare `b` filters to blocked, `d` to done, `a` clears.
 next_agent = "prefix+a"
 previous_agent = "prefix+shift+a"
@@ -56,6 +56,12 @@ focus_agent = "prefix+alt+1..9"
 # prefix+- stacked split, prefix+c new tab, prefix+n/p tab cycle,
 # prefix+[ copy mode, prefix+z zoom, prefix+x close pane, prefix+R reload.
 # These add the aliases pain-control trained into my hands.
+
+# prefix+s: herdr defaults this to settings (theme picker etc.), which I
+# don't use. Freed it up for goto, matching tmux's prefix-s session chooser
+# muscle memory (goto defaults to prefix+g).
+settings = ""
+goto = "prefix+s"
 
 # pain-control: | and % split side-by-side, " splits stacked
 split_vertical = ["prefix+v", "prefix+|", "prefix+percent"]
@@ -78,8 +84,6 @@ next_tab = ["prefix+n", "prefix+ctrl+n"]
 #                       Leaving herdr's default. Resize lives behind
 #                       prefix+r (resize mode). This is the one real
 #                       muscle-memory trap in the migration.
-# prefix+s              herdr = settings; tmux = session chooser.
-#                       prefix+g (goto) is the closer analog.
 #
 # No herdr equivalent exists for: \ and _ (full-width splits),
 # < and > (swap window), prefix+Space (last-window; herdr's last_pane is
@@ -100,9 +104,10 @@ command = "jt.command-palette.open"
 description = "Command palette"
 
 # herdr-keymap, spike fork (github:technicalpickles/herdr-keymap@fuzzy-search,
-# linked from ~/github.com/technicalpickles/herdr-keymap): fuzzy-searches
-# herdr's own keybindings (defaults + overrides above), not plugin actions --
-# complements prefix+alt+p rather than replacing it.
+# installed from that GitHub ref rather than linked locally, so it needs no
+# per-machine path): fuzzy-searches herdr's own keybindings (defaults +
+# overrides above), not plugin actions -- complements prefix+alt+p rather
+# than replacing it.
 [[keys.command]]
 key = "prefix+m"
 type = "plugin_action"
