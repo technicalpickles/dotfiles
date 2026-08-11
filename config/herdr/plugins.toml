@@ -20,4 +20,5 @@ github = "devashish2203/herdr-worktrunk"
 
 [[plugin]]
 id = "tds.keymap"
-local = "~/github.com/technicalpickles/herdr-keymap"
+github = "technicalpickles/herdr-keymap"
+ref = "fuzzy-search"

@@ -27,11 +27,17 @@ yq -p toml -o json '.plugin' "$MANIFEST" | jq -c '.[]' | while read -r entry; do
   fi
 
   github="$(jq -r '.github // empty' <<< "$entry")"
+  ref="$(jq -r '.ref // empty' <<< "$entry")"
   local_path="$(jq -r '.local // empty' <<< "$entry")"
 
   if [ -n "$github" ]; then
-    echo "  🔌 $id -> installing from github:$github"
-    herdr plugin install "$github" --yes
+    if [ -n "$ref" ]; then
+      echo "  🔌 $id -> installing from github:$github@$ref"
+      herdr plugin install "$github" --ref "$ref" --yes
+    else
+      echo "  🔌 $id -> installing from github:$github"
+      herdr plugin install "$github" --yes
+    fi
   elif [ -n "$local_path" ]; then
     expanded="${local_path/#\~/$HOME}"
     echo "  🔌 $id -> linking local $expanded"
