@@ -154,6 +154,9 @@ node_modules
 home/.claude/
 
 .claude/settings.local.json
+.claude/plans/
+.claude/arcade/
+.claude/task-summaries/
 
 # permissions-manager skill generated output
 doc/permissions/
