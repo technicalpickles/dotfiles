@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Load the role-scoped agent SSH keys into the launchd ssh-agent at login, so
+  unattended jobs can sign commits. See bin/load-agent-ssh-keys for the full
+  why (short version: launchd's agent and the fish shell's agent are two
+  different agents, and only the fish one was ever populated).
+
+  RunAtLoad only. The launchd agent is per-login-session, so one load at
+  session start covers every scheduled job for the life of that session.
+
+  `bash -c` rather than `bash -l -c`: launchd does not expand `~` in
+  ProgramArguments and no plist here hardcodes /Users/<me>, so a shell has to
+  do the expanding -- but the *login* profile is deliberately skipped. Under
+  launchd it does not run the way an interactive shell's does, and everything
+  this needs (ssh-add, ssh-keygen) is already in /usr/bin. The gazette plist
+  carries the same warning for the same reason.
+
+  Verify it took effect the way an unattended job would see it:
+    launchctl kickstart -k gui/$(id -u)/com.technicalpickles.agent-ssh-keys
+    cat /tmp/com.technicalpickles.agent-ssh-keys.out
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.technicalpickles.agent-ssh-keys</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>~/.pickles/bin/load-agent-ssh-keys</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/com.technicalpickles.agent-ssh-keys.out</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/com.technicalpickles.agent-ssh-keys.err</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+</dict>
+</plist>

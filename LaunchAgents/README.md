@@ -43,6 +43,27 @@ and [upstream issue #3808](https://github.com/pqrs-org/Karabiner-Elements/issues
 
 **Requires sudo:** uses the scoped `NOPASSWD` sudoers rule installed by `karabinerconfig.sh` at `/etc/sudoers.d/karabiner-wake-fix` (see ADR 0045) -- passwordless for that exact `launchctl kickstart` command only.
 
+### `com.technicalpickles.agent-ssh-keys.plist`
+
+Loads the role-scoped agent SSH keys ([ADR 0031](../doc/adr/0031-role-scoped-agent-git-identity.md)) into launchd's ssh-agent at login, so unattended jobs can sign commits.
+
+**What it does:**
+
+- Runs `bin/load-agent-ssh-keys`, which `ssh-add --apple-use-keychain`s every `~/.ssh/agents/*/id_ed25519` that isn't already in the agent
+- `RunAtLoad` only -- launchd's agent is per-login-session, so one load at session start covers every scheduled job for that session
+- Logs to `/tmp/com.technicalpickles.agent-ssh-keys.{out,err}`
+
+**Why it's needed:** there are two ssh-agents on a Mac, and only one of them was ever populated.
+
+|           | socket                                   | populated by                           | reachable from                                |
+| --------- | ---------------------------------------- | -------------------------------------- | --------------------------------------------- |
+| launchd's | `/var/run/com.apple.launchd.*/Listeners` | **this agent** (previously nothing)    | every launchd job, every GUI-launched process |
+| fish's    | `~/.ssh/agent/s.*`                       | `config/fish/conf.d/ssh-keychain.fish` | interactive fish shells and their descendants |
+
+Anything descended from a terminal got the fish agent, populated, so commit signing worked. Anything scheduled got launchd's, empty, so signing prompted on a tty that wasn't there. This agent is the missing half of that pattern: it is to launchd's agent what `ssh-keychain.fish` is to fish's.
+
+**Prerequisite:** the key passphrase has to be in the login keychain. `bin/setup-agent-ssh-key` does this; to do it by hand, run `ssh-add --apple-use-keychain ~/.ssh/agents/<role>/id_ed25519` once from a terminal. `bin/check-agent-ssh-key <role>` verifies the whole chain.
+
 ### `arm64-macos/com.technicalpickles.qmd-refresh.plist`
 
 Refreshes QMD semantic search index for the Obsidian vault.
@@ -131,7 +152,7 @@ Before committing to a LaunchAgent:
 
    ```bash
    ./launchagents.sh logs com.technicalpickles.disable-spotlight
-   
+
    # Or manually:
    cat /tmp/com.technicalpickles.disable-spotlight.out
    cat /tmp/com.technicalpickles.disable-spotlight.err

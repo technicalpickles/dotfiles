@@ -181,10 +181,18 @@ fi
 LOCAL_FP=$(ssh-keygen -lf "$PUB_PATH" | awk '{print $2}')
 
 # --- 2. Key loaded in ssh-agent ---
+# Scope note: this only sees the agent *this shell* points at, which in a
+# terminal is fish-ssh-agent's (~/.ssh/agent/s.*). launchd hands scheduled jobs
+# a different, separately-populated agent
+# (/var/run/com.apple.launchd.*/Listeners) -- that one is
+# com.technicalpickles.agent-ssh-keys' job, and passing here says nothing about
+# it. See LaunchAgents/README.md.
 if ssh-add -l 2> /dev/null | awk '{print $2}' | grep -Fxq "$LOCAL_FP"; then
   check_pass "Key loaded in ssh-agent (fingerprint: $LOCAL_FP)"
 else
-  check_fail "Key not loaded in ssh-agent" "Run: ssh-add --apple-use-keychain $KEY_PATH"
+  check_fail "Key not loaded in this shell's ssh-agent" \
+    "Store the passphrase in the keychain once: ssh-add --apple-use-keychain $KEY_PATH
+  Then launchd sessions get it automatically via com.technicalpickles.agent-ssh-keys."
 fi
 
 # --- gh auth scope check (needed for GitHub checks) ---

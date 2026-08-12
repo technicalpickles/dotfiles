@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# load-agent-ssh-keys
+#
+# Load the role-scoped agent SSH keys (~/.ssh/agents/<role>/id_ed25519, ADR
+# 0031) into the ssh-agent that launchd hands to unattended jobs. Run at login
+# by com.technicalpickles.agent-ssh-keys; safe to run by hand any time.
+#
+# ## Why this exists: there are two ssh-agents on this machine
+#
+#   1. macOS's built-in per-session agent, socket at
+#      /var/run/com.apple.launchd.*/Listeners. Every launchd job and every
+#      GUI-launched process gets this one via SSH_AUTH_SOCK. It starts EMPTY at
+#      every login and, before this script, nothing ever populated it.
+#
+#   2. fish-ssh-agent's, socket at ~/.ssh/agent/s.*. Exported only into
+#      interactive fish shells and their descendants. config/fish/conf.d/
+#      ssh-keychain.fish fills it on the first shell after boot.
+#
+# Anything descended from a terminal gets #2, populated, so commit signing
+# works. Anything scheduled gets #1, empty. That asymmetry is why signing
+# worked in a warm shell and failed under launchd, and it is expensive: the
+# 2026-08-12 gazette run finished all eleven stages, then died on
+# `fatal: failed to write commit object` 7m21s and $3.59 in.
+#
+# Signing is what needs the agent. The agent config sets gpg.format=ssh with
+# gpg.ssh.program=ssh-keygen (deliberately, to defeat 1Password's op-ssh-sign),
+# and unlike ssh, ssh-keygen honours no UseKeychain option -- handed a
+# passphrase-protected key it prompts on the tty, which headless is a hard
+# failure. It *will* sign via ssh-agent when given a .pub whose private half
+# the agent holds, and user.signingkey is already the .pub. So: put the key in
+# the agent, once, at login.
+#
+# This script is the missing half of a pattern the repo already had; it is to
+# agent #1 what config/fish/conf.d/ssh-keychain.fish is to agent #2.
+
+if [[ "$(uname)" != "Darwin" ]]; then
+  echo "load-agent-ssh-keys: not macOS, nothing to do" >&2
+  exit 0
+fi
+
+if [[ -z "${SSH_AUTH_SOCK:-}" ]]; then
+  echo "load-agent-ssh-keys: SSH_AUTH_SOCK is unset, no agent to load into." >&2
+  echo "  Under launchd this should be /var/run/com.apple.launchd.*/Listeners." >&2
+  exit 1
+fi
+
+shopt -s nullglob
+keys=("$HOME"/.ssh/agents/*/id_ed25519)
+shopt -u nullglob
+
+if [[ ${#keys[@]} -eq 0 ]]; then
+  echo "load-agent-ssh-keys: no agent keys under ~/.ssh/agents/*/id_ed25519" >&2
+  echo "  Create one with: bin/setup-agent-ssh-key <role>" >&2
+  exit 0
+fi
+
+# Fingerprints already in the agent. Checking first is not just tidiness:
+# --apple-use-keychain re-runs the bcrypt KDF on every call (~750ms) even when
+# the key is already loaded, and this script is cheap to invoke repeatedly
+# (preflight checks, manual reruns).
+loaded=$(ssh-add -l 2> /dev/null | awk '{print $2}')
+
+rc=0
+for key in "${keys[@]}"; do
+  role="$(basename "$(dirname "$key")")"
+  pub="$key.pub"
+
+  if [[ ! -f "$pub" ]]; then
+    echo "load-agent-ssh-keys: $role: missing $pub, skipping" >&2
+    rc=1
+    continue
+  fi
+
+  fp=$(ssh-keygen -lf "$pub" | awk '{print $2}')
+  if grep -Fxq "$fp" <<< "$loaded"; then
+    echo "load-agent-ssh-keys: $role: already loaded ($fp)"
+    continue
+  fi
+
+  # --apple-use-keychain reads the passphrase from the login keychain with no
+  # prompt, and a GUI LaunchAgent can do that with no partition-list step
+  # (verified from a real launchd job, 2026-08-12).
+  if add_out=$(ssh-add --apple-use-keychain "$key" 2>&1); then
+    echo "load-agent-ssh-keys: $role: loaded ($fp)"
+  else
+    echo "load-agent-ssh-keys: $role: FAILED to load $key" >&2
+    echo "  $add_out" >&2
+    echo "  If the passphrase is not in the keychain yet, store it once with:" >&2
+    echo "    ssh-add --apple-use-keychain $key" >&2
+    rc=1
+  fi
+done
+
+exit $rc
