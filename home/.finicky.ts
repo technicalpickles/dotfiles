@@ -15,6 +15,25 @@ if (hostname === 'josh-nichols-K9DJ2M7WK6') {
   personalChromeProfile = 'Josh';
 }
 
+// Chrome PWA app IDs, from CrAppModeShortcutID in the shim's Info.plist:
+//   plutil -p "$HOME/Applications/Chrome Apps.localized/Google Meet.app/Contents/Info.plist"
+const chromeApps = {
+  meet: 'kjgfgldnnfoeklkmfkjfagphfepbbdan',
+  calendar: 'kjbdgfilnfhdoflbpgamdcdgpehopbep',
+};
+
+// Open a URL in an installed Chrome PWA, as the app (its own dock icon and
+// cmd-tab entry) rather than as a Chrome window. See the "Chrome PWAs" section
+// of .claude/rules/finicky.md for why this specific pair of switches.
+const inChromeApp = (appId: string) => (url: URL) => ({
+  name: 'Google Chrome',
+  profile: workChromeProfile,
+  args: [
+    `--app-id=${appId}`,
+    `--app-launch-url-for-shortcuts-menu-item=${url.href}`,
+  ],
+});
+
 // Slack workspace subdomain to team ID mapping
 // Find your team ID: Open Slack in browser, check boot_data.team_id in page source
 // Always use the T-prefixed team_id (not E-prefixed enterprise_id)
@@ -145,16 +164,14 @@ const config: FinickyConfig = {
       browser: 'us.zoom.xos',
     },
 
-    // Google Meet - open in Chrome installed app
+    // Google Meet / Calendar - open in the installed PWA at the actual URL.
     {
       match: ['meet.google.com/*', '*.meet.google.com/*'],
-      browser: 'Google Meet',
+      browser: inChromeApp(chromeApps.meet),
     },
-
-    // Google Calendar - open in Chrome installed app
     {
       match: 'calendar.google.com/*',
-      browser: 'Google Calendar',
+      browser: inChromeApp(chromeApps.calendar),
     },
 
     // Other Google Workspace apps that might work better in Chrome
