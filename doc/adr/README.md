@@ -46,3 +46,4 @@
 - [44. tmux-url-and-hyperlink-opening](0044-tmux-url-and-hyperlink-opening.md)
 - [45. sudoers.d-templates-for-launchagent-root-actions](0045-sudoers.d-templates-for-launchagent-root-actions.md)
 - [46. declarative-herdr-plugin-manifest](0046-declarative-herdr-plugin-manifest.md)
+- [47. default-to-auto-permission-mode](0047-default-to-auto-permission-mode.md)
