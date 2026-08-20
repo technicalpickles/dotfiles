@@ -38,7 +38,7 @@
 
   // Permissions: base safety rules
   "permissions": {
-    "defaultMode": "acceptEdits",
+    "defaultMode": "auto",
     "allow": [
       "Bash(rm -rf .DS_Store)",
       "Bash(rm -rf .cache)",
