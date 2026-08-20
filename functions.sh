@@ -9,6 +9,10 @@ running_arm64_macos() {
   running_macos && [ "$(uname -m)" = "arm64" ]
 }
 
+running_home_role() {
+  [ "${DOTPICKLES_ROLE:-home}" = "home" ]
+}
+
 running_codespaces() {
   [ "$CODESPACES" = true ]
   return $?

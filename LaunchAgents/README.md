@@ -101,6 +101,22 @@ Runs QMD as an HTTP MCP server so Claude (and other agents) can search the vault
 claude mcp add --transport http qmd http://localhost:8181/mcp --scope user
 ```
 
+### `home/com.technicalpickles.task-sync.plist`
+
+Syncs Taskwarrior (TaskChampion) history to the personal sync server so tasks stay in sync across machines.
+
+**Role:** home only (gated by `running_home_role`; see "Role-gated agents" below) -- sync creds come from the personal `picklehome` 1Password vault (see `taskrc.sh`), so this has no meaning on the work role.
+
+**What it does:**
+
+- Runs `task sync` via a login shell (so `task` resolves from PATH the same as an interactive shell)
+- Runs every 30 minutes (at :00 and :30), plus once at login
+- Logs to `/tmp/com.technicalpickles.task-sync.{out,err}`
+
+**Prerequisites:**
+
+- `~/.config/task/sync.rc` populated with real sync creds (written by `taskrc.sh` from `op://picklehome/TaskChampion Sync`)
+
 ## Setup
 
 The `install.sh` script automatically symlinks all `.plist` files from this directory to `~/Library/LaunchAgents/`. Plists in platform-gated subdirectories (e.g. `arm64-macos/`) are linked only when the host matches.
@@ -114,6 +130,16 @@ Agents that only make sense on a specific platform live in a subdirectory whose 
 | `arm64-macos/` | `running_arm64_macos` | host is macOS on Apple Silicon |
 
 To add a new gate, add a predicate to `functions.sh` and a matching loop in `symlinks.sh`. Drop plists in the corresponding subdirectory; nothing else changes.
+
+## Role-gated agents
+
+Agents that only make sense for one `DOTPICKLES_ROLE` (see [doc/architecture.md](../doc/architecture.md)) live in a subdirectory whose name matches a role predicate in `functions.sh`:
+
+| Subdirectory | Predicate           | Linked when                                |
+| ------------ | ------------------- | ------------------------------------------ |
+| `home/`      | `running_home_role` | `DOTPICKLES_ROLE` is `home` (and on macOS) |
+
+Same extension mechanism as platform-gated agents above: add a predicate, add a matching loop in `symlinks.sh`, drop plists in the subdirectory.
 
 Manual installation:
 

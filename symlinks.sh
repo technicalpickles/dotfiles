@@ -59,3 +59,14 @@ if running_arm64_macos; then
     fi
   done
 fi
+
+# Link home-role-only LaunchAgents (e.g. personal-account sync jobs)
+if running_macos && running_home_role; then
+  echo "🚀 linking home-role LaunchAgents"
+  for agent in LaunchAgents/home/*.plist; do
+    if [ -f "$agent" ]; then
+      target="$HOME/Library/LaunchAgents/$(basename "$agent")"
+      link "$agent" "$target"
+    fi
+  done
+fi
