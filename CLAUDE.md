@@ -16,7 +16,7 @@ Pre-commit hooks via `lefthook`: Prettier formats staged files, TypeScript check
 
 There are no traditional unit tests. "Testing" means `npm run lint` + manual install verification.
 
-**Pushing needs the sandbox off.** `git push` and `gh` commands fail under the command sandbox (`nc: authentication method negotiation failed`) because SSH auth goes through the 1Password agent socket, which the sandbox blocks. Re-run the push/`gh` call with the sandbox disabled.
+**Pushing needs the sandbox off.** Any git operation over an SSH remote (`git push`, `fetch`, `pull`, or a `gh` command that shells out to one) fails under the command sandbox, usually with `nc: authentication method negotiation failed`. Confirmed 2026-08-20 (pickletown bean gt-o2jy): this is a network-policy deny on outbound port 22 itself — `ssh: connect to host github.com port 22: Operation not permitted`, failing before any identity/agent negotiation — not specifically about the 1Password socket as previously assumed here. Plain `gh api`/HTTPS operations are unaffected (github.com/api.github.com over 443 already work sandboxed). Re-run the SSH-based push/fetch/`gh` call with the sandbox disabled.
 
 ## Architecture Decision Records
 
