@@ -1,0 +1,12 @@
+{
+  // Dolt (versioned SQL database CLI). Even `dolt version` tries to create
+  // ~/.dolt for its global config on first touch and EPERMs without this.
+  "permissions": {
+    "allow": ["Bash(dolt:*)"],
+  },
+  "sandbox": {
+    "filesystem": {
+      "allowWrite": ["~/.dolt"],
+    },
+  },
+}

@@ -136,6 +136,12 @@
       "allowWrite": [
         // rtk (CLI proxy) needs to write its state/config here
         "~/Library/Application Support/rtk",
+        // Plain /tmp writes (as opposed to $TMPDIR) are the single biggest
+        // source of self-inflicted sandbox EPERM noise -- redirects, quick
+        // scratch files, background-job logs, etc. all default to /tmp out
+        // of habit despite $TMPDIR being the documented scratch dir. Allow
+        // it outright rather than fighting the habit.
+        "/tmp",
       ],
     },
   },
