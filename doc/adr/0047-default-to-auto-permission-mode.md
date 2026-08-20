@@ -25,9 +25,11 @@ built-in default stays `default` (Manual) when:
 - feature-flag fetching is off
 - it's the first session after an install or an upgrade that adds the default
 
-This repo's roles cover several of those cases (`claude-code-remote`,
-`container`, `coi-host`, plus Bedrock-backed work sessions), so dropping the
-key would silently leave those in Manual.
+Several of those cases apply here: headless `claude -p` runs driven from cron,
+LaunchAgents, and workflow stages, and the `claude-code-remote`, `container`,
+and `coi-host` roles. Dropping the key would silently leave those in Manual.
+(No role in this repo configures Bedrock or another alternate provider today,
+so those rows are latent rather than active.)
 
 ## Decision
 
