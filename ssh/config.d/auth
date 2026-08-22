@@ -1,2 +1,16 @@
+# Agent sessions (Claude Code sets $CLAUDECODE) use the Keychain-loaded
+# per-role key over fish-ssh-agent instead of 1Password -- no interactive
+# TouchID/biometric approval, and it applies to any host, not just github.com.
+# See ADR 0031 (role-scoped agent identity) and ADR 0030 (Keychain loading).
+Match exec "test -n \"$CLAUDECODE\" -a \"$DOTPICKLES_ROLE\" = home"
+  IdentityFile ~/.ssh/agents/home/id_ed25519
+  IdentityAgent SSH_AUTH_SOCK
+  IdentitiesOnly yes
+
+Match exec "test -n \"$CLAUDECODE\" -a \"$DOTPICKLES_ROLE\" = work"
+  IdentityFile ~/.ssh/agents/work/id_ed25519
+  IdentityAgent SSH_AUTH_SOCK
+  IdentitiesOnly yes
+
 Host *
   IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
