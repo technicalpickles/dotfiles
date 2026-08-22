@@ -48,3 +48,4 @@
 - [46. declarative-herdr-plugin-manifest](0046-declarative-herdr-plugin-manifest.md)
 - [47. default-to-auto-permission-mode](0047-default-to-auto-permission-mode.md)
 - [48. agent-session-ssh-key-override-via-match-exec](0048-agent-session-ssh-key-override-via-match-exec.md)
+- [49. role-gated-launchagents](0049-role-gated-launchagents.md)
