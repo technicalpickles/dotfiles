@@ -128,9 +128,28 @@ echo "🔄 Compaction window ($(echo "$COMPACTION_PCT * 100" | bc | cut -d. -f1)
 echo ""
 
 # Export for Claude Code
+# CLAUDE_CODE_MAX_CONTEXT_TOKENS: Overrides the context window size Claude Code reports
+#   in its status JSON. Used by ccstatusline and other tools that read context_window_size.
+#   Without this, Claude Code defaults to 200k (Claude's window) instead of the model's actual window.
+export CLAUDE_CODE_MAX_CONTEXT_TOKENS="$CONTEXT_LENGTH"
+
+# CLAUDE_CODE_AUTO_COMPACT_WINDOW: Triggers automatic context compaction when usage
+#   exceeds this threshold (default 80% of context_length). Prevents context overflow.
 export CLAUDE_CODE_AUTO_COMPACT_WINDOW="$COMPACTION_WINDOW"
+
+# OLLAMA_CONTEXT_LENGTH: Informational — the raw context_length from ollama API.
+#   Useful for debugging or external tooling.
 export OLLAMA_CONTEXT_LENGTH="$CONTEXT_LENGTH"
+
+# CCSTATUSLINE_CONTEXT_SIZE_FALLBACK: Fallback for ccstatusline when Claude Code
+#   doesn't report context_window_size. Only used if CLAUDE_CODE_MAX_CONTEXT_TOKENS
+#   isn't set or Claude Code reports no value. Kept as a backup.
+export CCSTATUSLINE_CONTEXT_SIZE_FALLBACK="$CONTEXT_LENGTH"
+
+# Required for ollama's claude integration — bypasses Anthropic auth
 export ANTHROPIC_AUTH_TOKEN="ollama"
+
+# Disable official Claude Code MCP servers (not compatible with ollama)
 export ENABLE_CLAUDEAI_MCP_SERVERS=0
 
 # Launch ollama with claude integration
