@@ -222,6 +222,34 @@ generate_settings() {
   sandbox_hosts=$(echo "$sandbox_hosts" | jq 'unique | sort')
   sandbox_write_paths=$(echo "$sandbox_write_paths" | jq 'unique | sort')
 
+  # macOS: /tmp, /var and /etc are symlinks into /private, and the Seatbelt
+  # sandbox matches the *resolved* path. An allowWrite entry spelled "/tmp"
+  # therefore never matches anything -- the write lands on /private/tmp and
+  # falls outside the rule. Claude Code works around this for its own session
+  # dirs by registering both spellings (you can see "/tmp/claude" and
+  # "/private/tmp/claude" side by side in the resolved config); user entries
+  # get no such treatment. So mirror it here: every /tmp|/var|/etc entry gets
+  # a /private twin. Keeping both spellings means base.jsonc stays portable --
+  # on Linux /tmp is a real directory and the plain entry is the one that works.
+  #
+  # Verified 2026-08-24: with only "/tmp" allowlisted, `echo hi > /tmp/x` and
+  # `echo hi > /private/tmp/x` both EPERM. Add "/private/tmp" and both succeed.
+  if [ "$(uname)" = "Darwin" ]; then
+    sandbox_write_paths=$(echo "$sandbox_write_paths" | jq '
+      map(select(test("^/(tmp|var|etc)(/|$)")) | "/private" + .) + . | unique | sort')
+
+    # macOS mktemp(1) with no template uses confstr(_CS_DARWIN_USER_TEMP_DIR),
+    # not $TMPDIR, so it ignores the writable session temp dir Claude Code sets
+    # up and lands in /var/folders/<hash>/T instead. That is what made
+    # claudeconfig.sh itself unrunnable under the sandbox. The path is
+    # per-user/per-machine, so compute it rather than hardcoding. Scoped to the
+    # temp dir (/T) only -- the sibling /C cache dir stays denied.
+    local darwin_tmp
+    darwin_tmp="/private$(getconf DARWIN_USER_TEMP_DIR)"
+    darwin_tmp="${darwin_tmp%/}"
+    sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --arg t "$darwin_tmp" '. + [$t] | unique | sort')
+  fi
+
   # allowedHosts entries must be bare hostnames (optionally with a port).
   # A stray "domain:" prefix (WebFetch permission syntax) or a URL path makes
   # Claude Code discard the entire allowedHosts array on its next rewrite of
