@@ -178,7 +178,7 @@ Before committing to a LaunchAgent:
 
    ```bash
    ./launchagents.sh logs com.technicalpickles.disable-spotlight
-
+   
    # Or manually:
    cat /tmp/com.technicalpickles.disable-spotlight.out
    cat /tmp/com.technicalpickles.disable-spotlight.err

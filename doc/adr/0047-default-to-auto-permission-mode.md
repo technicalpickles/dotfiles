@@ -14,7 +14,7 @@ setting bought nothing but a keystroke.
 
 The obvious fix is to delete the key and inherit the upstream default. That
 turns out not to be equivalent. Per [Permission modes][modes], `auto` is the
-built-in starting mode as of v2.1.228 (v2.1.233 on native Windows), but *only*
+built-in starting mode as of v2.1.228 (v2.1.233 on native Windows), but _only_
 on Pro, Max, and Team plans in a terminal or the VS Code extension. The
 built-in default stays `default` (Manual) when:
 
@@ -44,7 +44,7 @@ Three constraints shaped this:
   makes Claude Code fall back to the built-in default instead of honoring the
   `defaultMode` in `~/.claude/settings.json`. `claudeconfig.sh` writes
   user-scope settings, which is the right vehicle. Never set `defaultMode:
-  auto` in project settings.
+auto` in project settings.
 - **Nothing outranks it today.** Managed settings
   (`/Library/Application Support/ClaudeCode/managed-settings.json`) currently
   set neither `permissions.defaultMode` nor `permissions.disableAutoMode`. If
@@ -57,6 +57,7 @@ Three constraints shaped this:
 ### Alternatives Considered
 
 1. **Remove the key entirely**
+
    - Pros: less config, tracks upstream as the default evolves.
    - Cons: only equals `auto` for Pro/Max/Team terminal sessions; silently
      Manual for `-p`, the SDK, Bedrock, Enterprise/API-key auth, and the first
@@ -64,10 +65,11 @@ Three constraints shaped this:
    - Rejected: this repo's roles are exactly those cases.
 
 2. **Keep `acceptEdits`**
+
    - Rejected: it lost to a `Shift+Tab` every single session.
 
 3. **`dontAsk` or `bypassPermissions`**
-   - Cons: `dontAsk` runs only pre-approved tools and *denies* protected-path
+   - Cons: `dontAsk` runs only pre-approved tools and _denies_ protected-path
      writes; `bypassPermissions` drops the classifier entirely.
    - Rejected: `dontAsk` is for locked-down CI, `bypassPermissions` for
      disposable containers. Neither describes a laptop.
@@ -78,7 +80,7 @@ Three constraints shaped this:
 
 - Sessions start where they were being driven by hand anyway.
 - The `permissions.deny` and `permissions.ask` rules in `base.jsonc` still
-  apply: both are evaluated *before* the classifier, and a content-scoped `ask`
+  apply: both are evaluated _before_ the classifier, and a content-scoped `ask`
   rule always prompts even in auto mode. The safety rails in this repo are
   unaffected.
 - One declared value across every role, instead of a built-in that differs per
