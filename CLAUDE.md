@@ -18,6 +18,10 @@ There are no traditional unit tests. "Testing" means `npm run lint` + manual ins
 
 **Pushing needs the sandbox off.** Any git operation over an SSH remote (`git push`, `fetch`, `pull`, or a `gh` command that shells out to one) fails under the command sandbox, usually with `nc: authentication method negotiation failed`. Confirmed 2026-08-20 (pickletown bean gt-o2jy): this is a network-policy deny on outbound port 22 itself — `ssh: connect to host github.com port 22: Operation not permitted`, failing before any identity/agent negotiation — not specifically about the 1Password socket as previously assumed here. Plain `gh api`/HTTPS operations are unaffected (github.com/api.github.com over 443 already work sandboxed). Re-run the SSH-based push/fetch/`gh` call with the sandbox disabled.
 
+**`./claudeconfig.sh` needs the sandbox off too**, for exactly one step: the `mv` onto `~/.claude/settings.json`. That path is in the sandbox's "denied within allowed" set and [the docs](https://code.claude.com/docs/en/sandboxing) are explicit that no `allowWrite` entry can exempt it. This is by design -- don't try to allowlist your way around it. Everything else in the script runs fine sandboxed as of [ADR 0050](doc/adr/0050-canonicalize-sandbox-allowwrite-paths.md).
+
+**Sandbox `allowWrite` paths must be canonical on macOS.** `/tmp`, `/var`, and `/etc` are symlinks into `/private`, and Seatbelt matches the resolved path, so an entry spelled `/tmp` silently never fires. `claudeconfig.sh` adds the `/private` twin automatically at generate time, so write the natural spelling in `claude/roles/*.jsonc` and let the generator handle it. See [ADR 0050](doc/adr/0050-canonicalize-sandbox-allowwrite-paths.md).
+
 ## Architecture Decision Records
 
 This repo uses ADRs to document why architectural choices were made. Before making significant changes, check [doc/adr/](doc/adr/) for existing decisions.

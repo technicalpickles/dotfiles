@@ -141,7 +141,23 @@
         // scratch files, background-job logs, etc. all default to /tmp out
         // of habit despite $TMPDIR being the documented scratch dir. Allow
         // it outright rather than fighting the habit.
+        //
+        // NOTE: on macOS this entry alone is a no-op. /tmp is a symlink to
+        // /private/tmp and Seatbelt matches resolved paths, so the rule never
+        // fires. claudeconfig.sh adds the "/private/tmp" twin at generate
+        // time (and does the same for any /var or /etc entry), which is what
+        // actually makes this work. Leave the plain spelling here: it is the
+        // one that matters on Linux.
         "/tmp",
+        // worktrunk (`wt`) centralizes every worktree under ~/worktrees --
+        // see config/worktrunk/config.toml's worktree-path. claude/rules/
+        // worktrees.md tells agents to prefer `wt` over EnterWorktree, so
+        // without this the documented workflow EPERMs at every layer: `wt
+        // switch --create` can't create the leading .git dirs, and once
+        // inside a worktree even relative-path writes fail (the sandbox's
+        // implicit cwd allowance only covers the session's original cwd,
+        // not a directory the agent cd'd into).
+        "~/worktrees",
       ],
     },
   },
