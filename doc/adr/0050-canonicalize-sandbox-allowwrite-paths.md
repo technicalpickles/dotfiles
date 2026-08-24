@@ -43,6 +43,24 @@ User-supplied entries get no such treatment.
 
 A related consequence: macOS `mktemp(1)` with no template uses `confstr(_CS_DARWIN_USER_TEMP_DIR)` rather than `$TMPDIR`, so it ignores the writable session temp dir Claude Code provides and lands in `/var/folders/<hash>/T`. That is why `claudeconfig.sh` itself could not run sandboxed.
 
+### What the `/var/folders/<b>/<hash>` path actually is
+
+Worth recording, since the injected entry looks like an opaque machine-specific string and the temptation is to hardcode it.
+
+macOS gives every user a private temp (`/T`) and cache (`/C`) directory under `/var/folders`, addressed by a 32-character string split 2 chars / 30 chars across the two path components. The string encodes the account's UUID:
+
+```
+uid 0   FFFFEEEE-DDDD-CCCC-BBBB-AAAA00000000  ->  zz/zyxvpxvq6csfxvn_n0000000000000
+uid 1   FFFFEEEE-DDDD-CCCC-BBBB-AAAA00000001  ->  zz/zyxvpxvq6csfxvn_n0000004000001
+uid 501 E0353027-676B-442B-96D5-49AAB7097A8F  ->  w0/tl09v7dd22q5pn96nbf2btjw0000gn
+```
+
+System users (uid < 500) get formulaic UUIDs, which is why every daemon shares the long `zyxvpxvq6csfxvn_n` prefix and differs only in the tail. A real login account gets a random v4 UUID minted at account creation, so it lands in an unrelated bucket. Check it with `dsmemberutil getuuid -u $(id -u)`.
+
+The practical consequences: the path is per-user **and** per-machine, it survives reboots, and it changes if the account is recreated or you move to another Mac. Hence `getconf`, not a literal.
+
+The exact encoding was not reverse engineered. It is not plain base32 in the usual alphabets (32 chars at 5 bits is 160 bits against a 128-bit UUID, so something extra is packed in), and it does not need to be, since `getconf DARWIN_USER_TEMP_DIR` answers the question directly.
+
 ## Decision
 
 Canonicalize at generate time in `claudeconfig.sh`, after the `allowWrite` array is merged and deduplicated, gated on `uname = Darwin`:
