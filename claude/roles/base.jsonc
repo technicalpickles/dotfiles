@@ -142,6 +142,15 @@
         // of habit despite $TMPDIR being the documented scratch dir. Allow
         // it outright rather than fighting the habit.
         "/tmp",
+        // worktrunk (`wt`) centralizes every worktree under ~/worktrees --
+        // see config/worktrunk/config.toml's worktree-path. claude/rules/
+        // worktrees.md tells agents to prefer `wt` over EnterWorktree, so
+        // without this the documented workflow EPERMs at every layer: `wt
+        // switch --create` can't create the leading .git dirs, and once
+        // inside a worktree even relative-path writes fail (the sandbox's
+        // implicit cwd allowance only covers the session's original cwd,
+        // not a directory the agent cd'd into).
+        "~/worktrees",
       ],
     },
   },
