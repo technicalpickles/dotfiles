@@ -18,6 +18,9 @@ pre-commit:
     prettier:
       stage_fixed: true
       run: bin/prettier --write {staged_files}
+    typecheck:
+      glob: '*.ts'
+      run: npm run typecheck
 #     rubocop:
 #       tags: backend style
 #       glob: "*.rb"
