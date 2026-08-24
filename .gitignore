@@ -184,3 +184,8 @@ config/fish/functions/br.fish
 # ~/.gitignore too, but prettier only reads repo-local ignore files, so without
 # this `npm run lint` flags scratch files that will never be committed.
 .scratch/
+
+# claudeconfig.sh nests pickletown's project rules here so they load in every
+# session, not just under ~/pickleton. Machine-specific absolute path, and only
+# present where pickletown is checked out.
+claude/rules/pickletown
