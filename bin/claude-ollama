@@ -21,11 +21,11 @@ SHOW_HELP=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -h|--help)
+    -h | --help)
       SHOW_HELP=true
       shift
       ;;
-    -m|--model)
+    -m | --model)
       MODEL="$2"
       shift 2
       ;;
@@ -97,8 +97,8 @@ get_context_length() {
   local ctx
 
   # Try /api/show first
-  ctx=$(curl -s -X POST http://localhost:11434/api/show -d "{\"name\":\"$model\"}" 2>/dev/null | \
-        jq -r '.model_info | to_entries[] | select(.key | test("context_length"; "i")) | .value' 2>/dev/null)
+  ctx=$(curl -s -X POST http://localhost:11434/api/show -d "{\"name\":\"$model\"}" 2> /dev/null \
+    | jq -r '.model_info | to_entries[] | select(.key | test("context_length"; "i")) | .value' 2> /dev/null)
 
   if [[ -n "$ctx" && "$ctx" != "null" ]]; then
     echo "$ctx"
@@ -106,8 +106,8 @@ get_context_length() {
   fi
 
   # Fallback: try /api/tags
-  ctx=$(curl -s http://localhost:11434/api/tags 2>/dev/null | \
-        jq -r --arg model "$model" '.models[] | select(.name == $model) | .details.context_length // empty' 2>/dev/null | head -1)
+  ctx=$(curl -s http://localhost:11434/api/tags 2> /dev/null \
+    | jq -r --arg model "$model" '.models[] | select(.name == $model) | .details.context_length // empty' 2> /dev/null | head -1)
 
   if [[ -n "$ctx" && "$ctx" != "null" ]]; then
     echo "$ctx"
