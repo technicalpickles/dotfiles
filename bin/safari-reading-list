@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export Safari's Reading List as JSON.
+"""Export Safari's Reading List.
 
 Reads ~/Library/Safari/Bookmarks.plist directly via plistlib. Requires
 Full Disk Access for whatever process runs this (Terminal, etc.) --
@@ -53,9 +53,31 @@ def extract(node):
     }
 
 
+def print_human(items):
+    for i, item in enumerate(items):
+        if i > 0:
+            print()
+        print(item["title"] or "(untitled)")
+        print(f"  {item['url']}")
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Export Safari's Reading List as JSON")
+    parser = argparse.ArgumentParser(
+        description="Export Safari's Reading List.",
+        epilog="""examples:
+  safari-reading-list                    list title/url, human-readable
+  safari-reading-list --unread-only      only items still marked unread
+  safari-reading-list --json             full JSON (title, url, preview, date_added, unread)
+  safari-reading-list --json --unread-only | jq '.[].url'
+""",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--unread-only", action="store_true", help="only include unread items")
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="output full JSON (title, url, preview, date_added, unread) instead of the human-readable list",
+    )
     parser.add_argument(
         "--debug",
         action="store_true",
@@ -98,8 +120,11 @@ def main():
 
     items.sort(key=lambda item: item["date_added"] or "", reverse=True)
 
-    json.dump(items, sys.stdout, indent=2)
-    print()
+    if args.json:
+        json.dump(items, sys.stdout, indent=2)
+        print()
+    else:
+        print_human(items)
 
 
 if __name__ == "__main__":
