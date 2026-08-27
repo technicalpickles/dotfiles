@@ -1,4 +1,10 @@
 onboarding = false
+
+# herdr-mirror plugin (nikok6/herdr-mirror) needs the "terminal session"
+# streams, preview-only as of 2026-08. Direct install only (brew installs
+# can't switch channel) -- see docs/findings.md's herdr-mirror entry.
+[update]
+channel = "preview"
 # herdr - terminal multiplexer / agent orchestrator
 # https://github.com/herdrdev/herdr
 #
