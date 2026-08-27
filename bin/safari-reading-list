@@ -65,23 +65,27 @@ def main():
     parser = argparse.ArgumentParser(
         description="Export Safari's Reading List.",
         epilog="""examples:
-  safari-reading-list                    list title/url, human-readable
-  safari-reading-list --unread-only      only items still marked unread
-  safari-reading-list --json             full JSON (title, url, preview, date_added, unread)
-  safari-reading-list --json --unread-only | jq '.[].url'
+  safari-reading-list --all              list everything, human-readable
+  safari-reading-list --unread           only items still marked unread
+  safari-reading-list --read             only items already viewed
+  safari-reading-list --all --json       full JSON (title, url, preview, date_added, unread)
+  safari-reading-list --unread --json | jq '.[].url'
 """,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--unread-only", action="store_true", help="only include unread items")
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--all", action="store_true", help="show every item")
+    mode.add_argument("--read", action="store_true", help="show only items already viewed")
+    mode.add_argument("--unread", action="store_true", help="show only items not yet viewed")
+    mode.add_argument(
+        "--debug",
+        action="store_true",
+        help="print raw plist keys for the first Reading List item and exit",
+    )
     parser.add_argument(
         "--json",
         action="store_true",
         help="output full JSON (title, url, preview, date_added, unread) instead of the human-readable list",
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="print raw plist keys for the first Reading List item and exit",
     )
     args = parser.parse_args()
 
@@ -115,8 +119,10 @@ def main():
 
     items = [extract(node) for node in raw_items]
 
-    if args.unread_only:
+    if args.unread:
         items = [item for item in items if item["unread"]]
+    elif args.read:
+        items = [item for item in items if not item["unread"]]
 
     items.sort(key=lambda item: item["date_added"] or "", reverse=True)
 
