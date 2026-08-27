@@ -1,10 +1,11 @@
 ---
 # dotfiles-se8i
 title: Investigate git:commit skill's use of -t vs -F for commit messages
-status: todo
+status: scrapped
 type: task
+priority: normal
 created_at: 2026-08-27T23:36:37Z
-updated_at: 2026-08-27T23:36:37Z
+updated_at: 2026-08-27T23:41:21Z
 ---
 
 The git:commit skill (pickled-claude-plugins, git/3.2.0/skills/commit/SKILL.md) instructs agents to run 'git commit -t scratch/path-to-message.txt' to commit from a saved message file. That failed today: '-t' sets a commit *template* and expects an interactive editor session to edit/confirm it -- there's no editor in a non-interactive agent shell, so it aborted with 'Aborting commit; you did not edit the message.' Had to fall back to 'git commit -F scratch/path-to-message.txt', which reads the file directly as the final message with no edit step.
