@@ -77,6 +77,25 @@ setup_claude_directory() {
 
   # Symlink rules/ (topic-specific global agent instructions, loaded like CLAUDE.md)
   link "claude/rules" "$HOME/.claude/rules"
+
+  # Nest pickletown's project rules inside ours. Claude walks the user rules dir
+  # recursively and follows symlinks, so this makes pt conventions (beans,
+  # sandbox EPERM retries, qmd, mise) load in every session -- not just ones whose
+  # cwd sits under ~/pickleton, which is all the project-scoped walk covers. Same
+  # reasoning as the global pickletown session hooks in claude/roles/work.jsonc.
+  # Gitignored: absolute target, and only present where pickletown is checked out.
+  local pt_rules="$HOME/pickleton/.claude/rules"
+  local pt_rules_link="$DIR/claude/rules/pickletown"
+  if [ ! -d "$pt_rules" ]; then
+    echo "  - pickletown rules not found, skipping"
+  elif [ -L "$pt_rules_link" ] && [ "$(readlink "$pt_rules_link")" = "$pt_rules" ]; then
+    echo "  ✓ pickletown rules already nested"
+  elif [ -e "$pt_rules_link" ] || [ -L "$pt_rules_link" ]; then
+    echo "  ⚠ claude/rules/pickletown points elsewhere, leaving alone"
+  else
+    ln -s "$pt_rules" "$pt_rules_link"
+    echo "  ✓ pickletown rules nested at claude/rules/pickletown"
+  fi
 }
 
 setup_claude_directory

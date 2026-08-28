@@ -1,4 +1,10 @@
 onboarding = false
+
+# herdr-mirror plugin (nikok6/herdr-mirror) needs the "terminal session"
+# streams, preview-only as of 2026-08. Direct install only (brew installs
+# can't switch channel) -- see docs/findings.md's herdr-mirror entry.
+[update]
+channel = "preview"
 # herdr - terminal multiplexer / agent orchestrator
 # https://github.com/herdrdev/herdr
 #
@@ -12,7 +18,7 @@ onboarding = false
 # See every active binding:                     prefix+?
 
 [theme]
-name = "tokyo-night"
+name = "catppuccin"
 auto_switch = false
 
 [ui]
@@ -25,6 +31,7 @@ agent_panel_sort = "priority"
 
 # Agent name up top (with workspace) since that's what I scan for; tab on
 # its own second line. Default is ["state_icon", "workspace", "tab"] / ["agent"].
+status_indicators = "symbols"
 [ui.sidebar.agents]
 rows = [["state_icon", "workspace", "agent"], ["tab"]]
 
