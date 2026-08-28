@@ -17,6 +17,21 @@
   "agentPushNotifEnabled": true,
   "skipWorkflowUsageWarning": true,
 
+  // Keep session transcripts for a year instead of the 30-day default.
+  //
+  // Transcripts under ~/.claude/projects/ are the only record of what actually
+  // happened in a session; pickletown's own session index stores just metadata
+  // (session -> bean/repo refs), not content. At the default 30 days they age
+  // out silently -- measured 2026-08-28: 1064 of 1202 transcript files were
+  // under 30 days old, oldest survivor Jul 28, so the window was doing real
+  // deleting. Anything wanting to look further back (cq queries, digging up how
+  // a decision got made) had nothing to read.
+  //
+  // Cost is disk: ~800MB per 30 days measured, so on the order of 10GB/year.
+  // Revisit if that gets annoying. Not set in managed settings, so this is
+  // ours to choose.
+  "cleanupPeriodDays": 365,
+
   // Pin the shell so the system prompt tells the truth about it.
   //
   // The Bash tool only ever runs bash or zsh. Its resolver reads $SHELL and,
