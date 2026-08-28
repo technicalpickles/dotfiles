@@ -49,6 +49,13 @@
   // https://github.com/anthropics/claude-code/issues/68349
   "env": {
     "SHELL": "/bin/zsh",
+    // Sandboxed network egress goes through a local MITM proxy advertised
+    // via http_proxy/https_proxy. curl and git honor those; Node's global
+    // fetch (undici) ignores them unless this is set, so any Node CLI that
+    // uses fetch dies with a bare "fetch failed" even for an allowlisted
+    // host. Node 24+ only. Found via mcporter, but it is not mcporter-
+    // specific -- it hits every fetch-based Node tool.
+    "NODE_USE_ENV_PROXY": "1",
   },
 
   // Permissions: base safety rules
@@ -142,7 +149,16 @@
     "network": {
       // Permits git commit signing, git fsmonitor, Docker socket, etc.
       "allowAllUnixSockets": true,
-      "allowedHosts": ["api.anthropic.com", "code.claude.com"],
+      // gusto.runlayer.com fronts every Gusto MCP server (Glean, Jira,
+      // Slack, gdocs, ...). Claude Code's own MCP client isn't sandboxed,
+      // but mcporter is -- it reads those same servers out of ~/.claude.json
+      // and calls them from Bash, so without this every `mcporter list`
+      // or `mcporter call` against a Gusto server dies on "fetch failed".
+      "allowedHosts": [
+        "api.anthropic.com",
+        "code.claude.com",
+        "gusto.runlayer.com",
+      ],
       // local dev servers, and other things that are weird and listen (clippy
       // --fix for some reason??)
       "allowLocalBinding": true,
@@ -173,6 +189,11 @@
         // implicit cwd allowance only covers the session's original cwd,
         // not a directory the agent cd'd into).
         "~/worktrees",
+        // mcporter caches OAuth tokens here and mkdirs it on every run,
+        // even for servers that authenticate with a plain header. Without
+        // it the very first thing any mcporter invocation prints is
+        // "EPERM: operation not permitted, mkdir '~/.mcporter'".
+        "~/.mcporter",
       ],
     },
   },
