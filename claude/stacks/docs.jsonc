@@ -6,7 +6,15 @@
   // source: agent-safehouse
   "sandbox": {
     "network": {
-      "allowedHosts": ["karafka.io", "lima-vm.io"],
+      "allowedHosts": [
+        "karafka.io",
+        "lima-vm.io",
+        "code.visualstudio.com",
+        "containers.dev",
+        "docs.aws.amazon.com",
+        "docs.lefthook.io",
+        "playwright.dev",
+      ],
     },
   },
 }

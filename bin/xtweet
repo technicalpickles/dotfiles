@@ -1,0 +1,242 @@
+#!/usr/bin/env bash
+#
+# xtweet -- read a tweet by URL or ID via xurl (the X API CLI), without
+# hand-translating the web URL into an API path first.
+#
+# xurl only understands API paths (/2/tweets/:id), not web URLs
+# (x.com/user/status/:id) -- it forwards whatever you give it verbatim, so
+# a pasted status link 404s/453s instead of resolving. This pulls the
+# numeric ID out of a pasted URL (or accepts a bare ID) and calls the
+# right endpoint.
+#
+# -q/--quotes and -r/--replies exist because the naive approach (one xurl
+# call per tweet in a quote chain, one call per reply) burns through the
+# API's rate limits fast:
+#   - Quote chains: requesting expansions=referenced_tweets.id embeds the
+#     IMMEDIATELY quoted tweet's full data in the same response for free.
+#     So walking N levels of quotes only costs a new call every OTHER hop,
+#     not one call per hop. -q reuses the embedded tweet when it's there
+#     and only calls out when it isn't.
+#   - Replies: /2/tweets/search/recent?query=conversation_id:<id> returns
+#     the whole reply thread (up to max_results) in a SINGLE call, instead
+#     of one call per reply ID.
+#
+# Usage:
+#   xtweet <url-or-id> [url-or-id ...]
+#   xtweet -j <url-or-id>       # raw JSON instead of formatted output
+#   xtweet -q <url-or-id>       # walk the quoted-tweet chain
+#   xtweet -r <url-or-id>       # fetch replies (one API call)
+
+set -euo pipefail
+
+usage() {
+  cat << 'EOF'
+usage: xtweet [-j] [-q] [-r] <tweet-url-or-id> [tweet-url-or-id ...]
+
+Read one or more tweets via xurl, accepting either a full x.com/twitter.com
+status URL or a bare numeric tweet ID.
+
+Options:
+  -q, --quotes  Walk the quoted-tweet chain (minimizes calls: reuses tweets
+                already embedded in a response instead of refetching them)
+  -r, --replies Fetch replies in the conversation (one API call via
+                conversation_id search, instead of one call per reply)
+  -j, --json    Print raw API JSON instead of formatted output
+  -h, --help    Show this help and exit
+
+Examples:
+  xtweet https://x.com/benjaminsehl/status/2082158002958741746
+  xtweet 2082158002958741746
+  xtweet -q 2082158002958741746   # this tweet + everything it quotes
+  xtweet -r 2082158002958741746   # this tweet + all its replies
+  xtweet -j 2082158002958741746
+EOF
+}
+
+for arg in "$@"; do
+  case "$arg" in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+  esac
+done
+
+if [[ $# -eq 0 ]]; then
+  usage >&2
+  exit 1
+fi
+
+raw_json=false
+want_quotes=false
+want_replies=false
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -j | --json)
+      raw_json=true
+      shift
+      ;;
+    -q | --quotes)
+      want_quotes=true
+      shift
+      ;;
+    -r | --replies)
+      want_replies=true
+      shift
+      ;;
+    *) break ;;
+  esac
+done
+
+if [[ $# -eq 0 ]]; then
+  usage >&2
+  exit 1
+fi
+
+extract_id() {
+  local arg="$1"
+  if [[ "$arg" =~ ^[0-9]+$ ]]; then
+    echo "$arg"
+  elif [[ "$arg" =~ /status(es)?/([0-9]+) ]]; then
+    echo "${BASH_REMATCH[2]}"
+  else
+    echo "xtweet: couldn't find a tweet ID in: $arg" >&2
+    return 1
+  fi
+}
+
+check_errors() {
+  # Prints an error summary and returns 1 if the response has .errors, else 0.
+  local response="$1" label="$2"
+  if echo "$response" | jq -e '.errors' > /dev/null 2>&1; then
+    echo "xtweet: API error for $label:" >&2
+    echo "$response" | jq -r '.errors[] | "  \(.code // "?"): \(.message // .title // .)"' >&2
+    return 1
+  fi
+  return 0
+}
+
+# Basic fields: enough for a single tweet's text/author/metrics/links.
+# entities is included so linked URLs resolve to their real destination
+# instead of the raw t.co shortlink in .text -- see format_tweet.
+fetch_basic() {
+  xurl "/2/tweets/${1}?tweet.fields=created_at,public_metrics,text,entities&expansions=author_id&user.fields=username,name"
+}
+
+# Rich fields: needed to see quoted tweets, media, and the immediately
+# quoted tweet's own data (embedded via the referenced_tweets.id expansion).
+fetch_full() {
+  xurl "/2/tweets/${1}?tweet.fields=created_at,public_metrics,text,entities,referenced_tweets,attachments&expansions=author_id,referenced_tweets.id,referenced_tweets.id.author_id,attachments.media_keys&user.fields=username,name&media.fields=url,preview_image_url,alt_text,type"
+}
+
+fetch_replies() {
+  xurl "/2/tweets/search/recent?query=conversation_id:${1}&tweet.fields=created_at,public_metrics,text,entities,author_id,in_reply_to_user_id&expansions=author_id&user.fields=username,name&max_results=100"
+}
+
+# Formats one tweet (by id) found either at .data or in .includes.tweets[]
+# of the given response, using that response's .includes.users/.media.
+# Includes a permalink and any linked URLs resolved to their real
+# destination (tweet .text only ever has the raw t.co shortlink) so there's
+# always something to click through to for further tracing.
+format_tweet() {
+  local response="$1" id="$2"
+  echo "$response" | jq -r --arg id "$id" '
+    (if .data.id == $id then .data else (.includes.tweets[]? | select(.id == $id)) end) as $t |
+    (.includes.users[]? | select(.id == $t.author_id)) as $u |
+    "\($u.name // "?") (@\($u.username // "?")) -- \($t.created_at)\n" +
+    "🔗 https://x.com/\($u.username // "i")/status/\($t.id)\n" +
+    "\($t.text)\n" +
+    ($t.public_metrics | "❤ \(.like_count)  🔁 \(.retweet_count)  💬 \(.reply_count)  👁 \(.impression_count // "?")") +
+    (
+      ($t.attachments.media_keys // []) as $keys |
+      [(.includes.media // [])[] | select(.media_key as $mk | $keys | index($mk))] as $media |
+      if ($media | length) > 0 then
+        "\n" + ($media | map("🖼 " + (.url // .preview_image_url // "(no url)") + (if .alt_text then " -- " + .alt_text else "" end)) | join("\n"))
+      else "" end
+    ) +
+    (
+      [($t.entities.urls // [])[] | select(has("media_key") | not) | .expanded_url] as $links |
+      if ($links | length) > 0 then
+        "\n" + ($links | map("🔗 " + .) | join("\n"))
+      else "" end
+    ) + "\n"
+  '
+}
+
+# Returns the id of the tweet this one quotes, if any (empty otherwise).
+quoted_id_of() {
+  local response="$1" id="$2"
+  echo "$response" | jq -r --arg id "$id" '
+    (if .data.id == $id then .data else (.includes.tweets[]? | select(.id == $id)) end) as $t |
+    ($t.referenced_tweets // [])[] | select(.type == "quoted") | .id
+  ' 2> /dev/null | head -1
+}
+
+is_embedded() {
+  local response="$1" id="$2"
+  echo "$response" | jq -e --arg id "$id" '.includes.tweets[]? | select(.id == $id)' > /dev/null 2>&1
+}
+
+for arg in "$@"; do
+  id="$(extract_id "$arg")" || exit 1
+
+  if [[ "$want_quotes" == true ]]; then
+    response="$(fetch_full "$id")"
+    check_errors "$response" "$id" || continue
+    if [[ "$raw_json" == true ]]; then
+      echo "$response"
+    else
+      current_id="$id"
+      while true; do
+        format_tweet "$response" "$current_id"
+        next_id="$(quoted_id_of "$response" "$current_id")"
+        [[ -z "$next_id" ]] && break
+        echo "  ⬇ quotes"
+        if is_embedded "$response" "$next_id"; then
+          current_id="$next_id"
+          continue
+        fi
+        response="$(fetch_full "$next_id")"
+        check_errors "$response" "$next_id" || break
+        current_id="$next_id"
+      done
+    fi
+  else
+    response="$(fetch_basic "$id")"
+    check_errors "$response" "$id" || continue
+    if [[ "$raw_json" == true ]]; then
+      echo "$response"
+    else
+      format_tweet "$response" "$id"
+    fi
+  fi
+
+  if [[ "$want_replies" == true ]]; then
+    replies="$(fetch_replies "$id")"
+    if check_errors "$replies" "$id (replies)"; then
+      if [[ "$raw_json" == true ]]; then
+        echo "$replies"
+      else
+        count="$(echo "$replies" | jq -r '.meta.result_count // 0')"
+        echo "--- $count replies ---"
+        echo "$replies" | jq -r '
+          .includes.users as $users |
+          (.data // [])[] as $t |
+          ($users[]? | select(.id == $t.author_id)) as $u |
+          "\($u.name // "?") (@\($u.username // "?")) -- \($t.created_at)\n" +
+          "🔗 https://x.com/\($u.username // "i")/status/\($t.id)\n" +
+          "\($t.text)\n" +
+          (
+            [($t.entities.urls // [])[] | select(has("media_key") | not) | .expanded_url] as $links |
+            if ($links | length) > 0 then
+              ($links | map("🔗 " + .) | join("\n")) + "\n"
+            else "" end
+          )
+        '
+        if echo "$replies" | jq -e '.meta.next_token' > /dev/null 2>&1; then
+          echo "(more replies exist beyond max_results=100 -- not fetched)" >&2
+        fi
+      fi
+    fi
+  fi
+done

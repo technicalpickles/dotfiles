@@ -16,9 +16,17 @@ When writing _for_ me or _as_ me (blog posts, docs, messages), use the `writing-
 - **Reflect after repeated failures.** If the same approach fails twice, pause to state observations and critically reassess before continuing. Don't just try more variants.
 - **Understand before executing.** When the user proposes an approach, first understand what they're trying to accomplish and why. Surface better alternatives early if they exist. Once the motivation is clear, proceed with the best approach. Don't silently substitute a different one mid-task.
 
+# Tools
+
+- **Reading tweets:** if `xtweet` is on PATH (`~/.pickles/bin/xtweet`), use it instead of WebFetch or a browser tool. It hits the X API via `xurl` directly, so it works on x.com links that WebFetch/browser scraping can't (login walls, JS rendering). Accepts a full status URL or a bare tweet ID; `-q` walks the quoted-tweet chain, `-r` fetches replies, `-j` for raw JSON. Run `xtweet --help` for details.
+
 # graphify
 
 - **graphify** (`~/.claude/skills/graphify/SKILL.md`) - any input to knowledge graph. Trigger: `/graphify`
   When the user types `/graphify`, invoke the Skill tool with `skill: "graphify"` before doing anything else.
+
+## Claude Code's own configuration
+
+This file, `~/.claude/settings.json`, `~/.claude/rules/*.md`, marketplaces, and MCP servers are managed by [dotfiles](~/github.com/technicalpickles/dotfiles)'s `claudeconfig.sh` from sources in `claude/` (`CLAUDE.md`, `rules/*.md`, `roles/*.jsonc`, `stacks/*.jsonc`, `marketplaces.jsonc`, `mcp-servers.jsonc`). To change any of these, edit the source there and re-run `./claudeconfig.sh` -- don't hand-edit files under `~/.claude/` directly, they get overwritten. See `claude/README.md`.
 
 @RTK.md

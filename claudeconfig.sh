@@ -74,6 +74,28 @@ setup_claude_directory() {
   mkdir -p "$HOME/.claude/ccline"
   link "claude/ccline/config.toml" "$HOME/.claude/ccline/config.toml"
   link "claude/ccline/models.toml" "$HOME/.claude/ccline/models.toml"
+
+  # Symlink rules/ (topic-specific global agent instructions, loaded like CLAUDE.md)
+  link "claude/rules" "$HOME/.claude/rules"
+
+  # Nest pickletown's project rules inside ours. Claude walks the user rules dir
+  # recursively and follows symlinks, so this makes pt conventions (beans,
+  # sandbox EPERM retries, qmd, mise) load in every session -- not just ones whose
+  # cwd sits under ~/pickleton, which is all the project-scoped walk covers. Same
+  # reasoning as the global pickletown session hooks in claude/roles/work.jsonc.
+  # Gitignored: absolute target, and only present where pickletown is checked out.
+  local pt_rules="$HOME/pickleton/.claude/rules"
+  local pt_rules_link="$DIR/claude/rules/pickletown"
+  if [ ! -d "$pt_rules" ]; then
+    echo "  - pickletown rules not found, skipping"
+  elif [ -L "$pt_rules_link" ] && [ "$(readlink "$pt_rules_link")" = "$pt_rules" ]; then
+    echo "  ✓ pickletown rules already nested"
+  elif [ -e "$pt_rules_link" ] || [ -L "$pt_rules_link" ]; then
+    echo "  ⚠ claude/rules/pickletown points elsewhere, leaving alone"
+  else
+    ln -s "$pt_rules" "$pt_rules_link"
+    echo "  ✓ pickletown rules nested at claude/rules/pickletown"
+  fi
 }
 
 setup_claude_directory
@@ -90,6 +112,11 @@ setup_sandbox_dirs() {
   # writes under ~/.plannotator but not creating the dir itself (needs ~/).
   mkdir -p "$HOME/.plannotator"
   echo "  ✓ ~/.plannotator"
+  # worktrunk (`wt`) puts every worktree under ~/worktrees/<repo>/<branch>.
+  # allowWrite on ~/worktrees lets it create the per-repo dirs, but creating
+  # ~/worktrees itself needs write access to ~/, which isn't allowed.
+  mkdir -p "$HOME/worktrees"
+  echo "  ✓ ~/worktrees"
 }
 
 setup_sandbox_dirs
@@ -213,6 +240,46 @@ generate_settings() {
   merged_deny=$(echo "$merged_deny" | jq 'unique | sort')
   sandbox_hosts=$(echo "$sandbox_hosts" | jq 'unique | sort')
   sandbox_write_paths=$(echo "$sandbox_write_paths" | jq 'unique | sort')
+
+  # macOS: /tmp, /var and /etc are symlinks into /private, and the Seatbelt
+  # sandbox matches the *resolved* path. An allowWrite entry spelled "/tmp"
+  # therefore never matches anything -- the write lands on /private/tmp and
+  # falls outside the rule. Claude Code works around this for its own session
+  # dirs by registering both spellings (you can see "/tmp/claude" and
+  # "/private/tmp/claude" side by side in the resolved config); user entries
+  # get no such treatment. So mirror it here: every /tmp|/var|/etc entry gets
+  # a /private twin. Keeping both spellings means base.jsonc stays portable --
+  # on Linux /tmp is a real directory and the plain entry is the one that works.
+  #
+  # Verified 2026-08-24: with only "/tmp" allowlisted, `echo hi > /tmp/x` and
+  # `echo hi > /private/tmp/x` both EPERM. Add "/private/tmp" and both succeed.
+  if [ "$(uname)" = "Darwin" ]; then
+    sandbox_write_paths=$(echo "$sandbox_write_paths" | jq '
+      map(select(test("^/(tmp|var|etc)(/|$)")) | "/private" + .) + . | unique | sort')
+
+    # macOS mktemp(1) with no template uses confstr(_CS_DARWIN_USER_TEMP_DIR),
+    # not $TMPDIR, so it ignores the writable session temp dir Claude Code sets
+    # up and lands in /var/folders/<hash>/T instead. That is what made
+    # claudeconfig.sh itself unrunnable under the sandbox. The path is
+    # per-user/per-machine, so compute it rather than hardcoding. Scoped to the
+    # temp dir (/T) only -- the sibling /C cache dir stays denied.
+    local darwin_tmp
+    darwin_tmp="/private$(getconf DARWIN_USER_TEMP_DIR)"
+    darwin_tmp="${darwin_tmp%/}"
+    sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --arg t "$darwin_tmp" '. + [$t] | unique | sort')
+  fi
+
+  # allowedHosts entries must be bare hostnames (optionally with a port).
+  # A stray "domain:" prefix (WebFetch permission syntax) or a URL path makes
+  # Claude Code discard the entire allowedHosts array on its next rewrite of
+  # settings.json, silently emptying the network allowlist.
+  local bad_hosts
+  bad_hosts=$(echo "$sandbox_hosts" | jq -r '.[] | select(test("^[A-Za-z0-9*]([A-Za-z0-9._-]*)(:[0-9]+)?$") | not)')
+  if [ -n "$bad_hosts" ]; then
+    echo "Error: invalid sandbox.network.allowedHosts entries (bare hostnames only):"
+    echo "$bad_hosts" | sed 's/^/    /'
+    exit 1
+  fi
 
   # Assemble final JSON: settings + permissions + sandbox
   local final_settings

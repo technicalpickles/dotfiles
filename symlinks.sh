@@ -30,6 +30,13 @@ link_directory_contents home
 mkdir -p "$HOME/.config"
 link_directory_contents config
 
+# herdr: link only config.toml, not the directory. herdr keeps live unix
+# sockets, session.json, and logs alongside it in ~/.config/herdr; a directory
+# symlink would put that runtime state in the repo, where `git clean -xfd`
+# would eat the live session.
+mkdir -p "$HOME/.config/herdr"
+link config/herdr/config.toml "$HOME/.config/herdr/config.toml"
+
 # Link LaunchAgents if on macOS
 if running_macos; then
   mkdir -p "$HOME/Library/LaunchAgents"
@@ -47,6 +54,17 @@ fi
 if running_arm64_macos; then
   echo "🚀 linking arm64-macos LaunchAgents"
   for agent in LaunchAgents/arm64-macos/*.plist; do
+    if [ -f "$agent" ]; then
+      target="$HOME/Library/LaunchAgents/$(basename "$agent")"
+      link "$agent" "$target"
+    fi
+  done
+fi
+
+# Link home-role-only LaunchAgents (e.g. personal-account sync jobs)
+if running_macos && running_home_role; then
+  echo "🚀 linking home-role LaunchAgents"
+  for agent in LaunchAgents/home/*.plist; do
     if [ -f "$agent" ]; then
       target="$HOME/Library/LaunchAgents/$(basename "$agent")"
       link "$agent" "$target"

@@ -17,6 +17,21 @@
   "agentPushNotifEnabled": true,
   "skipWorkflowUsageWarning": true,
 
+  // Keep session transcripts for a year instead of the 30-day default.
+  //
+  // Transcripts under ~/.claude/projects/ are the only record of what actually
+  // happened in a session; pickletown's own session index stores just metadata
+  // (session -> bean/repo refs), not content. At the default 30 days they age
+  // out silently -- measured 2026-08-28: 1064 of 1202 transcript files were
+  // under 30 days old, oldest survivor Jul 28, so the window was doing real
+  // deleting. Anything wanting to look further back (cq queries, digging up how
+  // a decision got made) had nothing to read.
+  //
+  // Cost is disk: ~800MB per 30 days measured, so on the order of 10GB/year.
+  // Revisit if that gets annoying. Not set in managed settings, so this is
+  // ours to choose.
+  "cleanupPeriodDays": 365,
+
   // Pin the shell so the system prompt tells the truth about it.
   //
   // The Bash tool only ever runs bash or zsh. Its resolver reads $SHELL and,
@@ -34,11 +49,18 @@
   // https://github.com/anthropics/claude-code/issues/68349
   "env": {
     "SHELL": "/bin/zsh",
+    // Sandboxed network egress goes through a local MITM proxy advertised
+    // via http_proxy/https_proxy. curl and git honor those; Node's global
+    // fetch (undici) ignores them unless this is set, so any Node CLI that
+    // uses fetch dies with a bare "fetch failed" even for an allowlisted
+    // host. Node 24+ only. Found via mcporter, but it is not mcporter-
+    // specific -- it hits every fetch-based Node tool.
+    "NODE_USE_ENV_PROXY": "1",
   },
 
   // Permissions: base safety rules
   "permissions": {
-    "defaultMode": "acceptEdits",
+    "defaultMode": "auto",
     "allow": [
       "Bash(rm -rf .DS_Store)",
       "Bash(rm -rf .cache)",
@@ -127,7 +149,16 @@
     "network": {
       // Permits git commit signing, git fsmonitor, Docker socket, etc.
       "allowAllUnixSockets": true,
-      "allowedHosts": ["api.anthropic.com", "code.claude.com"],
+      // gusto.runlayer.com fronts every Gusto MCP server (Glean, Jira,
+      // Slack, gdocs, ...). Claude Code's own MCP client isn't sandboxed,
+      // but mcporter is -- it reads those same servers out of ~/.claude.json
+      // and calls them from Bash, so without this every `mcporter list`
+      // or `mcporter call` against a Gusto server dies on "fetch failed".
+      "allowedHosts": [
+        "api.anthropic.com",
+        "code.claude.com",
+        "gusto.runlayer.com",
+      ],
       // local dev servers, and other things that are weird and listen (clippy
       // --fix for some reason??)
       "allowLocalBinding": true,
@@ -136,6 +167,33 @@
       "allowWrite": [
         // rtk (CLI proxy) needs to write its state/config here
         "~/Library/Application Support/rtk",
+        // Plain /tmp writes (as opposed to $TMPDIR) are the single biggest
+        // source of self-inflicted sandbox EPERM noise -- redirects, quick
+        // scratch files, background-job logs, etc. all default to /tmp out
+        // of habit despite $TMPDIR being the documented scratch dir. Allow
+        // it outright rather than fighting the habit.
+        //
+        // NOTE: on macOS this entry alone is a no-op. /tmp is a symlink to
+        // /private/tmp and Seatbelt matches resolved paths, so the rule never
+        // fires. claudeconfig.sh adds the "/private/tmp" twin at generate
+        // time (and does the same for any /var or /etc entry), which is what
+        // actually makes this work. Leave the plain spelling here: it is the
+        // one that matters on Linux.
+        "/tmp",
+        // worktrunk (`wt`) centralizes every worktree under ~/worktrees --
+        // see config/worktrunk/config.toml's worktree-path. claude/rules/
+        // worktrees.md tells agents to prefer `wt` over EnterWorktree, so
+        // without this the documented workflow EPERMs at every layer: `wt
+        // switch --create` can't create the leading .git dirs, and once
+        // inside a worktree even relative-path writes fail (the sandbox's
+        // implicit cwd allowance only covers the session's original cwd,
+        // not a directory the agent cd'd into).
+        "~/worktrees",
+        // mcporter caches OAuth tokens here and mkdirs it on every run,
+        // even for servers that authenticate with a plain header. Without
+        // it the very first thing any mcporter invocation prints is
+        // "EPERM: operation not permitted, mkdir '~/.mcporter'".
+        "~/.mcporter",
       ],
     },
   },

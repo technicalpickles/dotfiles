@@ -8,7 +8,9 @@
 scratch-area
 scratch
 .scratch
+.parkinglot
 
 # per-machine tool state (not project config)
 .claude/actually-lsp.json
 .bk.yaml
+.claude/settings.local.json

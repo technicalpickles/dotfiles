@@ -154,6 +154,9 @@ node_modules
 home/.claude/
 
 .claude/settings.local.json
+.claude/plans/
+.claude/arcade/
+.claude/task-summaries/
 
 # permissions-manager skill generated output
 doc/permissions/
@@ -176,3 +179,13 @@ config/mise/config.toml
 config/fish/functions/br.fish
 
 .parkinglot/
+
+# agent scratch area (PR body drafts, one-off analysis). Ignored globally via
+# ~/.gitignore too, but prettier only reads repo-local ignore files, so without
+# this `npm run lint` flags scratch files that will never be committed.
+.scratch/
+
+# claudeconfig.sh nests pickletown's project rules here so they load in every
+# session, not just under ~/pickleton. Machine-specific absolute path, and only
+# present where pickletown is checked out.
+claude/rules/pickletown

@@ -45,3 +45,8 @@
 - [43. canonical-dotpickles-role-names](0043-canonical-dotpickles-role-names.md)
 - [44. tmux-url-and-hyperlink-opening](0044-tmux-url-and-hyperlink-opening.md)
 - [45. sudoers.d-templates-for-launchagent-root-actions](0045-sudoers.d-templates-for-launchagent-root-actions.md)
+- [46. declarative-herdr-plugin-manifest](0046-declarative-herdr-plugin-manifest.md)
+- [47. default-to-auto-permission-mode](0047-default-to-auto-permission-mode.md)
+- [48. agent-session-ssh-key-override-via-match-exec](0048-agent-session-ssh-key-override-via-match-exec.md)
+- [49. role-gated-launchagents](0049-role-gated-launchagents.md)
+- [50. canonicalize-sandbox-allowwrite-paths](0050-canonicalize-sandbox-allowwrite-paths.md)

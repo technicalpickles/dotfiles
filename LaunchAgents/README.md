@@ -43,6 +43,27 @@ and [upstream issue #3808](https://github.com/pqrs-org/Karabiner-Elements/issues
 
 **Requires sudo:** uses the scoped `NOPASSWD` sudoers rule installed by `karabinerconfig.sh` at `/etc/sudoers.d/karabiner-wake-fix` (see ADR 0045) -- passwordless for that exact `launchctl kickstart` command only.
 
+### `com.technicalpickles.agent-ssh-keys.plist`
+
+Loads the role-scoped agent SSH keys ([ADR 0031](../doc/adr/0031-role-scoped-agent-git-identity.md)) into launchd's ssh-agent at login, so unattended jobs can sign commits.
+
+**What it does:**
+
+- Runs `bin/load-agent-ssh-keys`, which `ssh-add --apple-use-keychain`s every `~/.ssh/agents/*/id_ed25519` that isn't already in the agent
+- `RunAtLoad` only -- launchd's agent is per-login-session, so one load at session start covers every scheduled job for that session
+- Logs to `/tmp/com.technicalpickles.agent-ssh-keys.{out,err}`
+
+**Why it's needed:** there are two ssh-agents on a Mac, and only one of them was ever populated.
+
+|           | socket                                   | populated by                           | reachable from                                |
+| --------- | ---------------------------------------- | -------------------------------------- | --------------------------------------------- |
+| launchd's | `/var/run/com.apple.launchd.*/Listeners` | **this agent** (previously nothing)    | every launchd job, every GUI-launched process |
+| fish's    | `~/.ssh/agent/s.*`                       | `config/fish/conf.d/ssh-keychain.fish` | interactive fish shells and their descendants |
+
+Anything descended from a terminal got the fish agent, populated, so commit signing worked. Anything scheduled got launchd's, empty, so signing prompted on a tty that wasn't there. This agent is the missing half of that pattern: it is to launchd's agent what `ssh-keychain.fish` is to fish's.
+
+**Prerequisite:** the key passphrase has to be in the login keychain. `bin/setup-agent-ssh-key` does this; to do it by hand, run `ssh-add --apple-use-keychain ~/.ssh/agents/<role>/id_ed25519` once from a terminal. `bin/check-agent-ssh-key <role>` verifies the whole chain.
+
 ### `arm64-macos/com.technicalpickles.qmd-refresh.plist`
 
 Refreshes QMD semantic search index for the Obsidian vault.
@@ -80,6 +101,22 @@ Runs QMD as an HTTP MCP server so Claude (and other agents) can search the vault
 claude mcp add --transport http qmd http://localhost:8181/mcp --scope user
 ```
 
+### `home/com.technicalpickles.task-sync.plist`
+
+Syncs Taskwarrior (TaskChampion) history to the personal sync server so tasks stay in sync across machines.
+
+**Role:** home only (gated by `running_home_role`; see "Role-gated agents" below) -- sync creds come from the personal `picklehome` 1Password vault (see `taskrc.sh`), so this has no meaning on the work role.
+
+**What it does:**
+
+- Runs `task sync` via a login shell (so `task` resolves from PATH the same as an interactive shell)
+- Runs every 30 minutes (at :00 and :30), plus once at login
+- Logs to `/tmp/com.technicalpickles.task-sync.{out,err}`
+
+**Prerequisites:**
+
+- `~/.config/task/sync.rc` populated with real sync creds (written by `taskrc.sh` from `op://picklehome/TaskChampion Sync`)
+
 ## Setup
 
 The `install.sh` script automatically symlinks all `.plist` files from this directory to `~/Library/LaunchAgents/`. Plists in platform-gated subdirectories (e.g. `arm64-macos/`) are linked only when the host matches.
@@ -95,6 +132,16 @@ Agents that only make sense on a specific platform live in a subdirectory whose 
 To add a new gate, add a predicate to `functions.sh` and a matching loop in `symlinks.sh`. Drop plists in the corresponding subdirectory; nothing else changes.
 
 Moving a plist between gates (e.g. top-level -> `arm64-macos/`) leaves behind a dangling `~/Library/LaunchAgents` symlink pointing at the old path. `symlinks.sh` detects these and repoints them to the plist's new location, then force-reloads via `launchctl unload`/`load`. This reload is necessary because a reboot alone isn't enough: launchd caches the already-loaded job in memory and won't notice the plist moved until its next full re-scan, which can itself silently fail if the symlink is still dangling at that point.
+
+## Role-gated agents
+
+Agents that only make sense for one `DOTPICKLES_ROLE` (see [doc/architecture.md](../doc/architecture.md)) live in a subdirectory whose name matches a role predicate in `functions.sh`:
+
+| Subdirectory | Predicate           | Linked when                                |
+| ------------ | ------------------- | ------------------------------------------ |
+| `home/`      | `running_home_role` | `DOTPICKLES_ROLE` is `home` (and on macOS) |
+
+Same extension mechanism as platform-gated agents above: add a predicate, add a matching loop in `symlinks.sh`, drop plists in the subdirectory.
 
 Manual installation:
 

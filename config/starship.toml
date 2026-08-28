@@ -169,6 +169,13 @@ format = "[](fg:#44883E bg:none)[$symbol$version]($style)[](fg:#44883E bg:
 style = "bold fg:#E4E4E4 bg:#44883E"
 detect_folders = ["node_modules"]
 
+# https://starship.rs/config/#container
+[container]
+# paste a glyph here, followed by a trailing space, like the other modules do
+symbol = ""
+format = "[](fg:dark_blue bg:none)[${symbol} container ]($style)[](fg:dark_blue bg:none)"
+style = "bold fg:#E4E4E4 bg:dark_blue"
+
 [env_var.STARSHIP_CTX]
 format = "[](fg:purple bg:none)[$env_value]($style)[](fg:purple bg:none)"
 style = "fg:#E4E4E4 bg:purple bold"

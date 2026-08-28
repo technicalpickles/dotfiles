@@ -1,0 +1,149 @@
+onboarding = false
+
+# herdr-mirror plugin (nikok6/herdr-mirror) needs the "terminal session"
+# streams, preview-only as of 2026-08. Direct install only (brew installs
+# can't switch channel) -- see docs/findings.md's herdr-mirror entry.
+[update]
+channel = "preview"
+# herdr - terminal multiplexer / agent orchestrator
+# https://github.com/herdrdev/herdr
+#
+# symlinks.sh links this single file to ~/.config/herdr/config.toml. The
+# directory itself is deliberately NOT symlinked: herdr keeps live sockets,
+# session.json, plugins/, and logs there, and that runtime state has no
+# business in a git working tree.
+#
+# Regenerate a fully commented reference with:  herdr --default-config
+# Reload without restarting:                    prefix+shift+r
+# See every active binding:                     prefix+?
+
+[theme]
+name = "catppuccin"
+auto_switch = false
+
+[ui]
+show_agent_labels_on_pane_borders = true
+
+# "priority" sorts the agent panel as an attention queue:
+# blocked -> done/unseen -> working -> idle. This also reorders what
+# next_agent/previous_agent walk, which is what makes them useful.
+agent_panel_sort = "priority"
+
+# Agent name up top (with workspace) since that's what I scan for; tab on
+# its own second line. Default is ["state_icon", "workspace", "tab"] / ["agent"].
+status_indicators = "symbols"
+[ui.sidebar.agents]
+rows = [["state_icon", "workspace", "agent"], ["tab"]]
+
+[keys]
+# Match tmux (~/.tmux.conf uses C-Space).
+# Note: if herdr ever runs *inside* tmux, both grab this and you'll be
+# double-pressing. The escape hatch is direct ctrl+alt+* chords.
+prefix = "ctrl+space"
+
+# ---------------------------------------------------------------------------
+# Agent attention cycling
+# ---------------------------------------------------------------------------
+# Unbound by default. Combined with agent_panel_sort = "priority" above,
+# next_agent walks blocked -> done -> working -> idle. From a non-agent pane
+# it lands on the single most-urgent agent.
+#
+# The explicit alternative, already bound: prefix+s opens the session
+# navigator, then bare `b` filters to blocked, `d` to done, `a` clears.
+next_agent = "prefix+a"
+previous_agent = "prefix+shift+a"
+
+# prefix+alt+1 = most urgent agent (with priority sort)
+focus_agent = "prefix+alt+1..9"
+
+# ---------------------------------------------------------------------------
+# tmux / pain-control muscle memory
+# ---------------------------------------------------------------------------
+# herdr's defaults already match tmux for: prefix+h/j/k/l pane focus,
+# prefix+- stacked split, prefix+c new tab, prefix+n/p tab cycle,
+# prefix+[ copy mode, prefix+z zoom, prefix+x close pane, prefix+R reload.
+# These add the aliases pain-control trained into my hands.
+
+# prefix+s: herdr defaults this to settings (theme picker etc.), which I
+# don't use. Freed it up for goto, matching tmux's prefix-s session chooser
+# muscle memory (goto defaults to prefix+g).
+settings = ""
+goto = "prefix+s"
+
+# pain-control: | and % split side-by-side, " splits stacked
+split_vertical = ["prefix+v", "prefix+|", "prefix+percent"]
+split_horizontal = ["prefix+minus", "prefix+double_quote"]
+
+# pain-control binds both h and C-h for pane navigation
+focus_pane_left = ["prefix+h", "prefix+ctrl+h"]
+focus_pane_down = ["prefix+j", "prefix+ctrl+j"]
+focus_pane_up = ["prefix+k", "prefix+ctrl+k"]
+focus_pane_right = ["prefix+l", "prefix+ctrl+l"]
+
+# tmux-sensible binds C-p/C-n alongside p/n
+previous_tab = ["prefix+p", "prefix+ctrl+p"]
+next_tab = ["prefix+n", "prefix+ctrl+n"]
+
+# ---------------------------------------------------------------------------
+# Deliberately NOT remapped
+# ---------------------------------------------------------------------------
+# prefix+shift+h/j/k/l  herdr swaps panes here; tmux/pain-control resizes.
+#                       Leaving herdr's default. Resize lives behind
+#                       prefix+r (resize mode). This is the one real
+#                       muscle-memory trap in the migration.
+#
+# No herdr equivalent exists for: \ and _ (full-width splits),
+# < and > (swap window), prefix+Space (last-window; herdr's last_pane is
+# pane-level only), T (sesh picker), C (open Claude Code). T and C could
+# still be rebuilt as [[keys.command]] entries.
+
+# ---------------------------------------------------------------------------
+# Plugins
+# ---------------------------------------------------------------------------
+# herdr-command-palette (github:JanTvrdik/herdr-command-palette): fuzzy-pick
+# and run any installed plugin's action. herdr 0.7 doesn't bind keys from a
+# plugin manifest, so this lives here. prefix+p is taken by previous_tab
+# above, so this rides alt like focus_agent and lazygit-style popups do.
+[[keys.command]]
+key = "prefix+alt+p"
+type = "plugin_action"
+command = "jt.command-palette.open"
+description = "Command palette"
+
+# herdr-keymap, spike fork (github:technicalpickles/herdr-keymap@fuzzy-search,
+# installed from that GitHub ref rather than linked locally, so it needs no
+# per-machine path): fuzzy-searches herdr's own keybindings (defaults +
+# overrides above), not plugin actions -- complements prefix+alt+p rather
+# than replacing it.
+[[keys.command]]
+key = "prefix+m"
+type = "plugin_action"
+command = "tds.keymap.open_palette"
+description = "Keybindings palette"
+
+# herdr-nvim (github:ChmaraX/herdr-nvim): full-height nvim sidebar with a
+# fuzzy picker over recently-edited/repo files. Nvim side is configured in
+# ~/.config/nvim/lua/plugins/herdr-nvim.lua. Keys match the plugin's README
+# defaults; neither prefix+e nor prefix+o is bound above.
+[[keys.command]]
+key = "prefix+e"
+type = "plugin_action"
+command = "chmarax.herdr-nvim.toggle"
+description = "nvim sidebar"
+
+[[keys.command]]
+key = "prefix+o"
+type = "plugin_action"
+command = "chmarax.herdr-nvim.pick-file"
+description = "open file from agent output"
+
+# pickletown workspace picker (replaces new_workspace: the picker creates
+# from the pt inventory too, so a bare "new blank workspace" shortcut is
+# redundant)
+[[keys.command]]
+key = "prefix+shift+n"
+type = "popup"
+command = "~/pickleton/herdr/bin/workspace-picker"
+description = "switch pickletown workspace"
+width = "80%"
+height = "70%"

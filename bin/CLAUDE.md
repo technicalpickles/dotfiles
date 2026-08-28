@@ -24,10 +24,12 @@ Spotlight is kept enabled (Alfred requires it) but specific directories are excl
 
 - `bin/claude-spend-today`: Read today's Claude spend from ccusage cache (for tmux status bar)
 - `bin/claude-status-line`: Status line wrapper (fixes Opus context window size, formats model name, wraps claude-powerline with capsule style)
+- `bin/claude-ollama`: Launch Claude Code with ollama models. Auto-sets `CLAUDE_CODE_AUTO_COMPACT_WINDOW` to 80% of the model's context_length (queried from ollama API). Use `OLLAMA_MODEL` env or pass model as first arg.
 - `bin/claude-permissions`: Query Claude Code permissions across all known config locations
 - `bin/claude-with`: Run Claude with a named environment (isolated `CLAUDE_CONFIG_DIR` per env under `~/.local/share/claude-env/<name>/`)
 - `bin/analyze-claude-sessions`: Analyze Claude Code sessions (via cq) to identify projects and skill usage
 - `bin/ccusage-refresh`: Refresh ccusage cache (run by LaunchAgent every 5 min)
 - `bin/tmux-auto-rename-session`: Auto-name sessions after their directory
 - `bin/setup-agent-ssh-key`: Generate a per-role agent SSH identity (see [ADR 0031](../doc/adr/0031-role-scoped-agent-git-identity.md)). Accepts `--email <addr>` to override the default `joshua.nichols+<role>-agent@gmail.com` (e.g. for the work role: `--email josh.nichols+agent@gusto.com`).
+- `bin/load-agent-ssh-keys`: Load every `~/.ssh/agents/*/id_ed25519` into the ssh-agent, skipping ones already there. Run at login by the `com.technicalpickles.agent-ssh-keys` LaunchAgent so _launchd's_ agent gets populated, not just the fish shell's -- without it, scheduled jobs can't sign commits (see [LaunchAgents/README.md](../LaunchAgents/README.md)).
 - `bin/check-agent-ssh-key`: Validate an agent SSH identity setup (local files, Keychain, GitHub registration, Claude settings, and -- for the work role -- per-org SAML SSO authorization). Pass the same `--email` used at setup time. When the identity name differs from the role (the `home` role signs as the `personal` identity, per [ADR 0035](../doc/adr/0035-canonical-dotpickles-role-names.md)), pass `--key <path>` so it checks the real key (claudeconfig.sh derives this from the role's gitconfig include automatically).

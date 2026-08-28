@@ -26,7 +26,18 @@
       ],
     },
     "network": {
-      "allowedHosts": ["docs.anthropic.com"],
+      "allowedHosts": [
+        "docs.anthropic.com",
+        "www.anthropic.com",
+        "claude.com",
+        "docs.claude.com",
+        "platform.claude.com",
+        "downloads.claude.ai",
+        "mcp-proxy.anthropic.com",
+        // Claude Code plugin/skill docs site
+        "claude-dev.tools",
+        "www.claude-dev.tools",
+      ],
     },
   },
 }

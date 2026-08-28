@@ -45,10 +45,19 @@
         "api.github.com",
         "docs.github.com",
         "ghcr.io",
+        "gist.github.com",
         "gist.githubusercontent.com",
         "github.com",
         "pkg-containers.githubusercontent.com",
         "raw.githubusercontent.com",
+        // git-lfs objects
+        "github-cloud.githubusercontent.com",
+        "github-cloud.s3.amazonaws.com",
+        "lfs.github.com",
+        // release assets and Actions log/artifact storage
+        "productionresultssa5.blob.core.windows.net",
+        "release-assets.githubusercontent.com",
+        "results-receiver.actions.githubusercontent.com",
       ],
     },
     "filesystem": {

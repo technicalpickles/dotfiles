@@ -1,6 +1,7 @@
 #!/bin/bash
 # Claude Code status line wrapper
 # - Fixes context window size for Opus 4.5 (should be 680k, not 200k)
+# - Passes through ollama cloud model context windows (they report correctly via API)
 # - Formats model display name nicely (e.g., "Opus 4.5" instead of "claude-opus-4-5-20251101")
 # - Wraps claude-powerline with capsule style
 
@@ -13,6 +14,10 @@ fi | jq '
   # Fix context_window_size for Opus 4.5 (should be 680k, not 200k)
   if (.model.id | test("opus-4-5|opus-4.5"; "i")) then
     .context_window.context_window_size = 680000
+  # Ollama cloud models report their context window correctly via API
+  # Pass through without modification (Claude Code assumes 200k otherwise)
+  elif (.model.id | test(":cloud$"; "i")) then
+    .
   else
     .
   end

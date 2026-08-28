@@ -81,7 +81,3 @@ if [[ -f "$HOME/.local/bin/env" ]]; then
   # shellcheck disable=SC1091
   . "$HOME/.local/bin/env"
 fi
-
-# Added by LM Studio CLI (lms)
-export PATH="$PATH:/Users/josh.nichols/.lmstudio/bin"
-# End of LM Studio CLI section

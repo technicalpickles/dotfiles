@@ -31,6 +31,10 @@ claude/
 │   ├── rust.jsonc         # Rust ecosystem (cargo, rustup)
 │   ├── shell.jsonc        # Shell utilities (jq, fd, grep, etc.)
 │   └── skills.jsonc       # Skill permissions
+├── rules/                 # Topic-specific global instructions (symlinked to ~/.claude/rules/)
+│   ├── sandbox-paths.md
+│   ├── taskwarrior.md
+│   └── worktrees.md
 ├── CLAUDE.md              # Claude Code instructions (symlinked to ~/.claude/)
 └── README.md              # This file
 ```
