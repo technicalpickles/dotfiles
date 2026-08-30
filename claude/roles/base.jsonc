@@ -158,6 +158,9 @@
         // implicit cwd allowance only covers the session's original cwd,
         // not a directory the agent cd'd into).
         "~/worktrees",
+        // wrangler (Cloudflare Workers CLI) writes its log files here;
+        // without it every `wrangler`/`npx wrangler` invocation EPERMs.
+        "~/Library/Preferences/.wrangler",
       ],
     },
   },
