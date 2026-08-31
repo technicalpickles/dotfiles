@@ -1,11 +1,11 @@
 ---
 # dotfiles-b6gd
 title: Sandbox blocks the whole Xcode/Swift toolchain (chirpfinder)
-status: todo
+status: in-progress
 type: bug
 priority: normal
 created_at: 2026-08-24T13:22:07Z
-updated_at: 2026-08-24T13:46:02Z
+updated_at: 2026-08-31T13:55:59Z
 ---
 
 chirpfinder had 507 dangerouslyDisableSandbox Bash calls - the toolchain is effectively unusable sandboxed. All 20 xcode/swiftpm/simulator denials in Jul-Aug are chirpfinder.
@@ -39,8 +39,18 @@ claudeconfig.sh now does for /T (the path is per-user/per-machine, so it cannot 
 jsonc entry).
 
 ## Checklist
-- [ ] Create claude/stacks/xcode.jsonc with allowWrite for ~/Library/Developer/Xcode, ~/Library/org.swift.swiftpm, ~/Library/Logs/CoreSimulator, ~/Library/Caches/org.swift.swiftpm
+- [x] Create claude/stacks/xcode.jsonc with allowWrite for ~/Library/Developer/Xcode, ~/Library/org.swift.swiftpm, ~/Library/Logs/CoreSimulator, ~/Library/Caches/org.swift.swiftpm
 - [x] Figure out whether /var/folders/<...>/{T,C} can be allowlisted at all -- YES, via the /private prefix. /T done; /C still to do.
-- [ ] Extend claudeconfig.sh to also inject /private$(getconf DARWIN_USER_CACHE_DIR), ideally only when the xcode stack is active
+- [x] Extend claudeconfig.sh to also inject /private$(getconf DARWIN_USER_CACHE_DIR), ideally only when the xcode stack is active
 - [ ] Test whether nested sandbox-exec can ever work; if not, document that xcodebuild/simctl always need dangerouslyDisableSandbox
 - [ ] Add the conclusion to chirpfinder's CLAUDE.md so agents stop rediscovering it
+
+## UPDATE 2026-08-31: allowMachLookup fixed as array, not boolean
+
+xcode.jsonc originally set `sandbox.network.allowMachLookup: true`. Claude Code's
+schema wants an array of Mach service names (or `"*"` as a wildcard entry), not a
+boolean -- this made every Claude Code startup log a settings validation warning
+("Expected array, but received boolean"). Fixed to `["*"]` to keep the original
+"allow everything" intent. Filed dotfiles taskwarrior task 480 to add schema
+validation for claude/*.jsonc sandbox config so this class of type error is caught
+before generation, not after a startup warning.

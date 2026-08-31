@@ -222,6 +222,16 @@ generate_settings() {
     local stack_json
     stack_json=$(read_json "$stack_file")
 
+    # Merge sandbox scalars from stack (stack overrides base/role; deep-merged
+    # so e.g. a stack's network.allowMachLookup doesn't clobber base's
+    # network.allowAllUnixSockets). Stacks previously could only contribute
+    # sandbox array entries (allowedDomains, allowWrite) -- a stack needing a
+    # network scalar like allowMachLookup (xcode.jsonc, for CoreSimulatorService
+    # XPC) had no way to set it.
+    local stack_sandbox_scalars
+    stack_sandbox_scalars=$(echo "$stack_json" | jq '.sandbox // {} | del(.network.allowedDomains, .filesystem.allowWrite, .filesystem, .network) + (if .network then {network: (.network | del(.allowedDomains))} else {} end) | del(.network | nulls) | del(.filesystem | nulls)')
+    sandbox_scalars=$(echo "$sandbox_scalars" | jq --argjson s "$stack_sandbox_scalars" '. * $s')
+
     # Concat permissions
     merged_allow=$(echo "$merged_allow" | jq --argjson s "$(echo "$stack_json" | jq '.permissions.allow // []')" '. + $s')
     merged_ask=$(echo "$merged_ask" | jq --argjson s "$(echo "$stack_json" | jq '.permissions.ask // []')" '. + $s')
@@ -261,12 +271,20 @@ generate_settings() {
     # not $TMPDIR, so it ignores the writable session temp dir Claude Code sets
     # up and lands in /var/folders/<hash>/T instead. That is what made
     # claudeconfig.sh itself unrunnable under the sandbox. The path is
-    # per-user/per-machine, so compute it rather than hardcoding. Scoped to the
-    # temp dir (/T) only -- the sibling /C cache dir stays denied.
+    # per-user/per-machine, so compute it rather than hardcoding.
     local darwin_tmp
     darwin_tmp="/private$(getconf DARWIN_USER_TEMP_DIR)"
     darwin_tmp="${darwin_tmp%/}"
     sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --arg t "$darwin_tmp" '. + [$t] | unique | sort')
+
+    # Sibling of the above: DARWIN_USER_CACHE_DIR (/var/folders/<hash>/C) is
+    # where clang's ModuleCache and xcrun_db live. Without it, swiftc fails
+    # with "unable to open output file ...SwiftShims.pcm: Operation not
+    # permitted" on every sandboxed build. See dotfiles-b6gd.
+    local darwin_cache
+    darwin_cache="/private$(getconf DARWIN_USER_CACHE_DIR)"
+    darwin_cache="${darwin_cache%/}"
+    sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --arg c "$darwin_cache" '. + [$c] | unique | sort')
   fi
 
   # allowedDomains entries must be bare hostnames (optionally with a port).
