@@ -67,7 +67,7 @@ Role files hold settings, permissions, and sandbox config:
     "enableWeakerNetworkIsolation": true,
     "network": {
       "allowAllUnixSockets": true,
-      "allowedHosts": []
+      "allowedDomains": []
     }
   }
 }
@@ -86,7 +86,7 @@ Stack files hold per-topic permissions and sandbox arrays (no scalars):
   },
   "sandbox": {
     "network": {
-      "allowedHosts": [],
+      "allowedDomains": [],
     },
     "filesystem": {
       "allowWrite": [],
@@ -123,7 +123,7 @@ Create `claude/stacks/foo.jsonc`:
   // Optional: sandbox config
   "sandbox": {
     "network": {
-      "allowedHosts": ["foo.example.com"],
+      "allowedDomains": ["foo.example.com"],
     },
     "filesystem": {
       "allowWrite": ["~/.foo"],
@@ -136,9 +136,9 @@ Then regenerate: `./claudeconfig.sh`
 
 ### Add a network host
 
-Find the relevant stack file and add to `sandbox.network.allowedHosts`. For example, to allow a new npm registry:
+Find the relevant stack file and add to `sandbox.network.allowedDomains`. For example, to allow a new npm registry:
 
-Edit `claude/stacks/node.jsonc` and add to `allowedHosts`, then `./claudeconfig.sh`.
+Edit `claude/stacks/node.jsonc` and add to `allowedDomains`, then `./claudeconfig.sh`.
 
 ### Add a filesystem write path
 
@@ -280,7 +280,7 @@ jq '.permissions.allow[]' ~/.claude/settings.json | grep -i skill
 jq '.sandbox' ~/.claude/settings.json
 
 # Check network hosts
-jq '.sandbox.network.allowedHosts' ~/.claude/settings.json
+jq '.sandbox.network.allowedDomains' ~/.claude/settings.json
 
 # Check filesystem write paths
 jq '.sandbox.filesystem.allowWrite' ~/.claude/settings.json

@@ -167,8 +167,8 @@ generate_settings() {
 
   # Extract sandbox from base (scalars + arrays)
   local sandbox_scalars sandbox_hosts sandbox_write_paths
-  sandbox_scalars=$(echo "$base_json" | jq '.sandbox // {} | del(.network.allowedHosts, .filesystem.allowWrite, .filesystem, .network) + (if .network then {network: (.network | del(.allowedHosts))} else {} end) | del(.network | nulls) | del(.filesystem | nulls)')
-  sandbox_hosts=$(echo "$base_json" | jq '.sandbox.network.allowedHosts // []')
+  sandbox_scalars=$(echo "$base_json" | jq '.sandbox // {} | del(.network.allowedDomains, .filesystem.allowWrite, .filesystem, .network) + (if .network then {network: (.network | del(.allowedDomains))} else {} end) | del(.network | nulls) | del(.filesystem | nulls)')
+  sandbox_hosts=$(echo "$base_json" | jq '.sandbox.network.allowedDomains // []')
   sandbox_write_paths=$(echo "$base_json" | jq '.sandbox.filesystem.allowWrite // []')
 
   echo "  + Loaded base role"
@@ -204,11 +204,11 @@ generate_settings() {
 
     # Merge sandbox scalars from role (role overrides base)
     local role_sandbox_scalars
-    role_sandbox_scalars=$(echo "$role_json" | jq '.sandbox // {} | del(.network.allowedHosts, .filesystem.allowWrite, .filesystem, .network) + (if .network then {network: (.network | del(.allowedHosts))} else {} end) | del(.network | nulls) | del(.filesystem | nulls)')
+    role_sandbox_scalars=$(echo "$role_json" | jq '.sandbox // {} | del(.network.allowedDomains, .filesystem.allowWrite, .filesystem, .network) + (if .network then {network: (.network | del(.allowedDomains))} else {} end) | del(.network | nulls) | del(.filesystem | nulls)')
     sandbox_scalars=$(echo "$sandbox_scalars" | jq --argjson r "$role_sandbox_scalars" '. * $r')
 
     # Concat sandbox arrays
-    sandbox_hosts=$(echo "$sandbox_hosts" | jq --argjson r "$(echo "$role_json" | jq '.sandbox.network.allowedHosts // []')" '. + $r')
+    sandbox_hosts=$(echo "$sandbox_hosts" | jq --argjson r "$(echo "$role_json" | jq '.sandbox.network.allowedDomains // []')" '. + $r')
     sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --argjson r "$(echo "$role_json" | jq '.sandbox.filesystem.allowWrite // []')" '. + $r')
 
     echo "  + Loaded $ROLE role"
@@ -228,7 +228,7 @@ generate_settings() {
     merged_deny=$(echo "$merged_deny" | jq --argjson s "$(echo "$stack_json" | jq '.permissions.deny // []')" '. + $s')
 
     # Concat sandbox arrays
-    sandbox_hosts=$(echo "$sandbox_hosts" | jq --argjson s "$(echo "$stack_json" | jq '.sandbox.network.allowedHosts // []')" '. + $s')
+    sandbox_hosts=$(echo "$sandbox_hosts" | jq --argjson s "$(echo "$stack_json" | jq '.sandbox.network.allowedDomains // []')" '. + $s')
     sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --argjson s "$(echo "$stack_json" | jq '.sandbox.filesystem.allowWrite // []')" '. + $s')
 
     echo "  + Merged $stack_name stack"
@@ -269,14 +269,14 @@ generate_settings() {
     sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --arg t "$darwin_tmp" '. + [$t] | unique | sort')
   fi
 
-  # allowedHosts entries must be bare hostnames (optionally with a port).
+  # allowedDomains entries must be bare hostnames (optionally with a port).
   # A stray "domain:" prefix (WebFetch permission syntax) or a URL path makes
-  # Claude Code discard the entire allowedHosts array on its next rewrite of
+  # Claude Code discard the entire allowedDomains array on its next rewrite of
   # settings.json, silently emptying the network allowlist.
   local bad_hosts
   bad_hosts=$(echo "$sandbox_hosts" | jq -r '.[] | select(test("^[A-Za-z0-9*]([A-Za-z0-9._-]*)(:[0-9]+)?$") | not)')
   if [ -n "$bad_hosts" ]; then
-    echo "Error: invalid sandbox.network.allowedHosts entries (bare hostnames only):"
+    echo "Error: invalid sandbox.network.allowedDomains entries (bare hostnames only):"
     echo "$bad_hosts" | sed 's/^/    /'
     exit 1
   fi
@@ -294,7 +294,7 @@ generate_settings() {
     '. + {
       permissions: ($perm_scalars + {allow: $allow, ask: $ask, deny: $deny}),
       sandbox: ($sandbox_scalars + {
-        network: ($sandbox_scalars.network // {} | . + {allowedHosts: $hosts}),
+        network: ($sandbox_scalars.network // {} | . + {allowedDomains: $hosts}),
         filesystem: {allowWrite: $write_paths}
       })
     }')

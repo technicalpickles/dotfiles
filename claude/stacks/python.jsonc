@@ -59,8 +59,8 @@
     },
     "network": {
       // Bare hostnames only. The "domain:" prefix is WebFetch permission
-      // syntax; Claude Code drops the whole allowedHosts array if it sees one.
-      "allowedHosts": ["pypi.org", "files.pythonhosted.org"],
+      // syntax; Claude Code drops the whole allowedDomains array if it sees one.
+      "allowedDomains": ["pypi.org", "files.pythonhosted.org"],
     },
   },
 }
