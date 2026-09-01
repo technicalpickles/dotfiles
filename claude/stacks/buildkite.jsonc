@@ -2,7 +2,7 @@
   // Buildkite CI (source: agent-safehouse)
   "sandbox": {
     "network": {
-      "allowedHosts": [
+      "allowedDomains": [
         "api.buildkite.com",
         "buildkite.com",
         "buildkiteartifacts.com",

@@ -46,6 +46,11 @@ case "$DOTPICKLES_ROLE" in
     echo "  → using home identity for git"
     git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/home-identity
 
+    if [ "$DOTPICKLES_ROLE" = "home" ] && command_available gh; then
+      echo "  → rewriting SSH github.com remotes to HTTPS (home role only)"
+      git config --file ~/.gitconfig.local "url.https://github.com/.insteadOf" "git@github.com:"
+    fi
+
     if running_macos && test -d '/Applications/1Password.app/'; then
       echo "  → enabling 1password ssh key signing"
       signing=true

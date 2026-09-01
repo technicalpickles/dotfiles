@@ -4,8 +4,9 @@
 # Regenerate a fully commented reference with: wt config create
 # Full docs on this section:                   https://worktrunk.dev/config/#worktree-path-template
 
-# Centralize worktrees under ~/worktrees instead of worktrunk's default
-# sibling-directory layout (~/github.com/technicalpickles/dotfiles.branch-name).
-# Keeps ~/github.com clean and gives one place to bulk-inspect or clean up
-# worktrees across every repo.
-worktree-path = "~/worktrees/{{ repo }}/{{ branch | sanitize }}"
+# Nest worktrees inside the repo itself, matching Claude Code's own
+# .claude/worktrees/<branch> convention (EnterWorktree/agent-created
+# worktrees already land there). This drops the previous centralized
+# ~/worktrees hub in favor of nested paths already covered by the sandbox's
+# implicit cwd allowance -- see claude/rules/worktrees.md.
+worktree-path = "{{ repo_path }}/.claude/worktrees/{{ branch | sanitize }}"

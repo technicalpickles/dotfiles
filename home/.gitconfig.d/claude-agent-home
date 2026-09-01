@@ -37,8 +37,8 @@
 # key or agent would authenticate -- confirmed in pickletown bean gt-o2jy.
 # HTTPS to github.com already works sandboxed (that's the path gh/WebFetch
 # use), so rewrite SSH remotes to HTTPS and hand auth off to gh's credential
-# helper. This only affects agent sessions (this file is only reachable via
-# GIT_CONFIG_GLOBAL) -- your interactive shell keeps using SSH normally.
+# helper. This block is redundant with the interactive home-role rewrite in
+# gitconfig.sh now, but kept here so agent sessions don't depend on that.
 [url "https://github.com/"]
 	insteadOf = git@github.com:
 [credential "https://github.com"]

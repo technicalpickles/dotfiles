@@ -6,7 +6,7 @@
   // source: agent-safehouse
   "sandbox": {
     "network": {
-      "allowedHosts": [
+      "allowedDomains": [
         "karafka.io",
         "lima-vm.io",
         "code.visualstudio.com",
