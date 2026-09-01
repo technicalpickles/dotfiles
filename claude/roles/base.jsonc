@@ -269,6 +269,10 @@
         // permission problem rather than our own sandbox. Confirmed via
         // `log show` kernel Sandbox denial lines (pickletown bean gt-1vxk).
         "~/.Trash",
+        // crit writes its session lock and review state under ~/.crit/sessions;
+        // without this every crit launch (tailscale or not) hits a write
+        // denial and needs dangerouslyDisableSandbox as a retry.
+        "~/.crit",
       ],
     },
   },
