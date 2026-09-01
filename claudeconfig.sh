@@ -112,11 +112,6 @@ setup_sandbox_dirs() {
   # writes under ~/.plannotator but not creating the dir itself (needs ~/).
   mkdir -p "$HOME/.plannotator"
   echo "  ✓ ~/.plannotator"
-  # worktrunk (`wt`) puts every worktree under ~/worktrees/<repo>/<branch>.
-  # allowWrite on ~/worktrees lets it create the per-repo dirs, but creating
-  # ~/worktrees itself needs write access to ~/, which isn't allowed.
-  mkdir -p "$HOME/worktrees"
-  echo "  ✓ ~/worktrees"
 }
 
 setup_sandbox_dirs
