@@ -1,0 +1,15 @@
+{
+  // crit (code review tool, https://github.com/tomasz-tomczyk/crit)
+  //
+  // The documented remote-review recipe (crit's SKILL.md "tailscale" block)
+  // launches crit on loopback with --public-url + --allow-unauthenticated-network
+  // and proxies it in with `tailscale serve`, e.g.:
+  //   crit --public-url "https://<machine>.ts.net" --allow-unauthenticated-network --no-open
+  //   tailscale serve --bg --https=443 http://127.0.0.1:<port>
+  // Without these entries, the auto-mode classifier flags --allow-unauthenticated-network
+  // as risky and forces a fresh AskUserQuestion confirmation every session, even though
+  // this is the expected, documented pattern.
+  "permissions": {
+    "allow": ["Bash(crit --public-url:*)", "Bash(tailscale serve:*)"],
+  },
+}
