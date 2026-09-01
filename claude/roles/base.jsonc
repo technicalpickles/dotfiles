@@ -112,6 +112,17 @@
       "Bash(rm -rf .:*)",
       "Bash(rm -rf ..:*)",
       "Bash(rm -rf ../*:*)",
+      // Claude habitually falls back to `find /` or `find ~` (with a
+      // -maxdepth guard) when it doesn't know where a binary/config/repo
+      // lives, instead of `which`, `mise which`, `brew --prefix`, `Glob`,
+      // or a targeted `ls` in the likely parent dir. Slow and noisy on
+      // macOS (System, Library, Volumes, ~/Library). Only the bare-root
+      // form is denied -- `find /Users/you/project ...` and `find ~/foo
+      // ...` are untouched, since the argument is a distinct token from
+      // the bare "/" or "~".
+      "Bash(find /:*)",
+      "Bash(find ~:*)",
+      "Bash(find $HOME:*)",
     ],
   },
 
@@ -149,15 +160,6 @@
         // actually makes this work. Leave the plain spelling here: it is the
         // one that matters on Linux.
         "/tmp",
-        // worktrunk (`wt`) centralizes every worktree under ~/worktrees --
-        // see config/worktrunk/config.toml's worktree-path. claude/rules/
-        // worktrees.md tells agents to prefer `wt` over EnterWorktree, so
-        // without this the documented workflow EPERMs at every layer: `wt
-        // switch --create` can't create the leading .git dirs, and once
-        // inside a worktree even relative-path writes fail (the sandbox's
-        // implicit cwd allowance only covers the session's original cwd,
-        // not a directory the agent cd'd into).
-        "~/worktrees",
         // wrangler (Cloudflare Workers CLI) writes its log files here;
         // without it every `wrangler`/`npx wrangler` invocation EPERMs.
         "~/Library/Preferences/.wrangler",
