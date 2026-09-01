@@ -6,7 +6,12 @@
   },
   "sandbox": {
     "filesystem": {
-      "allowWrite": ["~/.dolt"],
+      // ~/.dolt is dolt's own global config. The second entry is pickletown's
+      // shared local Dolt datastore: without it every dolt call against that
+      // store needs dangerouslyDisableSandbox, and it's on the SessionStart
+      // hook path. Precedent for the ~/.local/state/<tool> shape:
+      // claude/stacks/bktide.jsonc. See pickleton's projects/pt-datastore/.
+      "allowWrite": ["~/.dolt", "~/.local/state/pickletown"],
     },
   },
 }

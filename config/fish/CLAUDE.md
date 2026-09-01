@@ -29,7 +29,13 @@ default and showed the wrong role.
 
 ## Adding New Config
 
-Drop a `.fish` file in `config/fish/conf.d/`. It autoloads on next shell start. No need to source manually.
+Drop a `.fish` file in `config/fish/conf.d/`, then run `./fish.sh --check` (repo root) to symlink it into `~/.config/fish/conf.d/`. `~/.config/fish` is a real directory, not a symlinked one -- see "Why Not a Directory Symlink" below -- so a new file in the repo doesn't appear live until something links it. `fish.sh --check` does just that sync (no sudo, no chsh, no fisher), reports what it linked, and is safe to run any time to catch drift.
+
+## Why Not a Directory Symlink
+
+`symlinks.sh`'s generic `link_directory_contents` would normally symlink all of `config/fish` as one unit, same as other `config/*` dirs. It's explicitly excluded from that (`functions.sh`'s `skip=(... config/fish ...)`) because Fisher (the fish plugin manager) writes into `~/.config/fish` at runtime, and a whole-directory symlink would make those writes land in the git repo. Instead `fish.sh` keeps `~/.config/fish` a real directory and individually symlinks each file under `conf.d/` and `functions/`.
+
+The tradeoff: per-file symlinks don't appear automatically when a new file is added to the repo -- nothing re-runs that link step on its own. A file added and forgotten silently has no effect (its own `conf.d` autoload just never happens) until someone runs `fish.sh` (or `fish.sh --check`) again. Confirmed happening in practice: `dotpickles-role.fish` sat unlinked in the repo for ~2 months, so `DOTPICKLES_ROLE` silently never got set in interactive shells and the prompt fell back to its default "home" role.
 
 ## Starship Prompt
 
