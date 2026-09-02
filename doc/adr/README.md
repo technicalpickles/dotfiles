@@ -51,3 +51,4 @@
 - [49. role-gated-launchagents](0049-role-gated-launchagents.md)
 - [50. canonicalize-sandbox-allowwrite-paths](0050-canonicalize-sandbox-allowwrite-paths.md)
 - [51. nest-wt-worktrees-inside-the-repo](0051-nest-wt-worktrees-inside-the-repo.md)
+- [52. role-scoped-claude-rules](0052-role-scoped-claude-rules.md)

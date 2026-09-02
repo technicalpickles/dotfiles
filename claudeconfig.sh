@@ -75,27 +75,70 @@ setup_claude_directory() {
   link "claude/ccline/config.toml" "$HOME/.claude/ccline/config.toml"
   link "claude/ccline/models.toml" "$HOME/.claude/ccline/models.toml"
 
-  # Symlink rules/ (topic-specific global agent instructions, loaded like CLAUDE.md)
-  link "claude/rules" "$HOME/.claude/rules"
+  # Symlink rules/ (topic-specific global agent instructions, loaded like CLAUDE.md).
+  # Per-file, not a single directory symlink, so a rule can opt out of roles it
+  # doesn't apply to via a `<!-- dotpickles_role: role1,role2 -->` marker on its
+  # first line (absent marker = every role). See "Role-Scoping a Rule" in
+  # .claude/rules/claude-config.md.
+  link_rules
 
   # Nest pickletown's project rules inside ours. Claude walks the user rules dir
   # recursively and follows symlinks, so this makes pt conventions (beans,
   # sandbox EPERM retries, qmd, mise) load in every session -- not just ones whose
   # cwd sits under ~/pickleton, which is all the project-scoped walk covers. Same
   # reasoning as the global pickletown session hooks in claude/roles/work.jsonc.
-  # Gitignored: absolute target, and only present where pickletown is checked out.
+  # Symlinked directly into ~/.claude/rules now that it's a real directory (not
+  # a whole-dir symlink), so no gitignore entry is needed for it in this repo.
   local pt_rules="$HOME/pickleton/.claude/rules"
-  local pt_rules_link="$DIR/claude/rules/pickletown"
+  local pt_rules_link="$HOME/.claude/rules/pickletown"
   if [ ! -d "$pt_rules" ]; then
     echo "  - pickletown rules not found, skipping"
   elif [ -L "$pt_rules_link" ] && [ "$(readlink "$pt_rules_link")" = "$pt_rules" ]; then
     echo "  ✓ pickletown rules already nested"
   elif [ -e "$pt_rules_link" ] || [ -L "$pt_rules_link" ]; then
-    echo "  ⚠ claude/rules/pickletown points elsewhere, leaving alone"
+    echo "  ⚠ ~/.claude/rules/pickletown points elsewhere, leaving alone"
   else
     ln -s "$pt_rules" "$pt_rules_link"
-    echo "  ✓ pickletown rules nested at claude/rules/pickletown"
+    echo "  ✓ pickletown rules nested at ~/.claude/rules/pickletown"
   fi
+}
+
+# Symlink claude/rules/*.md into ~/.claude/rules/ individually (not as one
+# directory symlink), so each file can be scoped to specific DOTPICKLES_ROLE
+# values via a `<!-- dotpickles_role: role1,role2 -->` marker on its first
+# line. A file with no marker links for every role, same as before this
+# existed. Re-running removes a role-scoped file's link if the marker no
+# longer matches $ROLE (e.g. role changed on this machine).
+link_rules() {
+  local rules_source="$DIR/claude/rules"
+  local rules_target="$HOME/.claude/rules"
+
+  if [ -L "$rules_target" ]; then
+    if [ "$(readlink "$rules_target")" = "$rules_source" ]; then
+      echo "  🔁 ~/.claude/rules: migrating from whole-dir symlink to per-file (role scoping)"
+      rm "$rules_target"
+      mkdir -p "$rules_target"
+    else
+      echo "  ⚠ ~/.claude/rules is a symlink to something else, leaving alone"
+      return
+    fi
+  else
+    mkdir -p "$rules_target"
+  fi
+
+  local file name role_tag
+  for file in "$rules_source"/*.md; do
+    [ -f "$file" ] || continue
+    name="$(basename "$file")"
+    role_tag="$(head -n1 "$file" | sed -n 's/^<!-- *dotpickles_role: *\([^ ]*\) *-->.*$/\1/p')"
+
+    if [ -z "$role_tag" ] || [[ ",$role_tag," == *",$ROLE,"* ]]; then
+      link "claude/rules/$name" "$rules_target/$name"
+    elif [ -L "$rules_target/$name" ] && [ "$(readlink "$rules_target/$name")" = "$file" ]; then
+      echo "  - $name -> unlinked (role '$ROLE' not in: $role_tag)"
+      rm "$rules_target/$name"
+    fi
+  done
 }
 
 setup_claude_directory
