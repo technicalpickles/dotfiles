@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+"""Export Safari's Reading List.
+
+Reads ~/Library/Safari/Bookmarks.plist directly via plistlib. Requires
+Full Disk Access for whatever process runs this (Terminal, etc.) --
+macOS TCC blocks reading Safari's data otherwise, independent of any
+Claude Code sandbox.
+"""
+
+import argparse
+import json
+import plistlib
+import sys
+from datetime import timezone
+from pathlib import Path
+
+BOOKMARKS_PLIST = Path.home() / "Library" / "Safari" / "Bookmarks.plist"
+
+
+def collect_reading_list_items(node, items):
+    """Recursively find every node carrying a ReadingList dict.
+
+    Rather than locating the Reading List folder by title (which has
+    shifted across macOS versions), walk the whole bookmark tree and
+    grab any leaf that has a "ReadingList" key -- that's what actually
+    marks an item as being in the Reading List.
+    """
+    if "ReadingList" in node:
+        items.append(node)
+    for child in node.get("Children", []):
+        collect_reading_list_items(child, items)
+
+
+def iso(dt):
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
+
+
+def extract(node):
+    reading_list = node.get("ReadingList", {})
+    reading_list_non_sync = node.get("ReadingListNonSync", {})
+    uri_dict = node.get("URIDictionary", {})
+    unread = "DateLastViewed" not in reading_list and "DateLastViewed" not in reading_list_non_sync
+    return {
+        "url": node.get("URLString"),
+        "title": uri_dict.get("title"),
+        "preview": reading_list.get("PreviewText"),
+        "date_added": iso(reading_list.get("DateAdded")),
+        "unread": unread,
+    }
+
+
+def print_human(items):
+    for i, item in enumerate(items):
+        if i > 0:
+            print()
+        print(item["title"] or "(untitled)")
+        print(f"  {item['url']}")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Export Safari's Reading List.",
+        epilog="""examples:
+  safari-reading-list --all              list everything, human-readable
+  safari-reading-list --unread           only items still marked unread
+  safari-reading-list --read             only items already viewed
+  safari-reading-list --all --json       full JSON (title, url, preview, date_added, unread)
+  safari-reading-list --unread --json | jq '.[].url'
+""",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--all", action="store_true", help="show every item")
+    mode.add_argument("--read", action="store_true", help="show only items already viewed")
+    mode.add_argument("--unread", action="store_true", help="show only items not yet viewed")
+    mode.add_argument(
+        "--debug",
+        action="store_true",
+        help="print raw plist keys for the first Reading List item and exit",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="output full JSON (title, url, preview, date_added, unread) instead of the human-readable list",
+    )
+    args = parser.parse_args()
+
+    if not BOOKMARKS_PLIST.exists():
+        print(f"error: {BOOKMARKS_PLIST} not found", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        with open(BOOKMARKS_PLIST, "rb") as f:
+            data = plistlib.load(f)
+    except PermissionError:
+        print(
+            f"error: permission denied reading {BOOKMARKS_PLIST}\n"
+            "Grant Full Disk Access to your terminal app in "
+            "System Settings > Privacy & Security > Full Disk Access, then retry.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    raw_items = []
+    collect_reading_list_items(data, raw_items)
+
+    if not raw_items:
+        print("error: no Reading List items found in Bookmarks.plist", file=sys.stderr)
+        sys.exit(1)
+
+    if args.debug:
+        json.dump(raw_items[0], sys.stdout, indent=2, default=str)
+        print()
+        return
+
+    items = [extract(node) for node in raw_items]
+
+    if args.unread:
+        items = [item for item in items if item["unread"]]
+    elif args.read:
+        items = [item for item in items if not item["unread"]]
+
+    items.sort(key=lambda item: item["date_added"] or "", reverse=True)
+
+    if args.json:
+        json.dump(items, sys.stdout, indent=2)
+        print()
+    else:
+        print_human(items)
+
+
+if __name__ == "__main__":
+    main()

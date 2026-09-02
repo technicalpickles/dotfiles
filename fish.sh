@@ -10,6 +10,51 @@ if ! which fish > /dev/null 2> /dev/null; then
   exit 1
 fi
 
+dotfiles_fish="$DIR/config/fish"
+fish_config="$HOME/.config/fish"
+
+# Sync one subdir's (conf.d/ or functions/) symlinks from the repo into the
+# live fish config. Idempotent and side-effect-free (no sudo, no chsh, no
+# fisher), so it's safe to run standalone via `fish.sh --check` any time --
+# e.g. right after adding a new file to config/fish/conf.d, since nothing
+# else re-links it automatically. Reports each link it creates or repairs so
+# drift (a new file that silently never got linked) is visible instead of
+# failing silently at runtime.
+sync_fish_links() {
+  local subdir="$1"
+  local src_dir="$dotfiles_fish/$subdir"
+  local dest_dir="$fish_config/$subdir"
+
+  [ -d "$src_dir" ] || return 0
+  mkdir -p "$dest_dir"
+
+  local f name dest
+  for f in "$src_dir"/*; do
+    [ -f "$f" ] || continue
+    name="$(basename "$f")"
+    dest="$dest_dir/$name"
+
+    if [ -L "$dest" ] && [ "$(readlink "$dest")" = "$f" ]; then
+      continue
+    fi
+    if [ -e "$dest" ] && [ ! -L "$dest" ]; then
+      echo "  ⚠️  $subdir/$name exists and isn't a symlink -- leaving it, check manually"
+      continue
+    fi
+
+    ln -sf "$f" "$dest"
+    echo "  → linked $subdir/$name"
+  done
+}
+
+if [ "${1:-}" = "--check" ] || [ "${1:-}" = "--sync-links" ]; then
+  echo "🐟 checking fish conf.d/ and functions/ symlinks"
+  sync_fish_links conf.d
+  sync_fish_links functions
+  echo "  ✅ up to date"
+  exit 0
+fi
+
 echo "🐟 configuring fish"
 fish_path=$(which fish)
 
@@ -41,9 +86,6 @@ fi
 # link_directory_contents symlinks ~/.config/fish → dotfiles/config/fish.
 # Fisher would write into the dotfiles repo through that symlink, so replace
 # it with a real directory before fisher runs, then merge dotfiles conf back in.
-dotfiles_fish="$DIR/config/fish"
-fish_config="$HOME/.config/fish"
-
 if [ -L "$fish_config" ]; then
   rm "$fish_config"
   mkdir -p "$fish_config" "$fish_config/conf.d" "$fish_config/functions" "$fish_config/completions"
@@ -66,14 +108,9 @@ cat "$fish_config/fish_plugins"
 fish -c "fisher update" < /dev/null
 
 # Symlink conf.d and functions AFTER fisher update, so fisher doesn't overwrite them
-if [ -d "$fish_config" ] && [ -d "$dotfiles_fish/conf.d" ]; then
-  for f in "$dotfiles_fish"/conf.d/*; do
-    [ -f "$f" ] && ln -sf "$f" "$fish_config/conf.d/"
-  done
-
-  for f in "$dotfiles_fish"/functions/*; do
-    [ -f "$f" ] && ln -sf "$f" "$fish_config/functions/"
-  done
+if [ -d "$fish_config" ]; then
+  sync_fish_links conf.d
+  sync_fish_links functions
 fi
 
 echo
