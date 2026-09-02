@@ -1,3 +1,5 @@
+<!-- dotpickles_role: home -->
+
 ## Backlog & Task Tracking
 
 Taskwarrior is the backlog system. Use `task` directly (config at `~/.taskrc`, data at `~/.task`).
