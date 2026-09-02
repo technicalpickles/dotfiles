@@ -49,6 +49,24 @@
           },
         ],
       },
+      {
+        // Companion to the Write|Edit nudge above: catches the actual moment
+        // of damage (a mutating `task` command run against a bare decimal
+        // ID) instead of only warning once the ID lands in a file. Scoped to
+        // Bash(task:*) via `if` so the jq filter doesn't run on every Bash
+        // call. See the taskwarrior skill's "Durable references" section and
+        // bean dotfiles-cokl -- this exact pattern (a cached numeric ID that
+        // drifted mid-session) has caused annotate/done calls to silently
+        // land on unrelated tasks more than once.
+        "matcher": "Bash",
+        "if": "Bash(task:*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c '(.tool_input.command // \"\") as $c | ($c | test(\"\\\\btask\\\\s+([0-9]{1,6})\\\\s+(done|annotate|modify|depends|delete|start|stop)\\\\b\")) as $risky | if $risky then ($c | capture(\"\\\\btask\\\\s+(?<id>[0-9]{1,6})\\\\s+(?<verb>done|annotate|modify|depends|delete|start|stop)\\\\b\")) as $m | {hookSpecificOutput:{hookEventName:\"PreToolUse\", permissionDecision:\"allow\", additionalContext:\"This mutates taskwarrior task \\($m.id) by its plain numeric ID (`\\($m.verb)`). Numeric IDs are reused as the pending list reorders -- if this ID was captured more than a couple of commands ago (or anything else touched taskwarrior in between), re-resolve it first: `task \\($m.id) info` (or re-grep by description) to confirm it still points at the task you mean. See the taskwarrior skill Durable references section.\"}} else {} end' 2>/dev/null || true",
+          },
+        ],
+      },
     ],
   },
 }
