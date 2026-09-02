@@ -9,6 +9,7 @@ Scripts and utilities. Most are wrappers or helpers used by other scripts and ho
 - `bin/shell`: Helper for shell-related operations
 - `bin/qmd`: Runs the qmd semantic-search CLI (`@tobilu/qmd` via npx) under a pinned Node version with `mise exec`. Locates mise itself so it works under launchd (no PATH/mise activation). Used by the qmd-refresh and qmd-mcp LaunchAgents. Override version with `QMD_NODE_VERSION` (default `24`). The qmd-mcp agent runs `qmd mcp --http --port 8181` (localhost-only HTTP MCP server); register with Claude via `claude mcp add --transport http qmd http://localhost:8181/mcp --scope user`.
 - `bin/safari-reading-list`: Exports Safari's Reading List by parsing `~/Library/Safari/Bookmarks.plist` directly (stdlib `plistlib`, no deps). Requires exactly one mode flag -- `--all`, `--read`, `--unread`, or `--debug` (dumps one raw item's plist keys for troubleshooting); running with none prints usage. Human-readable title/url list by default, `--json` for full JSON (title, url, preview, date_added, unread). Requires Full Disk Access for the terminal app running it -- macOS TCC blocks reading Safari's data otherwise.
+- `bin/dotfiles-doctor`: Read-only health check for role detection, dotfile symlink health (`home/*`, `config/*`), LaunchAgents symlink health (macOS), and tool availability (git, mise, brew). Reports pass/fail per check and exits non-zero if anything failed.
 
 ## Spotlight Management
 
