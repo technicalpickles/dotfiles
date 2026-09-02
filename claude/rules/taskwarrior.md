@@ -15,19 +15,9 @@ Taskwarrior is the backlog system. Use `task` directly (config at `~/.taskrc`, d
 
 ## Stable Task References: Use UUIDs
 
-Integer task IDs are reused after tasks complete or the pending list otherwise reorders. Never cite them in durable artifacts (commits, memory files, docs, beans). Use the UUID instead.
+Integer task IDs are reused after tasks complete or the pending list otherwise reorders. Never cite them in durable artifacts (commits, memory files, docs, beans, handoffs) — use the UUID instead. Integer IDs are fine for interactive terminal use only.
 
-- `task list` shows a `UUID` column with 8-char short UUIDs
-- Short UUIDs work as partial matches in any `task` command: `task b8c4246b info`
-- When referencing a task from a commit message, memory file, or bean body, use the UUID form
-
-Integer IDs are fine for interactive terminal use only.
-
-**Verify before you cite, and re-resolve before you act.**
-
-- Before writing a UUID into a durable artifact (commit, memory, bean, handoff), confirm it actually resolves to the task you mean: `task <uuid> info` (or `_get <uuid>.description`) and read the description back. A UUID is only as trustworthy as the citation that produced it — hand-typed from memory, copied from an earlier message, or captured before the task was edited elsewhere can all silently point at the wrong task despite being correctly *formatted*.
-- Before acting on a cached integer ID (`task <id> done`, `annotate`, `modify`, `depends`), re-resolve it if it was captured more than a few commands ago in the same session. The pending list renumbers as other tasks complete or as unrelated background work touches taskwarrior — an ID that was correct three tool calls ago can point at an unrelated task now. Re-run the lookup (`task list`/`task <description-fragment> list`) or resolve by UUID instead of trusting the number still means what it meant earlier.
-- This has caused real damage more than once: annotations and `done` calls landing on unrelated tasks in other projects, requiring `task <uuid> denotate -- <text>` cleanup after the fact. Treat a "the ID looks right" feeling as insufficient — confirm it.
+For the full detail (why, how to verify a citation before it goes stale, re-resolving a cached ID mid-session) invoke the `taskwarrior` skill from the `pickled-claude-plugins` marketplace — see its "Durable references" section.
 
 ## Same principle: plan step numbers rot
 

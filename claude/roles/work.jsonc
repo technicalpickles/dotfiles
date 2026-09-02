@@ -1,6 +1,12 @@
 {
   // Work role settings (values from live settings, not stale source files)
   "awsAuthRefresh": "aws sso login --profile $AWS_PROFILE",
+
+  // Not used at work -- taskwarrior is a personal backlog tool. The rules/
+  // symlink is unconditional (same claude/rules for every role), so without
+  // this the full taskwarrior.md content loads as dead context in every
+  // work session too.
+  "claudeMdExcludes": ["**/rules/taskwarrior.md"],
   // Work role agent identity (mirrors home.jsonc, see ADR 0031).
   // Claude Code sessions under DOTPICKLES_ROLE=work commit and push as
   // josh.nichols+agent@gusto.com via the agent key at
