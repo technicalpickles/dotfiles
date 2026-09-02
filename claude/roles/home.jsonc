@@ -29,4 +29,26 @@
       "allowWrite": ["~/Library/Caches/f3d"],
     },
   },
+
+  // Nudge (non-blocking) when a Write/Edit lands a bare numeric task/plan-step
+  // ID in a durable, resumed-later artifact (.parkinglot handoffs, .beans,
+  // auto-memory files). See claude/rules/taskwarrior.md and bean
+  // dotfiles-cokl -- this pattern caused repeated real damage (annotations
+  // and `done` calls landing on the wrong taskwarrior task after ID drift).
+  // Always returns permissionDecision "allow" (or {} on no match), so it
+  // never blocks the write -- it only injects a reminder to resolve to a
+  // UUID or a stable slug before finalizing.
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c '.tool_input as $ti | ($ti.file_path // \"\") as $fp | ($ti.content // $ti.new_string // \"\") as $content | (($fp | test(\"\\\\.parkinglot/[^/]*\\\\.md$\")) or ($fp | test(\"\\\\.beans/[^/]*\\\\.md$\")) or ($fp | test(\"/\\\\.claude/projects/[^/]+/memory/[^/]*\\\\.md$\"))) as $in_scope | ($content | test(\"\\\\btask\\\\s*#?\\\\s*[0-9]{1,5}\\\\b\"; \"i\")) as $has_numeric_id | if ($in_scope and $has_numeric_id) then {hookSpecificOutput:{hookEventName:\"PreToolUse\", permissionDecision:\"allow\", additionalContext:\"This file (\\($fp)) is a durable/resumed-later artifact (.parkinglot, .beans, or auto-memory) per claude/rules/taskwarrior.md. It cites a bare numeric ID (e.g. \\\"task 465\\\"). These drift: taskwarrior integer IDs get reused as the pending list changes, and plan-step ordinals shift when steps are inserted or reordered. Resolve to a taskwarrior UUID (task <uuid> info) or a stable kebab-case slug before finalizing this write.\"}} else {} end' 2>/dev/null || true",
+          },
+        ],
+      },
+    ],
+  },
 }
