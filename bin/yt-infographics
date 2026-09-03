@@ -389,6 +389,52 @@ def write_reports(
     print(f"[report] wrote {out_dir / 'clean_transcript.md'}")
 
 
+def _describe_output_file(name: str) -> str | None:
+    if name == "video.mp4":
+        return "downloaded video"
+    if re.fullmatch(r"transcript\.[a-zA-Z-]+\.vtt", name):
+        return "raw captions (WebVTT)"
+    if name == "scene_log.txt":
+        return "ffmpeg scene-detection log (source of frame timestamps)"
+    return {
+        "triage_report.md": "every frame's OCR text + SKIP/CANDIDATE verdict",
+        "clean_transcript.md": "vision-corrected infographic slide text",
+        "transcript.md": "spoken transcript, chunked into paragraphs",
+        "full_context.md": "transcript + infographics merged chronologically — the summarize-me file",
+    }.get(name)
+
+
+def _format_size(num_bytes: int) -> str:
+    if num_bytes < 1024:
+        return f"{num_bytes} B"
+    if num_bytes < 1024 * 1024:
+        return f"{num_bytes / 1024:.0f} KB"
+    return f"{num_bytes / 1024 / 1024:.1f} MB"
+
+
+def print_output_tree(out_dir: Path) -> None:
+    """Print what's actually on disk under out_dir, not an assumed layout —
+    stays accurate regardless of which flags (--no-transcript, etc.) ran."""
+    print(f"\n[summary] output written to {out_dir}/")
+    for entry in sorted(out_dir.iterdir(), key=lambda p: (p.is_file(), p.name)):
+        if entry.is_dir():
+            children = sorted(entry.iterdir())
+            jpgs = [c for c in children if c.suffix == ".jpg"]
+            others = [c for c in children if c.suffix != ".jpg"]
+            print(f"  {entry.name}/")
+            if jpgs:
+                label = f"{jpgs[0].name} .. {jpgs[-1].name}" if len(jpgs) > 1 else jpgs[0].name
+                print(f"    {label}  ({len(jpgs)} scene-change keyframe{'s' if len(jpgs) != 1 else ''})")
+            for c in others:
+                desc = _describe_output_file(c.name)
+                suffix = f"  — {desc}" if desc else ""
+                print(f"    {c.name}  ({_format_size(c.stat().st_size)}){suffix}")
+        else:
+            desc = _describe_output_file(entry.name)
+            suffix = f"  — {desc}" if desc else ""
+            print(f"  {entry.name}  ({_format_size(entry.stat().st_size)}){suffix}")
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("url", nargs="?", help="Video URL (any yt-dlp-supported source)")
@@ -441,6 +487,7 @@ async def async_main() -> None:
     representatives = dedupe_candidates(frames, args.dedupe_similarity)
     await vision_read_all(representatives, out_dir, args.model, args.concurrency)
     write_reports(frames, representatives, transcript_chunks, out_dir)
+    print_output_tree(out_dir)
 
 
 def main() -> None:
