@@ -1,0 +1,451 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "claude-agent-sdk>=0.2.0",
+#     "yt-dlp>=2024.1.1",
+#     "imageio-ffmpeg>=0.5.1",
+#     "rapidocr-onnxruntime>=1.2.3",
+#     "wordfreq>=3.0",
+# ]
+# ///
+"""
+yt_infographics.py — pull everything worth summarizing out of a YouTube (or
+any yt-dlp-supported) video: the spoken transcript AND clean on-screen
+infographic/slide text, merged into one chronological document.
+
+Pipeline
+--------
+1. yt-dlp downloads the video, and separately the captions (manual if
+   available, else auto-generated).
+2. The caption VTT is parsed and de-duplicated — YouTube's auto-captions use
+   a rolling/overlapping-window format where most of each cue just repeats
+   the previous one — then chunked into readable paragraphs.
+3. ffmpeg scene-change detection extracts candidate keyframes.
+4. RapidOCR (ONNX, CPU) OCRs every frame — cheap first pass.
+5. A word-frequency heuristic triages the OCR text: real prose (an
+   infographic slide) vs incidental text (HUD numbers, clothing/logo
+   labels, menu chrome, garbled noise) — most frames get dropped here for
+   free, before anything touches Claude.
+6. Near-duplicate surviving frames (same slide re-triggering a scene cut
+   because the character art behind it is animating/shimmering) collapse
+   to one representative frame, compared by recognized-word-set overlap.
+7. Each remaining frame gets a clean re-transcription via Claude vision
+   (claude-agent-sdk), run with bounded concurrency, since OCR still
+   mangles colored/underlined/stylized text or merges adjacent words that
+   vision reads correctly.
+8. Transcript paragraphs and infographic slides are merged into one
+   timestamp-ordered `full_context.md`, meant to be handed to an LLM (or a
+   person) to summarize/process the video as a whole.
+
+No system binaries required — this is a self-contained `uv run --script`.
+Everything (yt-dlp, ffmpeg, OCR, the word list) is a pip wheel; only ffmpeg
+itself doesn't have a pure-Python equivalent for scene-change decoding, so
+imageio-ffmpeg ships a real ffmpeg binary as a dependency instead of
+requiring `brew install ffmpeg`. `claude_agent_sdk` still shells out to the
+`claude` CLI, which must be installed and logged in separately (it drives
+Claude Code's own auth, not something pip can vendor).
+
+Usage:
+    ./yt_infographics.py "https://www.youtube.com/watch?v=..." \\
+        --out-dir ./out --scene-threshold 0.3 --model claude-haiku-4-5
+
+    # or, without chmod +x:
+    uv run yt_infographics.py "https://www.youtube.com/watch?v=..."
+
+    # Re-run just the triage/vision stages on an already-downloaded video
+    # (also reuses an existing transcript if one was already fetched):
+    ./yt_infographics.py --skip-download --out-dir ./out
+
+    # No captions wanted, infographics only:
+    ./yt_infographics.py "https://..." --no-transcript
+"""
+from __future__ import annotations
+
+import argparse
+import asyncio
+import re
+import subprocess
+import sys
+from dataclasses import dataclass, field
+from pathlib import Path
+
+import imageio_ffmpeg
+import yt_dlp
+from claude_agent_sdk import (
+    AssistantMessage,
+    ClaudeAgentOptions,
+    ResultMessage,
+    TextBlock,
+    query,
+)
+from rapidocr_onnxruntime import RapidOCR
+from wordfreq import zipf_frequency
+
+STOPWORDS = {"a", "i", "in", "on", "of", "is", "it", "to", "the", "and", "or"}
+MIN_ZIPF = 1.5  # word-frequency floor for counting a token as "real" prose
+MIN_OCR_CONFIDENCE = 0.5
+
+VISION_PROMPT = (
+    "Read the image at {path} and transcribe ONLY the on-screen infographic "
+    "text (titles, headings, bullet points, labels) preserving structure as "
+    "markdown. Ignore background game footage, character art, HUD elements, "
+    "and decorative logos. If there is no substantive infographic/slide text "
+    "in this image, respond with exactly: NO_INFOGRAPHIC_TEXT. Do not "
+    "describe the image, just output the transcription (or that sentinel)."
+)
+
+
+@dataclass
+class Frame:
+    path: Path
+    timestamp: float
+    ocr_text: str = ""
+    n_tokens: int = 0
+    n_real_words: int = 0
+    ratio: float = 0.0
+    triage_verdict: str = ""
+    triage_reason: str = ""
+    real_words: set[str] = field(default_factory=set)
+    vision_text: str | None = None
+
+    @property
+    def timecode(self) -> str:
+        return timecode(self.timestamp)
+
+
+def download_video(url: str, out_dir: Path) -> Path:
+    video_path = out_dir / "video.mp4"
+    if video_path.exists():
+        print(f"[download] {video_path} already exists, skipping")
+        return video_path
+    print(f"[download] fetching {url}")
+    ydl_opts = {
+        "format": "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]",
+        "outtmpl": str(video_path),
+        "merge_output_format": "mp4",
+        "quiet": True,
+        "no_warnings": True,
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])
+    if not video_path.exists():
+        sys.exit(f"[download] yt-dlp finished but {video_path} was not created")
+    return video_path
+
+
+def download_transcript(url: str, out_dir: Path, langs: list[str]) -> Path | None:
+    existing = sorted(out_dir.glob("transcript.*.vtt"))
+    if existing:
+        print(f"[transcript] {existing[0]} already exists, skipping")
+        return existing[0]
+    print(f"[transcript] fetching captions ({', '.join(langs)})")
+    ydl_opts = {
+        "skip_download": True,
+        "writesubtitles": True,
+        "writeautomaticsub": True,
+        "subtitleslangs": langs,
+        "subtitlesformat": "vtt",
+        "outtmpl": str(out_dir / "transcript"),
+        "quiet": True,
+        "no_warnings": True,
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=True)
+    found = sorted((info.get("requested_subtitles") or {}).keys())
+    if not found:
+        print("[transcript] no captions available in the requested languages", file=sys.stderr)
+        return None
+    vtt_path = out_dir / f"transcript.{found[0]}.vtt"
+    if not vtt_path.exists():
+        print(f"[transcript] expected {vtt_path} but it wasn't created", file=sys.stderr)
+        return None
+    print(f"[transcript] wrote {vtt_path}")
+    return vtt_path
+
+
+def parse_vtt(vtt_path: Path) -> list[tuple[float, str]]:
+    """Parse a WebVTT caption file into (start_seconds, text) cues.
+
+    YouTube's auto-generated captions use a rolling-window style where each
+    cue repeats the previous cue's text verbatim as a plain line, then adds
+    new words as a second line wrapped in <...><c>word</c> timing tags. Only
+    the tagged lines carry genuinely new content, so plain (untagged) lines
+    are skipped to avoid duplicating most of the transcript.
+    """
+    cues: list[tuple[float, str]] = []
+    for block in vtt_path.read_text(errors="replace").split("\n\n"):
+        lines = block.strip("\n").split("\n")
+        if not lines or "-->" not in lines[0]:
+            continue
+        m = re.match(r"(\d\d):(\d\d):(\d\d)\.(\d\d\d)", lines[0])
+        if not m:
+            continue
+        h, mi, s, ms = (int(x) for x in m.groups())
+        start = h * 3600 + mi * 60 + s + ms / 1000
+        for line in lines[1:]:
+            if "<" in line:
+                plain = re.sub(r"<[^>]+>", "", line).strip()
+                if plain:
+                    cues.append((start, plain))
+    return cues
+
+
+def chunk_transcript(cues: list[tuple[float, str]], chunk_seconds: float) -> list[tuple[float, str]]:
+    """Merge fine-grained caption cues into readable multi-sentence
+    paragraphs, one per `chunk_seconds` window of video time."""
+    if not cues:
+        return []
+    chunks: list[tuple[float, str]] = []
+    chunk_start = cues[0][0]
+    words: list[str] = []
+    for t, text in cues:
+        if words and t - chunk_start >= chunk_seconds:
+            chunks.append((chunk_start, " ".join(words)))
+            chunk_start = t
+            words = []
+        words.append(text)
+    if words:
+        chunks.append((chunk_start, " ".join(words)))
+    return chunks
+
+
+def timecode(seconds: float) -> str:
+    secs = int(seconds)
+    return f"{secs // 3600:02d}:{(secs % 3600) // 60:02d}:{secs % 60:02d}"
+
+
+def extract_keyframes(video_path: Path, frames_dir: Path, threshold: float) -> list[Frame]:
+    frames_dir.mkdir(parents=True, exist_ok=True)
+    existing = sorted(frames_dir.glob("frame_*.jpg"))
+    if existing:
+        print(f"[keyframes] {len(existing)} frames already extracted, skipping ffmpeg")
+    else:
+        print(f"[keyframes] extracting scene changes (threshold={threshold})")
+        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+        proc = subprocess.run(
+            [
+                ffmpeg_exe, "-i", str(video_path),
+                "-vf", f"select='gt(scene,{threshold})',showinfo",
+                "-vsync", "vfr", "-qscale:v", "2",
+                str(frames_dir / "frame_%04d.jpg"),
+            ],
+            capture_output=True, text=True,
+        )
+        (frames_dir / "scene_log.txt").write_text(proc.stderr)
+        existing = sorted(frames_dir.glob("frame_*.jpg"))
+        print(f"[keyframes] extracted {len(existing)} frames")
+
+    log_path = frames_dir / "scene_log.txt"
+    timestamps = [float(t) for t in re.findall(r"pts_time:([0-9.]+)", log_path.read_text())] if log_path.exists() else []
+    if len(timestamps) != len(existing):
+        print("[keyframes] warning: timestamp count mismatch, timestamps may be off", file=sys.stderr)
+        timestamps = timestamps[: len(existing)] + [0.0] * (len(existing) - len(timestamps))
+    return [Frame(path=p, timestamp=t) for p, t in zip(existing, timestamps)]
+
+
+def ocr_frames(frames: list[Frame]) -> None:
+    print(f"[ocr] running RapidOCR on {len(frames)} frames")
+    engine = RapidOCR()
+    for f in frames:
+        result, _ = engine(str(f.path))
+        if result:
+            f.ocr_text = "\n".join(text for _, text, conf in result if float(conf) >= MIN_OCR_CONFIDENCE)
+
+
+def score_text(text: str) -> tuple[int, int, set[str], float]:
+    tokens = [t.lower() for t in re.findall(r"[A-Za-z']+", text) if len(t) >= 2]
+    if not tokens:
+        return 0, 0, set(), 0.0
+    real_tokens = [t for t in tokens if t not in STOPWORDS and zipf_frequency(t, "en") >= MIN_ZIPF]
+    return len(tokens), len(real_tokens), set(real_tokens), len(real_tokens) / len(tokens)
+
+
+def triage(frames: list[Frame], min_real_words: int, min_ratio: float) -> None:
+    for f in frames:
+        f.n_tokens, f.n_real_words, f.real_words, f.ratio = score_text(f.ocr_text)
+        if f.n_tokens == 0:
+            f.triage_verdict, f.triage_reason = "skip", "no text"
+        elif f.n_real_words < min_real_words:
+            f.triage_verdict, f.triage_reason = "skip", "too few real words (HUD/logo/clothing label)"
+        elif f.ratio < min_ratio:
+            f.triage_verdict, f.triage_reason = "skip", f"low real-word ratio ({f.ratio:.2f}, likely garbled)"
+        else:
+            f.triage_verdict, f.triage_reason = "candidate", f"{f.n_real_words} real words, ratio {f.ratio:.2f}"
+    n_candidates = sum(f.triage_verdict == "candidate" for f in frames)
+    print(f"[triage] {n_candidates} of {len(frames)} frames flagged as candidates")
+
+
+def _jaccard(a: set[str], b: set[str]) -> float:
+    if not a and not b:
+        return 1.0
+    union = a | b
+    return len(a & b) / len(union) if union else 0.0
+
+
+def dedupe_candidates(frames: list[Frame], similarity: float) -> list[Frame]:
+    """Collapse consecutive candidate frames onto the same slide (same slide
+    re-triggering a scene cut because animating character art behind the
+    static text panel counts as a "scene change") down to one representative.
+
+    Compares the *set* of recognized words per frame (Jaccard similarity)
+    rather than raw OCR text: raw text similarity is unreliable here because
+    incidental noise from the animating art bleeds into the OCR output at
+    different points each frame, diluting a straight text diff even when the
+    actual slide content is identical.
+    """
+    candidates = [f for f in frames if f.triage_verdict == "candidate"]
+    representatives: list[Frame] = []
+    for f in candidates:
+        if representatives:
+            prev = representatives[-1]
+            if _jaccard(prev.real_words, f.real_words) >= similarity:
+                continue
+        representatives.append(f)
+    print(f"[dedupe] {len(candidates)} candidates collapsed to {len(representatives)} representative frames")
+    return representatives
+
+
+_NOT_FOUND_MARKERS = ("can't locate", "doesn't exist", "unable to locate", "does not exist")
+
+
+async def _vision_read_attempt(frame: Frame, cwd: Path, model: str) -> str:
+    # Use an absolute path so this doesn't depend on the subprocess's cwd
+    # being honored correctly under concurrency (observed flaky in testing).
+    prompt = VISION_PROMPT.format(path=frame.path)
+    opts = ClaudeAgentOptions(
+        allowed_tools=["Read"],
+        permission_mode="bypassPermissions",
+        model=model,
+        cwd=str(cwd),
+        add_dirs=[str(frame.path.parent)],
+    )
+    text_parts = []
+    async for msg in query(prompt=prompt, options=opts):
+        if isinstance(msg, AssistantMessage):
+            for block in msg.content:
+                if isinstance(block, TextBlock):
+                    text_parts.append(block.text)
+        elif isinstance(msg, ResultMessage) and msg.is_error:
+            text_parts.append(f"[vision read error: {msg.result}]")
+    return "\n".join(text_parts).strip()
+
+
+async def vision_read_one(frame: Frame, cwd: Path, model: str, semaphore: asyncio.Semaphore) -> None:
+    async with semaphore:
+        for attempt in range(3):
+            text = await _vision_read_attempt(frame, cwd, model)
+            if not any(marker in text.lower() for marker in _NOT_FOUND_MARKERS):
+                break
+            print(f"[vision] {frame.path.name}: file-not-found response on attempt {attempt + 1}, retrying")
+        frame.vision_text = text
+        print(f"[vision] {frame.path.name} ({frame.timecode}) -> {len(frame.vision_text)} chars")
+
+
+async def vision_read_all(frames: list[Frame], cwd: Path, model: str, concurrency: int) -> None:
+    print(f"[vision] re-reading {len(frames)} frames with {model} (concurrency={concurrency})")
+    semaphore = asyncio.Semaphore(concurrency)
+    await asyncio.gather(*(vision_read_one(f, cwd, model, semaphore) for f in frames))
+
+
+def write_reports(
+    all_frames: list[Frame],
+    representatives: list[Frame],
+    transcript_chunks: list[tuple[float, str]],
+    out_dir: Path,
+) -> None:
+    triage_lines = ["# Triage report\n"]
+    for f in all_frames:
+        triage_lines.append(f"## {f.path.name} — {f.timecode} — **{f.triage_verdict.upper()}** ({f.triage_reason})")
+        if f.ocr_text:
+            triage_lines.append("```\n" + f.ocr_text + "\n```")
+        triage_lines.append("")
+    (out_dir / "triage_report.md").write_text("\n".join(triage_lines))
+
+    infographics = [
+        (f.timestamp, f"## {f.timecode} — infographic ({f.path.name})\n\n{f.vision_text}")
+        for f in representatives
+        if f.vision_text and f.vision_text != "NO_INFOGRAPHIC_TEXT"
+    ]
+
+    clean_lines = ["# Clean infographic transcript\n"] + [text for _, text in infographics]
+    (out_dir / "clean_transcript.md").write_text("\n\n".join(clean_lines))
+
+    if transcript_chunks:
+        transcript_lines = ["# Spoken transcript\n"]
+        for t, text in transcript_chunks:
+            transcript_lines.append(f"## {timecode(t)}\n\n{text}")
+        (out_dir / "transcript.md").write_text("\n\n".join(transcript_lines))
+        print(f"[report] wrote {out_dir / 'transcript.md'}")
+
+    speech = [(t, f"## {timecode(t)} — transcript\n\n{text}") for t, text in transcript_chunks]
+    timeline = sorted(speech + infographics, key=lambda item: item[0])
+    if timeline:
+        full_lines = ["# Full video context (transcript + infographics, chronological)\n"] + [text for _, text in timeline]
+        (out_dir / "full_context.md").write_text("\n\n".join(full_lines))
+        print(f"[report] wrote {out_dir / 'full_context.md'}")
+
+    print(f"[report] wrote {out_dir / 'triage_report.md'}")
+    print(f"[report] wrote {out_dir / 'clean_transcript.md'}")
+
+
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("url", nargs="?", help="Video URL (any yt-dlp-supported source)")
+    p.add_argument("--out-dir", type=Path, default=Path("./yt-infographics-out"))
+    p.add_argument("--skip-download", action="store_true", help="Reuse an existing video.mp4 in --out-dir")
+    p.add_argument("--scene-threshold", type=float, default=0.3, help="ffmpeg scene-change sensitivity (lower = more frames)")
+    p.add_argument("--min-real-words", type=int, default=15, help="Triage: min real-word count to flag a frame as a candidate")
+    p.add_argument("--min-ratio", type=float, default=0.45, help="Triage: min real-word ratio to flag a frame as a candidate")
+    p.add_argument("--dedupe-similarity", type=float, default=0.5, help="Jaccard similarity of recognized-word sets above which consecutive candidates are treated as the same slide")
+    p.add_argument("--model", default="claude-haiku-4-5", help="Model for the vision re-read pass")
+    p.add_argument("--concurrency", type=int, default=4, help="Concurrent vision reads")
+    p.add_argument("--no-transcript", action="store_true", help="Skip fetching/parsing the spoken-word transcript")
+    p.add_argument("--langs", nargs="+", default=["en"], help="Preferred caption languages, in order")
+    p.add_argument("--transcript-chunk-seconds", type=float, default=30.0, help="Paragraph length when chunking the transcript")
+    return p.parse_args()
+
+
+async def async_main() -> None:
+    args = parse_args()
+    out_dir = args.out_dir.resolve()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    frames_dir = out_dir / "frames"
+
+    if not args.skip_download:
+        if not args.url:
+            sys.exit("A video URL is required unless --skip-download is given")
+        video_path = download_video(args.url, out_dir)
+    else:
+        video_path = out_dir / "video.mp4"
+        if not video_path.exists():
+            sys.exit(f"--skip-download given but {video_path} does not exist")
+
+    transcript_chunks: list[tuple[float, str]] = []
+    if not args.no_transcript:
+        if args.url:
+            vtt_path = download_transcript(args.url, out_dir, args.langs)
+        else:
+            existing = sorted(out_dir.glob("transcript.*.vtt"))
+            vtt_path = existing[0] if existing else None
+            if vtt_path:
+                print(f"[transcript] {vtt_path} already exists, skipping")
+        if vtt_path:
+            cues = parse_vtt(vtt_path)
+            transcript_chunks = chunk_transcript(cues, args.transcript_chunk_seconds)
+            print(f"[transcript] {len(cues)} cues chunked into {len(transcript_chunks)} paragraphs")
+
+    frames = extract_keyframes(video_path, frames_dir, args.scene_threshold)
+    ocr_frames(frames)
+    triage(frames, args.min_real_words, args.min_ratio)
+    representatives = dedupe_candidates(frames, args.dedupe_similarity)
+    await vision_read_all(representatives, out_dir, args.model, args.concurrency)
+    write_reports(frames, representatives, transcript_chunks, out_dir)
+
+
+def main() -> None:
+    asyncio.run(async_main())
+
+
+if __name__ == "__main__":
+    main()
