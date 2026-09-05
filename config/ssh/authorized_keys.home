@@ -1,0 +1,14 @@
+# Personal identities allowed to SSH into this machine (home role only).
+#
+# One 1Password item title per line, vault "Personal" assumed. sshconfig.sh
+# fetches each item's public key and appends it to ~/.ssh/authorized_keys.
+#
+# Deliberately a separate list from config/1password/agent.toml.home: that
+# file is an *outbound* allowlist (which keys 1Password offers as this
+# machine's identity), this one is *inbound* (who's allowed to log in as
+# this user). They happen to overlap today, but "unifi ssh key" in the
+# outbound list is the router's key, not a client identity -- it has no
+# business here.
+
+SSH Key (ed25519)
+Personal SSH (rsa)
