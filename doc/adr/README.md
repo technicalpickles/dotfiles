@@ -52,3 +52,4 @@
 - [50. canonicalize-sandbox-allowwrite-paths](0050-canonicalize-sandbox-allowwrite-paths.md)
 - [51. nest-wt-worktrees-inside-the-repo](0051-nest-wt-worktrees-inside-the-repo.md)
 - [52. role-scoped-claude-rules](0052-role-scoped-claude-rules.md)
+- [54. sync-authorized-keys-from-1password-for-inbound-ssh](0054-sync-authorized-keys-from-1password-for-inbound-ssh.md)

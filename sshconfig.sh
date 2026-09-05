@@ -51,6 +51,48 @@ else
   echo "🔑 1Password not installed, skipping agent.toml setup"
 fi
 
+# Sync ~/.ssh/authorized_keys from 1Password (home role only -- work laptops
+# shouldn't accept inbound SSH from personal keys). Lets this machine be
+# SSH'd into (e.g. over Tailscale) without hand-copying pubkeys. See
+# config/ssh/authorized_keys.home for the item list and why it's separate
+# from the 1Password agent allowlist above.
+if running_home_role; then
+  ak_source="$DIR/config/ssh/authorized_keys.home"
+  if [ -f "$ak_source" ] && command_available op; then
+    echo "🔑 syncing ~/.ssh/authorized_keys from 1Password (role: home)"
+    mkdir -p ~/.ssh
+    chmod 700 ~/.ssh
+    touch ~/.ssh/authorized_keys
+    chmod 600 ~/.ssh/authorized_keys
+    while IFS= read -r item; do
+      [ -z "$item" ] && continue
+      case "$item" in \#*) continue ;; esac
+      # Uses 1Password's desktop-app biometric integration, not `op signin`
+      # -- `op whoami` reports signed-out even when this works fine, so
+      # don't gate on it, just let a failed fetch skip that one item.
+      pubkey=$(op item get "$item" --vault Personal --fields "public key" 2> /dev/null)
+      if [ -z "$pubkey" ]; then
+        echo "  → could not fetch '$item' from 1Password, skipping"
+        continue
+      fi
+      fingerprint=$(echo "$pubkey" | cut -d' ' -f2)
+      if grep -qF "$fingerprint" ~/.ssh/authorized_keys 2> /dev/null; then
+        echo "  → $item already authorized"
+      else
+        echo "$pubkey $item (1Password)" >> ~/.ssh/authorized_keys
+        echo "  → added $item"
+      fi
+    done < "$ak_source"
+  fi
+
+  # Remote Login (macOS's SSH server) can only be toggled interactively in
+  # System Settings, so just detect and nudge rather than trying to set it.
+  if running_macos && ! timeout 2 bash -c "echo > /dev/tcp/127.0.0.1/22" 2> /dev/null; then
+    echo "⚠️  Remote Login doesn't look enabled -- turn it on manually:"
+    echo "    System Settings → General → Sharing → Remote Login"
+  fi
+fi
+
 # Ensure ~/.ssh/config starts with Include
 include_line="Include ~/.ssh/config.d/*"
 if [ ! -f ~/.ssh/config ]; then
