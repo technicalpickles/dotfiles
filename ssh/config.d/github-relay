@@ -1,0 +1,9 @@
+# The Claude Code sandbox blocks outbound port 22 but allows localhost, so
+# agent sessions can't reach github.com:22 directly. com.technicalpickles.
+# github-ssh-relay (a LaunchAgent running unsandboxed via launchd) relays
+# 127.0.0.1:2222 -> github.com:22. HostKeyAlias keeps known_hosts lookups
+# keyed on the real hostname despite the Hostname rewrite.
+Match host github.com exec "test -n \"$CLAUDECODE\""
+  Hostname 127.0.0.1
+  Port 2222
+  HostKeyAlias github.com
