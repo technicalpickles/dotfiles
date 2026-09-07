@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "lines": [
     [
       {
@@ -61,10 +61,18 @@
   "globalBold": false,
   "powerline": {
     "enabled": true,
-    "separators": [""],
-    "separatorInvertBackground": [false],
-    "startCaps": [""],
-    "endCaps": [""],
+    "separators": [
+      ""
+    ],
+    "separatorInvertBackground": [
+      false
+    ],
+    "startCaps": [
+      ""
+    ],
+    "endCaps": [
+      ""
+    ],
     "theme": "onedark",
     "autoAlign": false
   }
