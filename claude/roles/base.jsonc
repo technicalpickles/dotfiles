@@ -199,6 +199,16 @@
         // it the very first thing any mcporter invocation prints is
         // "EPERM: operation not permitted, mkdir '~/.mcporter'".
         "~/.mcporter",
+        // Gusto's gusto-dev Claude Code plugin ships a PreToolUse hook that
+        // rewrites every `rm ...` Bash command to `trash ...` (macOS's
+        // built-in /usr/bin/trash, NSFileManager trashItem API) so deletes
+        // are recoverable. Without ~/.Trash allowlisted, the seatbelt
+        // profile denies `file-write-create` on ~/.Trash/<name> and macOS
+        // surfaces that as a cryptic NSCocoaErrorDomain 513 /
+        // "afpAccessDenied" error -- easy to mistake for a Finder/TCC
+        // permission problem rather than our own sandbox. Confirmed via
+        // `log show` kernel Sandbox denial lines (pickletown bean gt-1vxk).
+        "~/.Trash",
       ],
     },
   },
