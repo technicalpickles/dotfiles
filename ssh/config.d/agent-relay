@@ -1,0 +1,10 @@
+# The Claude Code sandbox blocks outbound port 22 but allows localhost, so
+# agent sessions can't SSH directly to any real host. com.technicalpickles.
+# agent-ssh-relay (a LaunchAgent running gost, an unsandboxed SOCKS5 proxy,
+# on 127.0.0.1:1080) relays connections through, restricted to an explicit
+# host:port allowlist in config/gost/agent-ssh-relay.yml. This ProxyCommand
+# applies to every destination in an agent session -- the allowlist, not
+# this file, decides what's actually reachable. Add a git host by editing
+# the YAML, not by adding another Match block here.
+Match exec "test -n \"$CLAUDECODE\""
+  ProxyCommand ncat --proxy 127.0.0.1:1080 --proxy-type socks5 %h %p

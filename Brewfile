@@ -47,8 +47,9 @@ brew 'imagemagick'
 brew 'webp' # cwebp/dwebp
 
 # networky
+brew 'gost' # SOCKS5 relay w/ host allowlist, used by ssh/config.d/agent-relay
 brew 'mtr'
-brew 'nmap'
+brew 'nmap' # provides ncat, used as the ProxyCommand client for gost
 brew 'socat'
 brew 'wget'
 
