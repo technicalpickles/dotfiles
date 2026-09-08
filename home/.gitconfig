@@ -1,77 +1,8 @@
-[user]
-	name = Josh Nichols
-
-[github]
-	user = technicalpickles
-
 [include]
-  path = ~/.gitconfig.local
-  path = ~/.gitconfig.d/alias
-  path = ~/.gitconfig.d/color
+	path = ~/.gitconfig.d/common
+	path = ~/.gitconfig.local
+	path = ~/.gitconfig.d/alias
+	path = ~/.gitconfig.d/color
 
 [includeIf "gitdir:/usr/local/Homebrew/"]
 	path = ~/.gitconfig.d/home-identity
-
-[core]
-	excludesfile = ~/.gitignore
-	untrackedcache = true
-	fsmonitor = true
-
-[fetch]
-  prune = true
-	pruneTags = true
-	all = true
-
-[pull]
-  rebase = false
-
-[push]
- 	default = current
-	autoSetupRemote = true
-	followTags = true
-
-[mergetool]
-	keepTemporaries = false
-	keepBackup = false
-
-[init]
-	defaultBranch = main
-
-[commit]
-	verbose = true
-
-[remote]
-  pushdefault = origin
-
-[remote "origin"]
-	prune = true
-
-[merge]
-	autoedit = no
-	conflictstyle = merge
-
-[diff]
-	colorMoved = plain
-	algorithm = histogram
-	renames = true
-	mnemonicPrefix = true
-
-[branch]
-	sort = -committerdate
-
-[tag]
-	sort = version:refname
-
-[rerere]
-	enabled = true
-	autoupdate = true
-
-[rebase]
-	autoSquash = true
-	autoStash = true
-	updateRefs = true
-[filter "lfs"]
-	clean = git-lfs clean -- %f
-	smudge = git-lfs smudge -- %f
-	process = git-lfs filter-process
-	required = true
