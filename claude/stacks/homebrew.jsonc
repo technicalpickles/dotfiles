@@ -1,7 +1,7 @@
 {
   "sandbox": {
     "network": {
-      "allowedHosts": ["formulae.brew.sh"],
+      "allowedDomains": ["formulae.brew.sh"],
     },
   },
 }

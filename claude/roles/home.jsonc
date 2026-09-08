@@ -23,7 +23,7 @@
 
   "sandbox": {
     "network": {
-      "allowedHosts": ["brineworks.tail2023b7.ts.net"],
+      "allowedDomains": ["brineworks.tail2023b7.ts.net"],
     },
     "filesystem": {
       "allowWrite": ["~/Library/Caches/f3d"],

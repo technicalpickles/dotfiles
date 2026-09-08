@@ -33,7 +33,7 @@
       "allowWrite": ["~/.docker"],
     },
     "network": {
-      "allowedHosts": [
+      "allowedDomains": [
         "auth.docker.io",
         "registry-1.docker.io",
         "hub.docker.com",

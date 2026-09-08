@@ -89,7 +89,7 @@
   // source: agent-safehouse
   "sandbox": {
     "network": {
-      "allowedHosts": ["hk.jdx.dev"],
+      "allowedDomains": ["hk.jdx.dev"],
     },
     "filesystem": {
       "allowWrite": [

@@ -6,7 +6,7 @@
   },
   "sandbox": {
     "network": {
-      "allowedHosts": ["duckdb.org", "motherduck.com"],
+      "allowedDomains": ["duckdb.org", "motherduck.com"],
     },
   },
 }

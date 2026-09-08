@@ -1,0 +1,46 @@
+{
+  // Xcode/Swift toolchain (macOS only). See dotfiles-b6gd: the toolchain was
+  // effectively unusable sandboxed (507 dangerouslyDisableSandbox calls in
+  // chirpfinder) because none of its cache/state paths were allowlisted and
+  // xcodebuild/simctl couldn't reach CoreSimulatorService over XPC.
+  "permissions": {
+    "allow": [
+      "Bash(xcodebuild:*)",
+      "Bash(xcodegen:*)",
+      "Bash(xcodegen generate:*)",
+      "Bash(xcrun:*)",
+      "Bash(swift build:*)",
+      "Bash(swift test:*)",
+      "Bash(swift package:*)",
+      "Bash(swift run:*)",
+      "Bash(swiftc:*)",
+      "Bash(simctl:*)",
+      "Bash(xcrun simctl:*)",
+    ],
+  },
+
+  "sandbox": {
+    "network": {
+      // xcodebuild/simctl/devicectl talk to CoreSimulatorService and friends
+      // over XPC, not plain Unix sockets -- allowAllUnixSockets doesn't cover
+      // this. Without it every simulator-backed command dies with an XPC
+      // "Operation not permitted", and xcodebuild still exits 0 (see
+      // chirpfinder/CLAUDE.md's "Three traps").
+      "allowMachLookup": ["*"],
+    },
+
+    // source: dotfiles-b6gd investigation. DARWIN_USER_TEMP_DIR (/T) and
+    // DARWIN_USER_CACHE_DIR (/C) are injected separately by claudeconfig.sh
+    // (per-user/per-machine paths, can't be static entries here) -- see the
+    // Darwin block in generate_settings().
+    "filesystem": {
+      "allowWrite": [
+        "~/Library/Developer/Xcode",
+        "~/Library/org.swift.swiftpm",
+        "~/Library/Caches/org.swift.swiftpm",
+        "~/Library/Logs/CoreSimulator",
+        "~/.swiftpm",
+      ],
+    },
+  },
+}

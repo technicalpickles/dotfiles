@@ -50,7 +50,7 @@
   // source: agent-safehouse
   "sandbox": {
     "network": {
-      "allowedHosts": [
+      "allowedDomains": [
         "rubygems.org",
         "index.rubygems.org",
         "rubocop.org",

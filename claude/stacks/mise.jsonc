@@ -26,7 +26,11 @@
   // source: agent-safehouse
   "sandbox": {
     "network": {
-      "allowedHosts": ["mise.jdx.dev", "mise-versions.jdx.dev", "fnox.jdx.dev"],
+      "allowedDomains": [
+        "mise.jdx.dev",
+        "mise-versions.jdx.dev",
+        "fnox.jdx.dev",
+      ],
     },
     "filesystem": {
       "allowWrite": [

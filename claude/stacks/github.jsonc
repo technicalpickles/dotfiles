@@ -41,7 +41,7 @@
   // source: agent-safehouse
   "sandbox": {
     "network": {
-      "allowedHosts": [
+      "allowedDomains": [
         "api.github.com",
         "docs.github.com",
         "ghcr.io",

@@ -75,27 +75,70 @@ setup_claude_directory() {
   link "claude/ccline/config.toml" "$HOME/.claude/ccline/config.toml"
   link "claude/ccline/models.toml" "$HOME/.claude/ccline/models.toml"
 
-  # Symlink rules/ (topic-specific global agent instructions, loaded like CLAUDE.md)
-  link "claude/rules" "$HOME/.claude/rules"
+  # Symlink rules/ (topic-specific global agent instructions, loaded like CLAUDE.md).
+  # Per-file, not a single directory symlink, so a rule can opt out of roles it
+  # doesn't apply to via a `<!-- dotpickles_role: role1,role2 -->` marker on its
+  # first line (absent marker = every role). See "Role-Scoping a Rule" in
+  # .claude/rules/claude-config.md.
+  link_rules
 
   # Nest pickletown's project rules inside ours. Claude walks the user rules dir
   # recursively and follows symlinks, so this makes pt conventions (beans,
   # sandbox EPERM retries, qmd, mise) load in every session -- not just ones whose
   # cwd sits under ~/pickleton, which is all the project-scoped walk covers. Same
   # reasoning as the global pickletown session hooks in claude/roles/work.jsonc.
-  # Gitignored: absolute target, and only present where pickletown is checked out.
+  # Symlinked directly into ~/.claude/rules now that it's a real directory (not
+  # a whole-dir symlink), so no gitignore entry is needed for it in this repo.
   local pt_rules="$HOME/pickleton/.claude/rules"
-  local pt_rules_link="$DIR/claude/rules/pickletown"
+  local pt_rules_link="$HOME/.claude/rules/pickletown"
   if [ ! -d "$pt_rules" ]; then
     echo "  - pickletown rules not found, skipping"
   elif [ -L "$pt_rules_link" ] && [ "$(readlink "$pt_rules_link")" = "$pt_rules" ]; then
     echo "  ✓ pickletown rules already nested"
   elif [ -e "$pt_rules_link" ] || [ -L "$pt_rules_link" ]; then
-    echo "  ⚠ claude/rules/pickletown points elsewhere, leaving alone"
+    echo "  ⚠ ~/.claude/rules/pickletown points elsewhere, leaving alone"
   else
     ln -s "$pt_rules" "$pt_rules_link"
-    echo "  ✓ pickletown rules nested at claude/rules/pickletown"
+    echo "  ✓ pickletown rules nested at ~/.claude/rules/pickletown"
   fi
+}
+
+# Symlink claude/rules/*.md into ~/.claude/rules/ individually (not as one
+# directory symlink), so each file can be scoped to specific DOTPICKLES_ROLE
+# values via a `<!-- dotpickles_role: role1,role2 -->` marker on its first
+# line. A file with no marker links for every role, same as before this
+# existed. Re-running removes a role-scoped file's link if the marker no
+# longer matches $ROLE (e.g. role changed on this machine).
+link_rules() {
+  local rules_source="$DIR/claude/rules"
+  local rules_target="$HOME/.claude/rules"
+
+  if [ -L "$rules_target" ]; then
+    if [ "$(readlink "$rules_target")" = "$rules_source" ]; then
+      echo "  🔁 ~/.claude/rules: migrating from whole-dir symlink to per-file (role scoping)"
+      rm "$rules_target"
+      mkdir -p "$rules_target"
+    else
+      echo "  ⚠ ~/.claude/rules is a symlink to something else, leaving alone"
+      return
+    fi
+  else
+    mkdir -p "$rules_target"
+  fi
+
+  local file name role_tag
+  for file in "$rules_source"/*.md; do
+    [ -f "$file" ] || continue
+    name="$(basename "$file")"
+    role_tag="$(head -n1 "$file" | sed -n 's/^<!-- *dotpickles_role: *\([^ ]*\) *-->.*$/\1/p')"
+
+    if [ -z "$role_tag" ] || [[ ",$role_tag," == *",$ROLE,"* ]]; then
+      link "claude/rules/$name" "$rules_target/$name"
+    elif [ -L "$rules_target/$name" ] && [ "$(readlink "$rules_target/$name")" = "$file" ]; then
+      echo "  - $name -> unlinked (role '$ROLE' not in: $role_tag)"
+      rm "$rules_target/$name"
+    fi
+  done
 }
 
 setup_claude_directory
@@ -112,11 +155,6 @@ setup_sandbox_dirs() {
   # writes under ~/.plannotator but not creating the dir itself (needs ~/).
   mkdir -p "$HOME/.plannotator"
   echo "  ✓ ~/.plannotator"
-  # worktrunk (`wt`) puts every worktree under ~/worktrees/<repo>/<branch>.
-  # allowWrite on ~/worktrees lets it create the per-repo dirs, but creating
-  # ~/worktrees itself needs write access to ~/, which isn't allowed.
-  mkdir -p "$HOME/worktrees"
-  echo "  ✓ ~/worktrees"
 }
 
 setup_sandbox_dirs
@@ -167,8 +205,8 @@ generate_settings() {
 
   # Extract sandbox from base (scalars + arrays)
   local sandbox_scalars sandbox_hosts sandbox_write_paths
-  sandbox_scalars=$(echo "$base_json" | jq '.sandbox // {} | del(.network.allowedHosts, .filesystem.allowWrite, .filesystem, .network) + (if .network then {network: (.network | del(.allowedHosts))} else {} end) | del(.network | nulls) | del(.filesystem | nulls)')
-  sandbox_hosts=$(echo "$base_json" | jq '.sandbox.network.allowedHosts // []')
+  sandbox_scalars=$(echo "$base_json" | jq '.sandbox // {} | del(.network.allowedDomains, .filesystem.allowWrite, .filesystem, .network) + (if .network then {network: (.network | del(.allowedDomains))} else {} end) | del(.network | nulls) | del(.filesystem | nulls)')
+  sandbox_hosts=$(echo "$base_json" | jq '.sandbox.network.allowedDomains // []')
   sandbox_write_paths=$(echo "$base_json" | jq '.sandbox.filesystem.allowWrite // []')
 
   echo "  + Loaded base role"
@@ -204,11 +242,11 @@ generate_settings() {
 
     # Merge sandbox scalars from role (role overrides base)
     local role_sandbox_scalars
-    role_sandbox_scalars=$(echo "$role_json" | jq '.sandbox // {} | del(.network.allowedHosts, .filesystem.allowWrite, .filesystem, .network) + (if .network then {network: (.network | del(.allowedHosts))} else {} end) | del(.network | nulls) | del(.filesystem | nulls)')
+    role_sandbox_scalars=$(echo "$role_json" | jq '.sandbox // {} | del(.network.allowedDomains, .filesystem.allowWrite, .filesystem, .network) + (if .network then {network: (.network | del(.allowedDomains))} else {} end) | del(.network | nulls) | del(.filesystem | nulls)')
     sandbox_scalars=$(echo "$sandbox_scalars" | jq --argjson r "$role_sandbox_scalars" '. * $r')
 
     # Concat sandbox arrays
-    sandbox_hosts=$(echo "$sandbox_hosts" | jq --argjson r "$(echo "$role_json" | jq '.sandbox.network.allowedHosts // []')" '. + $r')
+    sandbox_hosts=$(echo "$sandbox_hosts" | jq --argjson r "$(echo "$role_json" | jq '.sandbox.network.allowedDomains // []')" '. + $r')
     sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --argjson r "$(echo "$role_json" | jq '.sandbox.filesystem.allowWrite // []')" '. + $r')
 
     echo "  + Loaded $ROLE role"
@@ -222,13 +260,23 @@ generate_settings() {
     local stack_json
     stack_json=$(read_json "$stack_file")
 
+    # Merge sandbox scalars from stack (stack overrides base/role; deep-merged
+    # so e.g. a stack's network.allowMachLookup doesn't clobber base's
+    # network.allowAllUnixSockets). Stacks previously could only contribute
+    # sandbox array entries (allowedDomains, allowWrite) -- a stack needing a
+    # network scalar like allowMachLookup (xcode.jsonc, for CoreSimulatorService
+    # XPC) had no way to set it.
+    local stack_sandbox_scalars
+    stack_sandbox_scalars=$(echo "$stack_json" | jq '.sandbox // {} | del(.network.allowedDomains, .filesystem.allowWrite, .filesystem, .network) + (if .network then {network: (.network | del(.allowedDomains))} else {} end) | del(.network | nulls) | del(.filesystem | nulls)')
+    sandbox_scalars=$(echo "$sandbox_scalars" | jq --argjson s "$stack_sandbox_scalars" '. * $s')
+
     # Concat permissions
     merged_allow=$(echo "$merged_allow" | jq --argjson s "$(echo "$stack_json" | jq '.permissions.allow // []')" '. + $s')
     merged_ask=$(echo "$merged_ask" | jq --argjson s "$(echo "$stack_json" | jq '.permissions.ask // []')" '. + $s')
     merged_deny=$(echo "$merged_deny" | jq --argjson s "$(echo "$stack_json" | jq '.permissions.deny // []')" '. + $s')
 
     # Concat sandbox arrays
-    sandbox_hosts=$(echo "$sandbox_hosts" | jq --argjson s "$(echo "$stack_json" | jq '.sandbox.network.allowedHosts // []')" '. + $s')
+    sandbox_hosts=$(echo "$sandbox_hosts" | jq --argjson s "$(echo "$stack_json" | jq '.sandbox.network.allowedDomains // []')" '. + $s')
     sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --argjson s "$(echo "$stack_json" | jq '.sandbox.filesystem.allowWrite // []')" '. + $s')
 
     echo "  + Merged $stack_name stack"
@@ -261,22 +309,30 @@ generate_settings() {
     # not $TMPDIR, so it ignores the writable session temp dir Claude Code sets
     # up and lands in /var/folders/<hash>/T instead. That is what made
     # claudeconfig.sh itself unrunnable under the sandbox. The path is
-    # per-user/per-machine, so compute it rather than hardcoding. Scoped to the
-    # temp dir (/T) only -- the sibling /C cache dir stays denied.
+    # per-user/per-machine, so compute it rather than hardcoding.
     local darwin_tmp
     darwin_tmp="/private$(getconf DARWIN_USER_TEMP_DIR)"
     darwin_tmp="${darwin_tmp%/}"
     sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --arg t "$darwin_tmp" '. + [$t] | unique | sort')
+
+    # Sibling of the above: DARWIN_USER_CACHE_DIR (/var/folders/<hash>/C) is
+    # where clang's ModuleCache and xcrun_db live. Without it, swiftc fails
+    # with "unable to open output file ...SwiftShims.pcm: Operation not
+    # permitted" on every sandboxed build. See dotfiles-b6gd.
+    local darwin_cache
+    darwin_cache="/private$(getconf DARWIN_USER_CACHE_DIR)"
+    darwin_cache="${darwin_cache%/}"
+    sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --arg c "$darwin_cache" '. + [$c] | unique | sort')
   fi
 
-  # allowedHosts entries must be bare hostnames (optionally with a port).
+  # allowedDomains entries must be bare hostnames (optionally with a port).
   # A stray "domain:" prefix (WebFetch permission syntax) or a URL path makes
-  # Claude Code discard the entire allowedHosts array on its next rewrite of
+  # Claude Code discard the entire allowedDomains array on its next rewrite of
   # settings.json, silently emptying the network allowlist.
   local bad_hosts
   bad_hosts=$(echo "$sandbox_hosts" | jq -r '.[] | select(test("^[A-Za-z0-9*]([A-Za-z0-9._-]*)(:[0-9]+)?$") | not)')
   if [ -n "$bad_hosts" ]; then
-    echo "Error: invalid sandbox.network.allowedHosts entries (bare hostnames only):"
+    echo "Error: invalid sandbox.network.allowedDomains entries (bare hostnames only):"
     echo "$bad_hosts" | sed 's/^/    /'
     exit 1
   fi
@@ -294,7 +350,7 @@ generate_settings() {
     '. + {
       permissions: ($perm_scalars + {allow: $allow, ask: $ask, deny: $deny}),
       sandbox: ($sandbox_scalars + {
-        network: ($sandbox_scalars.network // {} | . + {allowedHosts: $hosts}),
+        network: ($sandbox_scalars.network // {} | . + {allowedDomains: $hosts}),
         filesystem: {allowWrite: $write_paths}
       })
     }')
