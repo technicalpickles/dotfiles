@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.technicalpickles.agent-ssh-relay</string>
+    <!-- Generic SOCKS5 relay on 127.0.0.1:1080, restricted by
+         config/gost/agent-ssh-relay.yml to an allowlist of host:port pairs.
+         Lets agent-sandboxed SSH (which can reach localhost but not real
+         port 22) do real SSH to any allowlisted host. Paired with
+         ssh/config.d/agent-relay, which points agent sessions at this
+         relay for every host via ProxyCommand. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>/opt/homebrew/bin/gost -C $HOME/.config/gost/agent-ssh-relay.yml</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/com.technicalpickles.agent-ssh-relay.out</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/com.technicalpickles.agent-ssh-relay.err</string>
+</dict>
+</plist>
