@@ -1,0 +1,18 @@
+# SOCKS5 relay for Claude Code agent sessions, whose sandbox blocks outbound
+# port 22 but allows localhost. Only hosts/ports listed here are reachable
+# through the proxy -- add a git host by adding it here, not by touching
+# ssh/config.d or the LaunchAgent. See ssh/CLAUDE.md.
+services:
+  - name: agent-ssh-relay
+    addr: '127.0.0.1:1080'
+    handler:
+      type: socks5
+    listener:
+      type: tcp
+    bypass: agent-ssh-relay-allowlist
+
+bypasses:
+  - name: agent-ssh-relay-allowlist
+    whitelist: true
+    matchers:
+      - github.com:22
