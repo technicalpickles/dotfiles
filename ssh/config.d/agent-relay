@@ -7,4 +7,4 @@
 # this file, decides what's actually reachable. Add a git host by editing
 # the YAML, not by adding another Match block here.
 Match exec "test -n \"$CLAUDECODE\""
-  ProxyCommand ncat --proxy 127.0.0.1:1080 --proxy-type socks5 %h %p
+  ProxyCommand /opt/homebrew/bin/ncat --proxy 127.0.0.1:1080 --proxy-type socks5 %h %p
