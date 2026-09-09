@@ -6,40 +6,46 @@
 # GitHub-enrolled "personal-agent" address kept to preserve the Verified-badge
 # enrollment until/unless it's re-enrolled under a home-named address.
 #
-# Referenced via GIT_CONFIG_GLOBAL in claude/roles/home.jsonc. The
-# [include] pulls in the real global gitconfig first (transitively pulling
-# in gitconfig.d fragments via ~/.gitconfig's own includes). Later sections
-# here override: user.email, core.sshCommand for the agent SSH key, and
-# gpg.ssh.program=ssh-keygen to defeat the 1Password op-ssh-sign default.
+# Referenced via GIT_CONFIG_GLOBAL in claude/roles/home.jsonc. The [include]
+# below pulls in the shared behavior fragments directly -- NOT ~/.gitconfig
+# itself, because that transitively includes ~/.gitconfig.local, which
+# carries the interactive-only home-role decision to rewrite git@github.com:
+# remotes to HTTPS (gitconfig.sh, "rewrite SSH github.com remotes to HTTPS
+# (home role only)"). git's url.*.insteadOf can't be cleanly undone by a
+# later config file once inherited, so the only way to keep agent sessions
+# on real SSH (via the agent-ssh-relay, see ssh/CLAUDE.md) is to never
+# inherit that rewrite in the first place. Interactive shells still get it
+# via ~/.gitconfig -> ~/.gitconfig.local, unaffected.
+#
+# Later sections here override: user.email and gpg.ssh.program=ssh-keygen
+# to defeat the 1Password op-ssh-sign default (which needs interactive
+# Touch ID). No core.sshCommand override: ssh/config.d/auth's Match block
+# already selects the home agent key exclusively (IdentitiesOnly yes plus
+# an explicit IdentityFile, no competing Host * IdentityFile to leak in),
+# and ssh/config.d/agent-relay's Match block already routes through the
+# com.technicalpickles.agent-ssh-relay LaunchAgent's SOCKS5 relay (see
+# ssh/CLAUDE.md) -- both keyed on $CLAUDECODE, so plain `ssh` already does
+# the right thing for agent sessions without git needing to know about it.
+# Verified with `ssh -G git@github.com` under this role/env: exactly one
+# identityfile (the agent key), identitiesonly yes, and the relay's
+# proxycommand, all resolved from ~/.ssh/config alone.
 [include]
-	path = ~/.gitconfig
+	path = ~/.gitconfig.d/common
+	path = ~/.gitconfig.d/alias
+	path = ~/.gitconfig.d/color
+	path = ~/.gitconfig.d/signing
 [user]
 	email = joshua.nichols+personal-agent@gmail.com
 	signingkey = ~/.ssh/agents/home/id_ed25519.pub
-[core]
-	# -F /dev/null makes ssh ignore ~/.ssh/config entirely. Without it, the
-	# `Host *` block's `IdentityFile ~/.ssh/id_ed25519` (the human laptop key)
-	# leaks in as a second candidate identity: IdentityFile is additive, and
-	# IdentitiesOnly=yes does not drop it. ssh could then auth to GitHub as the
-	# human, or hard-fail headless if the agent can't sign the laptop key
-	# ("sign_and_send_pubkey: ... communication with agent failed"). With -F we
-	# use ONLY the agent key. IdentityAgent=SSH_AUTH_SOCK still resolves (env
-	# var, not config) and points at the agent holding the unlocked agent key.
-	sshCommand = ssh -F /dev/null -i ~/.ssh/agents/home/id_ed25519 -o IdentitiesOnly=yes -o IdentityAgent=SSH_AUTH_SOCK
 [commit]
 	gpgsign = true
 [gpg]
 	format = ssh
 [gpg "ssh"]
 	program = ssh-keygen
-# The Claude Code sandbox denies outbound port 22 at the TCP connect level, so
-# any SSH remote (push/fetch/pull/clone) fails sandboxed regardless of which
-# key or agent would authenticate -- confirmed in pickletown bean gt-o2jy.
-# HTTPS to github.com already works sandboxed (that's the path gh/WebFetch
-# use), so rewrite SSH remotes to HTTPS and hand auth off to gh's credential
-# helper. This block is redundant with the interactive home-role rewrite in
-# gitconfig.sh now, but kept here so agent sessions don't depend on that.
-[url "https://github.com/"]
-	insteadOf = git@github.com:
-[credential "https://github.com"]
-	helper = !gh auth git-credential
+# gist.github.com isn't in the agent-ssh-relay allowlist (config/gost/
+# agent-ssh-relay.yml only lists github.com:22), so it still goes over
+# HTTPS via gh's credential helper.
+[credential "https://gist.github.com"]
+	helper =
+	helper = !/opt/homebrew/bin/gh auth git-credential

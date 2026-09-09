@@ -159,6 +159,21 @@ setup_sandbox_dirs() {
 
 setup_sandbox_dirs
 
+# Append one source's autoMode arrays onto the accumulators generate_settings
+# declares. Roles and stacks both feed through here, so a stack can carry the
+# classifier rule for its own tool right next to the permissions entry for it
+# (beans.jsonc owning both `Bash(beans:*)` lines, say).
+merge_auto_mode() {
+  local src="$1"
+  local key
+  for key in allow soft_deny hard_deny environment; do
+    local var="auto_${key}"
+    local incoming
+    incoming=$(echo "$src" | jq ".autoMode.${key} // []")
+    printf -v "$var" '%s' "$(echo "${!var}" | jq --argjson r "$incoming" '. + $r')"
+  done
+}
+
 # Generate settings.json from roles/ + stacks/
 generate_settings() {
   echo "Generating settings.json..."
@@ -189,9 +204,11 @@ generate_settings() {
   local base_json
   base_json=$(read_json "$base_role")
 
-  # Extract settings (everything except permissions and sandbox)
+  # Extract settings (everything except permissions, sandbox and autoMode --
+  # all three are array-carrying and get concatenated across sources below,
+  # not deep-merged, since jq's `*` replaces arrays wholesale)
   local merged_settings
-  merged_settings=$(echo "$base_json" | jq 'del(.permissions, .sandbox)')
+  merged_settings=$(echo "$base_json" | jq 'del(.permissions, .sandbox, .autoMode, .requiresPrivateOverlay)')
 
   # Extract permissions arrays from base
   local merged_allow merged_ask merged_deny
@@ -209,6 +226,16 @@ generate_settings() {
   sandbox_hosts=$(echo "$base_json" | jq '.sandbox.network.allowedDomains // []')
   sandbox_write_paths=$(echo "$base_json" | jq '.sandbox.filesystem.allowWrite // []')
 
+  # Extract auto mode classifier rules from base. These are plain-English
+  # strings that Claude Code splices into the classifier's system prompt, so
+  # they behave differently from every other array here -- see the ordering
+  # note further down before touching this.
+  local auto_allow auto_soft_deny auto_hard_deny auto_environment
+  auto_allow=$(echo "$base_json" | jq '.autoMode.allow // []')
+  auto_soft_deny=$(echo "$base_json" | jq '.autoMode.soft_deny // []')
+  auto_hard_deny=$(echo "$base_json" | jq '.autoMode.hard_deny // []')
+  auto_environment=$(echo "$base_json" | jq '.autoMode.environment // []')
+
   echo "  + Loaded base role"
 
   # --- Load active role (if not base) ---
@@ -221,13 +248,15 @@ generate_settings() {
     echo "     No role-specific env (e.g. GIT_CONFIG_GLOBAL) or sandbox rules will apply." >&2
     echo "     Check DOTPICKLES_ROLE and claude/roles/ for a name mismatch." >&2
   fi
+  # Declared out here (not inside the if) so the private-overlay guard further
+  # down can still read requiresPrivateOverlay off it.
+  local role_json="{}"
   if [ -f "$role_file" ] && [ "$ROLE" != "base" ]; then
-    local role_json
     role_json=$(read_json "$role_file")
 
     # Deep merge settings keys (role overrides base)
     local role_settings
-    role_settings=$(echo "$role_json" | jq 'del(.permissions, .sandbox)')
+    role_settings=$(echo "$role_json" | jq 'del(.permissions, .sandbox, .autoMode, .requiresPrivateOverlay)')
     merged_settings=$(echo "$merged_settings" | jq --argjson role "$role_settings" '. * $role')
 
     # Concat permissions arrays (not deep merge, which would replace)
@@ -248,6 +277,9 @@ generate_settings() {
     # Concat sandbox arrays
     sandbox_hosts=$(echo "$sandbox_hosts" | jq --argjson r "$(echo "$role_json" | jq '.sandbox.network.allowedDomains // []')" '. + $r')
     sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --argjson r "$(echo "$role_json" | jq '.sandbox.filesystem.allowWrite // []')" '. + $r')
+
+    # Concat auto mode rules (role appends to base, never replaces it)
+    merge_auto_mode "$role_json"
 
     echo "  + Loaded $ROLE role"
   fi
@@ -279,8 +311,66 @@ generate_settings() {
     sandbox_hosts=$(echo "$sandbox_hosts" | jq --argjson s "$(echo "$stack_json" | jq '.sandbox.network.allowedDomains // []')" '. + $s')
     sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --argjson s "$(echo "$stack_json" | jq '.sandbox.filesystem.allowWrite // []')" '. + $s')
 
+    # Concat auto mode rules
+    merge_auto_mode "$stack_json"
+
     echo "  + Merged $stack_name stack"
   done
+
+  # --- Load the private overlay, if there is one ---
+  #
+  # An optional role file kept OUTSIDE this repo, for config that is real but
+  # cannot be public. The case that forced it: autoMode.environment tells the
+  # classifier who you work for, which hosts are internal, and which namespaces
+  # are protected. base.jsonc carries the shipped "None configured" text for
+  # those slots, which is true under the home role and dangerously wrong under
+  # work -- a classifier told there is no organization reads an upload to a
+  # company host as an upload to a stranger. Filling those slots in means
+  # naming internal infrastructure, and this repo is public.
+  #
+  # Deliberately not a gitignored file in claude/roles/: this survives a fresh
+  # clone of dotfiles, and there is no `git add -f` that can leak it.
+  #
+  # It is a full role file, not an autoMode-only one -- same schema, same merge
+  # rules -- and it is applied LAST so it wins over base, role and stacks alike.
+  local private_overlay="${XDG_CONFIG_HOME:-$HOME/.config}/dotpickles/roles/$ROLE.jsonc"
+  if [ -f "$private_overlay" ]; then
+    local overlay_json
+    overlay_json=$(read_json "$private_overlay")
+
+    local overlay_settings
+    overlay_settings=$(echo "$overlay_json" | jq 'del(.permissions, .sandbox, .autoMode, .requiresPrivateOverlay)')
+    merged_settings=$(echo "$merged_settings" | jq --argjson o "$overlay_settings" '. * $o')
+
+    merged_allow=$(echo "$merged_allow" | jq --argjson o "$(echo "$overlay_json" | jq '.permissions.allow // []')" '. + $o')
+    merged_ask=$(echo "$merged_ask" | jq --argjson o "$(echo "$overlay_json" | jq '.permissions.ask // []')" '. + $o')
+    merged_deny=$(echo "$merged_deny" | jq --argjson o "$(echo "$overlay_json" | jq '.permissions.deny // []')" '. + $o')
+
+    local overlay_permissions_scalars
+    overlay_permissions_scalars=$(echo "$overlay_json" | jq '.permissions // {} | del(.allow, .ask, .deny)')
+    permissions_scalars=$(echo "$permissions_scalars" | jq --argjson o "$overlay_permissions_scalars" '. * $o')
+
+    local overlay_sandbox_scalars
+    overlay_sandbox_scalars=$(echo "$overlay_json" | jq '.sandbox // {} | del(.network.allowedDomains, .filesystem.allowWrite, .filesystem, .network) + (if .network then {network: (.network | del(.allowedDomains))} else {} end) | del(.network | nulls) | del(.filesystem | nulls)')
+    sandbox_scalars=$(echo "$sandbox_scalars" | jq --argjson o "$overlay_sandbox_scalars" '. * $o')
+
+    sandbox_hosts=$(echo "$sandbox_hosts" | jq --argjson o "$(echo "$overlay_json" | jq '.sandbox.network.allowedDomains // []')" '. + $o')
+    sandbox_write_paths=$(echo "$sandbox_write_paths" | jq --argjson o "$(echo "$overlay_json" | jq '.sandbox.filesystem.allowWrite // []')" '. + $o')
+
+    merge_auto_mode "$overlay_json"
+
+    echo "  + Loaded private overlay ($private_overlay)"
+  elif [ "$(echo "$role_json" | jq -r '.requiresPrivateOverlay // false')" = "true" ]; then
+    # Loud guard, same reasoning as the missing-role-file warning above: the
+    # failure is silent and points the wrong way. Without the overlay the
+    # classifier keeps base.jsonc's "None configured" answers and treats an
+    # internal host like any host on the internet.
+    echo "  ⚠️  WARNING: role '$ROLE' declares requiresPrivateOverlay, but" >&2
+    echo "     $private_overlay does not exist." >&2
+    echo "     Settings will generate with base.jsonc's placeholder autoMode" >&2
+    echo "     environment ('Organization: None configured' and friends), which" >&2
+    echo "     is wrong for this role. See doc/adr/0056-auto-mode-classifier-rules-in-role-sources.md" >&2
+  fi
 
   # Deduplicate and sort all arrays
   merged_allow=$(echo "$merged_allow" | jq 'unique | sort')
@@ -288,6 +378,88 @@ generate_settings() {
   merged_deny=$(echo "$merged_deny" | jq 'unique | sort')
   sandbox_hosts=$(echo "$sandbox_hosts" | jq 'unique | sort')
   sandbox_write_paths=$(echo "$sandbox_write_paths" | jq 'unique | sort')
+
+  # Auto mode arrays are ORDER-SENSITIVE. Do NOT `sort` them the way the
+  # permissions and sandbox arrays above are sorted.
+  #
+  # Two reasons:
+  #
+  # 1. "$defaults" is a splice point, not a flag. Claude Code's settings
+  #    schema describes it as "include the literal string \"$defaults\" to
+  #    inherit the built-in rules at that position" -- the shipped rules get
+  #    spliced in where the entry sits, so moving it moves them.
+  # 2. autoMode.environment is a structured document, not a set. Its
+  #    "### Org-wide" / "### User-specific" entries are section headers that
+  #    group the lines following them. Sorting scatters lines out from under
+  #    their headers and the classifier reads the wreckage as one flat list.
+  #
+  # So: concatenate base -> role -> stacks in source order and dedupe keeping
+  # the FIRST occurrence. jq's `unique` keeps one of each but sorts as a side
+  # effect, which is the one thing we can't do, hence the reduce.
+  local dedupe_keep_first='reduce .[] as $x ([]; if index([$x]) then . else . + [$x] end)'
+  auto_allow=$(echo "$auto_allow" | jq "$dedupe_keep_first")
+  auto_soft_deny=$(echo "$auto_soft_deny" | jq "$dedupe_keep_first")
+  auto_hard_deny=$(echo "$auto_hard_deny" | jq "$dedupe_keep_first")
+
+  # autoMode.environment needs more than concatenation: it is header-grouped,
+  # not a flat list. Claude Code's setup writes exactly two sections,
+  # "### Org-wide" and "### User-specific", each holding "**Label**: value"
+  # bullets drawn from a fixed label list. Plain concatenation would land
+  # home.jsonc's Org-wide bullets after base.jsonc's User-specific ones and
+  # the classifier would read them under the wrong heading.
+  #
+  # So regroup by section. Within a section, a later source's bullet REPLACES
+  # an earlier source's bullet carrying the same **Label**, in the position
+  # the earlier one established -- role beats base, the same way role beats
+  # base for every scalar in this script, which is what lets base.jsonc hold
+  # the role-invariant facts and home/work override just the ones that differ.
+  # Unlabelled lines (the "routine under <user>/..." qualifiers) have no key
+  # to collide on, so they dedupe on exact text and keep first-seen order.
+  local regroup_environment='
+    def lbl: if type == "string" then (capture("^\\*\\*(?<l>[^*]+)\\*\\*\\s*:") | .l)? // null else null end;
+    reduce .[] as $x (
+      {cur: null, order: [], sec: {}};
+      if ($x | startswith("### ")) then
+        .cur = $x
+        | (if (.order | index([$x])) then . else .order += [$x] end)
+        | .sec[$x] = (.sec[$x] // [])
+      else
+        (.cur // "### Org-wide") as $c
+        | (if (.order | index([$c])) then . else .order += [$c] end)
+        | .sec[$c] = (.sec[$c] // [])
+        | ($x | lbl) as $k
+        | if $k == null then
+            (if (.sec[$c] | index([$x])) then . else .sec[$c] += [$x] end)
+          else
+            (.sec[$c] | map(lbl) | index([$k])) as $i
+            | if $i == null then .sec[$c] += [$x] else .sec[$c][$i] = $x end
+          end
+      end
+    )
+    | [ .order[] as $h | ([$h] + .sec[$h])[] ]'
+  auto_environment=$(echo "$auto_environment" | jq "$regroup_environment")
+
+  # A non-empty allow/soft_deny/hard_deny array WITHOUT "$defaults" silently
+  # replaces the shipped classifier rules instead of extending them -- i.e. a
+  # stack that adds one narrow allow rule would drop every built-in rule with
+  # it. Claude Code rejects that on its own write path; nothing stops us from
+  # generating it, so guard here. environment never carries "$defaults".
+  local guard_defaults='if length > 0 and (index(["$defaults"]) | not) then ["$defaults"] + . else . end'
+  auto_allow=$(echo "$auto_allow" | jq "$guard_defaults")
+  auto_soft_deny=$(echo "$auto_soft_deny" | jq "$guard_defaults")
+  auto_hard_deny=$(echo "$auto_hard_deny" | jq "$guard_defaults")
+
+  # Assemble the block, dropping empty sections and the whole key when no
+  # source contributed anything (an empty array is a validation error, and an
+  # absent autoMode key is what "just use the shipped defaults" looks like).
+  local auto_mode
+  auto_mode=$(jq -n \
+    --argjson allow "$auto_allow" \
+    --argjson soft_deny "$auto_soft_deny" \
+    --argjson hard_deny "$auto_hard_deny" \
+    --argjson environment "$auto_environment" \
+    '{allow: $allow, soft_deny: $soft_deny, hard_deny: $hard_deny, environment: $environment}
+     | with_entries(select(.value | length > 0))')
 
   # macOS: /tmp, /var and /etc are symlinks into /private, and the Seatbelt
   # sandbox matches the *resolved* path. An allowWrite entry spelled "/tmp"
@@ -347,13 +519,15 @@ generate_settings() {
     --argjson sandbox_scalars "$sandbox_scalars" \
     --argjson hosts "$sandbox_hosts" \
     --argjson write_paths "$sandbox_write_paths" \
+    --argjson auto_mode "$auto_mode" \
     '. + {
       permissions: ($perm_scalars + {allow: $allow, ask: $ask, deny: $deny}),
       sandbox: ($sandbox_scalars + {
         network: ($sandbox_scalars.network // {} | . + {allowedDomains: $hosts}),
         filesystem: {allowWrite: $write_paths}
       })
-    }')
+    }
+    + (if ($auto_mode | length) > 0 then {autoMode: $auto_mode} else {} end)')
 
   # Merge in local-only settings
   final_settings=$(echo "$final_settings" | jq --argjson local "$local_settings" '. * $local')

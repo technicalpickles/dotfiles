@@ -17,13 +17,9 @@ Taskwarrior is the backlog system. Use `task` directly (config at `~/.taskrc`, d
 
 ## Stable Task References: Use UUIDs
 
-Integer task IDs are reused after tasks complete. Never cite them in durable artifacts (commits, memory files, docs, beans). Use the UUID instead.
+Integer task IDs are reused after tasks complete or the pending list otherwise reorders. Never cite them in durable artifacts (commits, memory files, docs, beans, handoffs) — use the UUID instead. Integer IDs are fine for interactive terminal use only.
 
-- `task list` shows a `UUID` column with 8-char short UUIDs
-- Short UUIDs work as partial matches in any `task` command: `task b8c4246b info`
-- When referencing a task from a commit message, memory file, or bean body, use the UUID form
-
-Integer IDs are fine for interactive terminal use only.
+For the full detail (why, how to verify a citation before it goes stale, re-resolving a cached ID mid-session) invoke the `taskwarrior` skill from the `pickled-claude-plugins` marketplace — see its "Durable references" section.
 
 ## Same principle: plan step numbers rot
 

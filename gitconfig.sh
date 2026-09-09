@@ -24,14 +24,6 @@ if command_available delta; then
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/delta
 fi
 
-if command_available gh; then
-  echo "  → enabling gh credential helper"
-  gh_path=$(which gh)
-  for remote in https://github.com https://gist.github.com; do
-    git config --file ~/.gitconfig.local "credential.$remote.helper" "!$gh_path auth git-credential"
-  done
-fi
-
 if running_macos; then
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/macos
 fi
@@ -97,4 +89,28 @@ fi
 if command_available git-duet; then
   echo "  → enabling git-duet specific settings"
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/duet
+fi
+
+if command_available gh; then
+  # This must run LAST. /opt/homebrew/etc/gitconfig (Homebrew's system-level
+  # config, always read before ~/.gitconfig and everything it includes) sets a
+  # bare, unscoped `credential.helper = osxkeychain`. Git tries helpers for a
+  # URL in file-read order, so that system-level entry is always first in line
+  # -- no ordering earlier in this script can put gh ahead of it. The empty
+  # `--replace-all ... ""` is git's documented reset: it clears every
+  # credential.helper entry accumulated so far for that URL (system-level
+  # osxkeychain included), so the `!gh auth git-credential` added right after
+  # it is the *only* helper left for github.com/gist.github.com. Without this,
+  # osxkeychain silently answers `git credential fill` first, bypassing gh's
+  # hardened Secret Gate entirely (confirmed via GIT_TRACE=1: only
+  # `git-credential-osxkeychain get` ran, gh was never invoked) -- and each
+  # successful auth re-caches a credential in osxkeychain via `store`, which
+  # is what makes the leak self-healing/recurring even after manually
+  # deleting the stale Keychain item.
+  echo "  → enabling gh credential helper (reset, so it wins over osxkeychain)"
+  gh_path=$(which gh)
+  for remote in https://github.com https://gist.github.com; do
+    git config --file ~/.gitconfig.local --replace-all "credential.$remote.helper" ""
+    git config --file ~/.gitconfig.local --add "credential.$remote.helper" "!$gh_path auth git-credential"
+  done
 fi

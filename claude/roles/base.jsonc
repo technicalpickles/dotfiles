@@ -58,6 +58,64 @@
     "NODE_USE_ENV_PROXY": "1",
   },
 
+  // Auto mode classifier rules (see ADR 0056).
+  //
+  // These are plain-English strings spliced into the system prompt of the LLM
+  // that adjudicates tool calls while defaultMode is "auto". Claude Code only
+  // honours autoMode from user, --settings, or managed settings -- it reads
+  // projectSettings and localSettings, finds rules there, and deliberately
+  // ignores them ("projectSettings and localSettings are repo-controllable"),
+  // so a checked-in .claude/settings.json can never contribute. That is why
+  // this lives in the generated ~/.claude/settings.json and therefore has to
+  // live here in source.
+  //
+  // Ordering rules that claudeconfig.sh enforces, worth knowing before you
+  // edit: "$defaults" is a splice point for the shipped rules, so it stays
+  // first; environment is grouped under "### Org-wide" / "### User-specific"
+  // headers holding "**Label**: value" bullets from a fixed label list; and a
+  // role or stack bullet with the same **Label** replaces the one here rather
+  // than sitting alongside it.
+  //
+  // Base holds the role-invariant picture: this repo, this laptop, and the
+  // shipped "None configured" text for the org-shaped slots (correct as-is
+  // under the home role). work.jsonc overrides the slots Gusto changes.
+  // Roles and stacks omit "$defaults" -- the generator guarantees it.
+  "autoMode": {
+    "allow": ["$defaults", "Bash(herdr:*) in technicalpickles/dotfiles"],
+    "soft_deny": [
+      "$defaults",
+      "Bash(rm -rf:*) in technicalpickles/dotfiles — repo docs show a prior EPERM/sandbox workaround pattern around forced writes; keep destructive rm under review",
+      "Push to origin over SSH (git@github.com:) — repo docs say agent sessions rewrite this to HTTPS; a literal SSH push attempt is unexpected and worth a second look",
+    ],
+    "environment": [
+      "### Org-wide",
+      "**Organization**: None configured",
+      "**Cloud provider(s)**: None configured",
+      "**Repository visibility**: PUBLIC — technicalpickles/dotfiles (github.com). Any push to this repo's origin is publishing.",
+      "**Internal sharing / snippet hosting**: None configured — treat public paste/gist services as outside the trust boundary",
+      "**Secrets management**: 1Password (`op`) — referenced in repo docs (ADR 0033, ADR 0032 fnox) and used in shell history (`op` 26×, `bw` 37×)",
+      "**Default / protected branches**: `main` (protected, per gh); no rulesets configured",
+      "**CI/CD deploy targets**: None configured",
+      "**Network posture**: None configured",
+      "**Host containment**: None configured — assume Claude Code runs on an ordinary developer machine with open internet; note repo docs describe a Seatbelt/sandbox layer (outbound port 22 to github.com blocked, some paths under `~/.claude/` denied for writes) but this is local sandboxing, not a declared network/identity containment boundary — the classifier cannot verify sandbox state from commands alone",
+      "**Source control**: The trusted repo (technicalpickles/dotfiles) and its origin remote (github.com:technicalpickles/dotfiles.git) only",
+      "**Trusted internal domains**: None configured",
+      "**Trusted cloud buckets**: None configured",
+      "**Key internal services**: None configured",
+      "**Internal package registry**: None configured",
+      "**Sensitive data locations & audiences**: `home/.bash_profile.d/private`, `config/fish/conf.d/fish_frozen_key_bindings.fish`, `config/fish/functions/_tide_item_private_mode.fish` (gitignored — treat as personal secrets/private material, never commit); `.beans/dotfiles-fyjp--fix-1password-allowlist-socket-gate-in-sshconfigsh.md`, `.beans/dotfiles-wswz--1password-ssh-agent-allowlist-not-installed-agent.md`, `doc/adr/0032-use-fnox-for-secrets.md`, `doc/adr/0033-1password-ssh-agent-allowlist.md` (secrets-management design docs — handle normally as tracked repo docs, but avoid pasting live secret values into them)",
+      "**Data retention / declassification**: None configured",
+      "**Sensitive remote targets**: any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment",
+      "**Protected deployment namespaces / environments**: None configured — fall back to the Sensitive remote targets heuristic",
+      "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or name segment",
+      "### User-specific",
+      "**Primary use of Claude Code**: personal dotfiles / developer tooling maintenance (shell configs, git settings, macOS preferences, Claude Code's own configuration)",
+      "**Trusted repo**: technicalpickles/dotfiles (public) — its own work is fine to push there; content ported from other repos/sessions is not",
+      "**Org-specific CLIs**: `beans` (agentic issue tracker, this repo), `herdr` (plugin manager, this repo — `config/herdr/plugins.toml`), `claudeconfig.sh`, `sshconfig.sh`, `gitconfig.sh`, `bin/adr` — all repo-local scripts/CLIs, routine under this repo",
+      "routine under technicalpickles/dotfiles: edits to `claude/`, `.claude/rules/`, `home/`, `config/`, `ssh/config.d/` followed by the documented regeneration scripts (`claudeconfig.sh`, `sshconfig.sh`, `gitconfig.sh`)",
+    ],
+  },
+
   // Permissions: base safety rules
   "permissions": {
     "defaultMode": "auto",
@@ -134,6 +192,17 @@
       "Bash(rm -rf .:*)",
       "Bash(rm -rf ..:*)",
       "Bash(rm -rf ../*:*)",
+      // Claude habitually falls back to `find /` or `find ~` (with a
+      // -maxdepth guard) when it doesn't know where a binary/config/repo
+      // lives, instead of `which`, `mise which`, `brew --prefix`, `Glob`,
+      // or a targeted `ls` in the likely parent dir. Slow and noisy on
+      // macOS (System, Library, Volumes, ~/Library). Only the bare-root
+      // form is denied -- `find /Users/you/project ...` and `find ~/foo
+      // ...` are untouched, since the argument is a distinct token from
+      // the bare "/" or "~".
+      "Bash(find /:*)",
+      "Bash(find ~:*)",
+      "Bash(find $HOME:*)",
     ],
   },
 
@@ -154,7 +223,7 @@
       // but mcporter is -- it reads those same servers out of ~/.claude.json
       // and calls them from Bash, so without this every `mcporter list`
       // or `mcporter call` against a Gusto server dies on "fetch failed".
-      "allowedHosts": [
+      "allowedDomains": [
         "api.anthropic.com",
         "code.claude.com",
         "gusto.runlayer.com",
@@ -180,11 +249,24 @@
         // actually makes this work. Leave the plain spelling here: it is the
         // one that matters on Linux.
         "/tmp",
+        // wrangler (Cloudflare Workers CLI) writes its log files here;
+        // without it every `wrangler`/`npx wrangler` invocation EPERMs.
+        "~/Library/Preferences/.wrangler",
         // mcporter caches OAuth tokens here and mkdirs it on every run,
         // even for servers that authenticate with a plain header. Without
         // it the very first thing any mcporter invocation prints is
         // "EPERM: operation not permitted, mkdir '~/.mcporter'".
         "~/.mcporter",
+        // Gusto's gusto-dev Claude Code plugin ships a PreToolUse hook that
+        // rewrites every `rm ...` Bash command to `trash ...` (macOS's
+        // built-in /usr/bin/trash, NSFileManager trashItem API) so deletes
+        // are recoverable. Without ~/.Trash allowlisted, the seatbelt
+        // profile denies `file-write-create` on ~/.Trash/<name> and macOS
+        // surfaces that as a cryptic NSCocoaErrorDomain 513 /
+        // "afpAccessDenied" error -- easy to mistake for a Finder/TCC
+        // permission problem rather than our own sandbox. Confirmed via
+        // `log show` kernel Sandbox denial lines (pickletown bean gt-1vxk).
+        "~/.Trash",
       ],
     },
   },

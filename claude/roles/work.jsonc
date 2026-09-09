@@ -12,6 +12,10 @@
     "GIT_CONFIG_GLOBAL": "~/.gitconfig.d/claude-agent-work",
     // too many
     "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
+    // Loses to the harness's injected GIT_SSH_COMMAND inside the sandbox --
+    // the SessionStart hook below is what actually makes this stick. See
+    // ADR 0055 and home.jsonc for the full explanation.
+    "GIT_SSH_COMMAND": "ssh",
   },
 
   // Work-specific permissions
@@ -52,6 +56,29 @@
     },
   },
 
+  // Auto mode classifier rules: intentionally absent from this file.
+  //
+  // base.jsonc's org-shaped slots carry the shipped "None configured" text.
+  // That is correct at home and flatly wrong here -- a classifier told there
+  // is no organization judges an upload to a Gusto host as an upload to a
+  // stranger -- so the work role does need its own environment bullets.
+  //
+  // They just cannot live here: this repo is public, and a filled-in work
+  // environment block spells out org name, internal services, deploy targets
+  // and protected namespaces in one place. Some of that already leaks through
+  // the sandbox allowlist above; the classifier block would be a much fuller
+  // picture.
+  //
+  // They live in ~/.config/dotpickles/roles/work.jsonc instead, which
+  // claudeconfig.sh merges last. Generate it by running /auto-mode-setup on
+  // the work machine and moving the autoMode block it writes into that file.
+  // See ADR 0056.
+  //
+  // The flag below is not a Claude Code setting -- claudeconfig.sh strips it
+  // and uses it to warn when the overlay is missing, so this role never
+  // quietly generates with base.jsonc's placeholder answers.
+  "requiresPrivateOverlay": true,
+
   // Pickleton session tracking hooks (global so they fire in all directories,
   // not just when Claude starts in ~/pickleton itself)
   "hooks": {
@@ -62,6 +89,19 @@
           {
             "type": "command",
             "command": "~/.pickles/bin/pickletown claude-hook session-start",
+          },
+        ],
+      },
+      // Makes GIT_SSH_COMMAND=ssh actually stick inside the sandbox, where
+      // the role env block above loses to the harness's later injection.
+      // $CLAUDE_ENV_FILE is read afterward into a cached session-environment
+      // script and wins. See ADR 0055 and home.jsonc for the full writeup.
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'export GIT_SSH_COMMAND=ssh' >> \"$CLAUDE_ENV_FILE\"",
           },
         ],
       },

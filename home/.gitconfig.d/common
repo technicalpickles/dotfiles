@@ -1,0 +1,74 @@
+# Shared git behavior settings, independent of identity/credentials. Split
+# out of home/.gitconfig so claude-agent-{home,work} can include it directly
+# without pulling in ~/.gitconfig.local (which carries interactive-only
+# identity/credential decisions, e.g. the home-role HTTPS remote rewrite).
+[user]
+	name = Josh Nichols
+
+[github]
+	user = technicalpickles
+
+[core]
+	excludesfile = ~/.gitignore
+	untrackedcache = true
+	fsmonitor = true
+
+[fetch]
+	prune = true
+	pruneTags = true
+	all = true
+
+[pull]
+	rebase = false
+
+[push]
+	default = current
+	autoSetupRemote = true
+	followTags = true
+
+[mergetool]
+	keepTemporaries = false
+	keepBackup = false
+
+[init]
+	defaultBranch = main
+
+[commit]
+	verbose = true
+
+[remote]
+	pushdefault = origin
+
+[remote "origin"]
+	prune = true
+
+[merge]
+	autoedit = no
+	conflictstyle = merge
+
+[diff]
+	colorMoved = plain
+	algorithm = histogram
+	renames = true
+	mnemonicPrefix = true
+
+[branch]
+	sort = -committerdate
+
+[tag]
+	sort = version:refname
+
+[rerere]
+	enabled = true
+	autoupdate = true
+
+[rebase]
+	autoSquash = true
+	autoStash = true
+	updateRefs = true
+
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
