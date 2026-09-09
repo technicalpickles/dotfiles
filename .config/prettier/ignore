@@ -33,3 +33,11 @@
 # in place (4-space indent) whenever its settings change, since
 # ~/.config/karabiner is symlinked straight to this repo path
 **/karabiner/karabiner.json
+
+# same idea, one step removed: this is a copy of what ccstatusline itself
+# writes to ~/.config/ccstatusline (not symlinked, copied in by hand after
+# changing the status line). prettier wants single-element arrays collapsed
+# onto one line, the tool writes them expanded, so the file goes
+# out-of-format again every time it is refreshed. It had CI red on main for
+# days before anyone tied the failure to it.
+**/config/ccstatusline/settings.json
