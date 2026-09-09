@@ -102,12 +102,13 @@ All keys are optional. A stack can have only `permissions`, only `sandbox`, or b
 
 When you run `./claudeconfig.sh`:
 
-1. **Base role** (`roles/base.jsonc`): settings, permissions, and sandbox extracted
-2. **Active role** (`roles/$ROLE.jsonc`): settings deep-merged on top of base. Permissions and sandbox arrays concatenated (not deep-merged, which would replace arrays)
-3. **Stacks** (`stacks/*.jsonc`, sorted alphabetically): permissions and sandbox arrays concatenated
-4. **Deduplication**: all arrays sorted and deduplicated
-5. **Local keys**: `enabledPlugins`, `extraKnownMarketplaces` preserved from existing `~/.claude/settings.json`
-6. **Validation and write**
+1. **Base role** (`roles/base.jsonc`): settings, permissions, sandbox, and `autoMode` extracted
+2. **Active role** (`roles/$ROLE.jsonc`): settings deep-merged on top of base. Permissions, sandbox and `autoMode` arrays concatenated (not deep-merged, which would replace arrays)
+3. **Stacks** (`stacks/*.jsonc`, sorted alphabetically): permissions, sandbox and `autoMode` arrays concatenated
+4. **Private overlay** (`~/.config/dotpickles/roles/$ROLE.jsonc`, optional): a full role file kept outside this repo, merged last so it wins over everything above. See [Auto Mode Rules](#auto-mode-rules)
+5. **Deduplication**: permissions and sandbox arrays sorted and deduplicated. `autoMode` arrays are deduplicated but **never sorted** -- order carries meaning there
+6. **Local keys**: `enabledPlugins`, `extraKnownMarketplaces` preserved from existing `~/.claude/settings.json`
+7. **Validation and write**
 
 ## Common Tasks
 
@@ -213,6 +214,31 @@ When you notice you're repeatedly approving the same permission across projects:
 3. **Regenerate**: `./claudeconfig.sh`
 4. **Clean up**: `claude-permissions cleanup --force`
 5. **Commit** to dotfiles
+
+## Auto Mode Rules
+
+The `autoMode` block feeds the LLM classifier that adjudicates tool calls while `defaultMode` is `auto`. It is generated like everything else, from `roles/` + `stacks/` + the private overlay. See [ADR 0055](../doc/adr/0055-auto-mode-classifier-rules-in-role-sources.md) for the full reasoning.
+
+**It has to be generated into user settings.** Claude Code honours `autoMode` from user, `--settings` and managed settings only. Rules in a repo's `.claude/settings.json` are read, recognized, and deliberately ignored, because a cloned repo must not be able to talk the classifier into trusting it.
+
+**`/auto-mode-setup` writes the wrong file.** It writes `~/.claude/settings.json`, which the next `./claudeconfig.sh` overwrites. So does `claude auto-mode reset`. Port anything you want to keep back into `roles/` or `stacks/`. Same contract as every other generated key, but this one has a CLI that invites you to edit it directly.
+
+**Order matters, so these arrays are never sorted:**
+
+- `$defaults` is a splice point. The shipped rules get inserted where that entry sits, so it stays first.
+- An `allow`/`soft_deny`/`hard_deny` array without `$defaults` **replaces** the shipped rules instead of extending them. The generator prepends it if it is missing.
+- `environment` is header-grouped: `### Org-wide` and `### User-specific`, each holding `**Label**: value` bullets from a fixed label list. The generator regroups by section after concatenating, and a later source's bullet **replaces** an earlier one with the same `**Label**`, in the earlier one's position.
+
+**Where things go:**
+
+| Content                                           | File                                     |
+| ------------------------------------------------- | ---------------------------------------- |
+| Role-invariant facts, `$defaults`, shipped labels | `roles/base.jsonc`                       |
+| A tool's own carve-out                            | that tool's `stacks/*.jsonc`             |
+| Home-only additions                               | `roles/home.jsonc`                       |
+| Anything that can't be public                     | `~/.config/dotpickles/roles/$ROLE.jsonc` |
+
+A role that needs the private overlay sets `"requiresPrivateOverlay": true` (stripped before writing settings). Without the overlay, `claudeconfig.sh` warns loudly rather than silently generating `base.jsonc`'s placeholder answers.
 
 ## Local Keys
 
