@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# dotfiles-doctor
+#
+# Health-check script for this dotfiles repo's install state. Reports
+# pass/fail for role detection, dotfile symlink health, LaunchAgent symlink
+# health, and basic tool availability -- reusing the same helpers functions.sh
+# already provides rather than reinventing them.
+#
+# Read-only: it never repoints or creates anything. A dangling/misdirected
+# LaunchAgents symlink is reported as a FAIL here; repairing it is
+# symlinks.sh's job (see repoint_dangling_launchagents there).
+#
+# Exits 0 on all-pass, 1 if anything failed.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
+
+# shellcheck source=../functions.sh
+source "$DOTFILES_DIR/functions.sh"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+info() { echo -e "${BLUE}$*${NC}"; }
+success() { echo -e "${GREEN}✓${NC} $*"; }
+warn() { echo -e "${YELLOW}⚠${NC} $*"; }
+error() { echo -e "${RED}✗${NC} $*" >&2; }
+
+PASS=0
+FAIL=0
+
+check_pass() {
+  success "$1"
+  PASS=$((PASS + 1))
+}
+
+check_fail() {
+  error "$1"
+  [[ $# -gt 1 ]] && echo -e "  ${YELLOW}$2${NC}" >&2
+  FAIL=$((FAIL + 1))
+}
+
+usage() {
+  cat << EOF
+Usage: dotfiles-doctor [--help]
+
+Health-check for this dotfiles repo's install state. Reports pass/fail for:
+  - DOTPICKLES_ROLE detection
+  - dotfile symlink health (home/* and config/*)
+  - LaunchAgents symlink health (macOS only)
+  - basic tool availability (git, mise, brew)
+
+Read-only -- never repoints or creates anything. Exits 0 if all checks pass,
+1 if any fail.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --help | -h)
+      usage
+      exit 0
+      ;;
+    *)
+      error "Unknown argument: $1"
+      usage
+      exit 2
+      ;;
+  esac
+done
+
+echo -e "${BOLD}dotfiles-doctor${NC}"
+echo
+
+# --- 1. Role detection ---
+# Canonical names per ADR 0043 (supersedes 0035): home, work, container,
+# claude-code-remote, coi-host. coi-host is explicit-only (never
+# auto-detected), but a caller may still set it before sourcing functions.sh.
+VALID_ROLES=(home work container claude-code-remote coi-host)
+role_valid=false
+for r in "${VALID_ROLES[@]}"; do
+  if [[ "$DOTPICKLES_ROLE" == "$r" ]]; then
+    role_valid=true
+    break
+  fi
+done
+if $role_valid; then
+  check_pass "role detected: $DOTPICKLES_ROLE"
+else
+  check_fail "unexpected role: $DOTPICKLES_ROLE" "expected one of: ${VALID_ROLES[*]}"
+fi
+
+# --- 2. Dotfile symlink health (home/*, config/*) ---
+# Read-only mirror of functions.sh's link_directory_contents(): same skip
+# list (entries managed by their own installer scripts, not plain symlinks)
+# and the same target-path mapping, but only inspects state instead of
+# mutating it.
+check_directory_symlinks() {
+  local directory="$1"
+  local abs_dir="$DOTFILES_DIR/$directory"
+  [ -d "$abs_dir" ] || return 0
+
+  local -a skip=(config home config/fish config/1password)
+  local entry linkable target display_target expected_source should_skip s
+
+  for entry in $(find_targets "$abs_dir"); do
+    linkable="${entry#"$DOTFILES_DIR"/}"
+
+    should_skip=false
+    for s in "${skip[@]}"; do
+      if [[ "$linkable" == "$s" ]]; then
+        should_skip=true
+        break
+      fi
+    done
+    $should_skip && continue
+
+    if [ "$directory" = "home" ]; then
+      target="$HOME/$(basename "$linkable")"
+    else
+      target="$HOME/.config/$(basename "$linkable")"
+    fi
+    display_target="${target/#"$HOME"/\~}"
+    expected_source="$DOTFILES_DIR/$linkable"
+
+    if [ -L "$target" ]; then
+      if [ "$(readlink "$target")" = "$expected_source" ]; then
+        check_pass "$display_target -> linked correctly"
+      else
+        check_fail "$display_target -> points elsewhere ($(readlink "$target"))"
+      fi
+    elif [ -e "$target" ]; then
+      check_fail "$display_target -> exists but is not a symlink"
+    else
+      check_fail "$display_target -> missing"
+    fi
+  done
+}
+
+check_directory_symlinks home
+check_directory_symlinks config
+
+# --- 3. LaunchAgents symlink health (macOS only, read-only) ---
+# Same two-tier lookup as symlinks.sh: top-level LaunchAgents/*.plist always
+# applies; LaunchAgents/arm64-macos/*.plist only under running_arm64_macos.
+# Reports FAIL on dangling/misdirected symlinks -- doesn't repoint them.
+check_launchagents_dir() {
+  local glob_dir="$1"
+  local plist name target display_target
+
+  for plist in "$glob_dir"/*.plist; do
+    [ -f "$plist" ] || continue
+    name="$(basename "$plist")"
+    target="$HOME/Library/LaunchAgents/$name"
+    display_target="${target/#"$HOME"/\~}"
+
+    if [ -L "$target" ]; then
+      if [ ! -e "$target" ]; then
+        check_fail "$display_target -> dangling symlink"
+      elif [ "$(readlink "$target")" = "$plist" ]; then
+        check_pass "$display_target -> linked correctly"
+      else
+        check_fail "$display_target -> points elsewhere ($(readlink "$target"))"
+      fi
+    elif [ -e "$target" ]; then
+      check_fail "$display_target -> exists but is not a symlink"
+    else
+      check_fail "$display_target -> missing"
+    fi
+  done
+}
+
+if running_macos; then
+  check_launchagents_dir "$DOTFILES_DIR/LaunchAgents"
+  if running_arm64_macos; then
+    check_launchagents_dir "$DOTFILES_DIR/LaunchAgents/arm64-macos"
+  fi
+else
+  info "Skipping LaunchAgents checks (not macOS)"
+fi
+
+# --- 4. Tool availability ---
+if command_available git; then
+  check_pass "git available"
+else
+  check_fail "git not found"
+fi
+
+if command_available mise; then
+  check_pass "mise available"
+else
+  check_fail "mise not found"
+fi
+
+if running_macos; then
+  if brew_available; then
+    check_pass "brew available"
+  else
+    check_fail "brew not found"
+  fi
+fi
+
+# --- Summary ---
+echo
+if [[ $FAIL -eq 0 ]]; then
+  echo -e "${GREEN}${BOLD}$PASS passed, $FAIL failed${NC}"
+  exit 0
+else
+  echo -e "${RED}${BOLD}$PASS passed, $FAIL failed${NC}"
+  exit 1
+fi
