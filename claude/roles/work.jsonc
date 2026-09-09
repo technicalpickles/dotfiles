@@ -68,7 +68,7 @@
   // They live in ~/.config/dotpickles/roles/work.jsonc instead, which
   // claudeconfig.sh merges last. Generate it by running /auto-mode-setup on
   // the work machine and moving the autoMode block it writes into that file.
-  // See ADR 0055.
+  // See ADR 0056.
   //
   // The flag below is not a Claude Code setting -- claudeconfig.sh strips it
   // and uses it to warn when the overlay is missing, so this role never

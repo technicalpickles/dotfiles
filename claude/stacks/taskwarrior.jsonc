@@ -8,7 +8,7 @@
   // because that is the scope the /auto-mode-setup recon actually supported.
   // Taskwarrior is the backlog system everywhere (claude/rules/taskwarrior.md),
   // so this probably wants widening -- but widening a classifier allow rule is
-  // a deliberate call, not a tidy-up. See ADR 0055.
+  // a deliberate call, not a tidy-up. See ADR 0056.
   "autoMode": {
     "allow": ["Bash(task:*) in technicalpickles/dotfiles"],
   },

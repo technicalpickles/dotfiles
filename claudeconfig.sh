@@ -369,7 +369,7 @@ generate_settings() {
     echo "     $private_overlay does not exist." >&2
     echo "     Settings will generate with base.jsonc's placeholder autoMode" >&2
     echo "     environment ('Organization: None configured' and friends), which" >&2
-    echo "     is wrong for this role. See doc/adr/0055-auto-mode-classifier-rules-in-role-sources.md" >&2
+    echo "     is wrong for this role. See doc/adr/0056-auto-mode-classifier-rules-in-role-sources.md" >&2
   fi
 
   # Deduplicate and sort all arrays

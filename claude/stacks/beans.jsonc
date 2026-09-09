@@ -15,7 +15,7 @@
   // Auto mode: beans is a non-standard CLI, so the classifier has no prior on
   // it and would otherwise soft-block routine bean writes. Scoped to the repo
   // that actually uses it. No "$defaults" here -- claudeconfig.sh keeps the
-  // one from base.jsonc at the front. See ADR 0055.
+  // one from base.jsonc at the front. See ADR 0056.
   "autoMode": {
     "allow": ["Bash(beans:*) in technicalpickles/dotfiles"],
   },

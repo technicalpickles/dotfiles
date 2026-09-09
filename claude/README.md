@@ -217,7 +217,7 @@ When you notice you're repeatedly approving the same permission across projects:
 
 ## Auto Mode Rules
 
-The `autoMode` block feeds the LLM classifier that adjudicates tool calls while `defaultMode` is `auto`. It is generated like everything else, from `roles/` + `stacks/` + the private overlay. See [ADR 0055](../doc/adr/0055-auto-mode-classifier-rules-in-role-sources.md) for the full reasoning.
+The `autoMode` block feeds the LLM classifier that adjudicates tool calls while `defaultMode` is `auto`. It is generated like everything else, from `roles/` + `stacks/` + the private overlay. See [ADR 0056](../doc/adr/0056-auto-mode-classifier-rules-in-role-sources.md) for the full reasoning.
 
 **It has to be generated into user settings.** Claude Code honours `autoMode` from user, `--settings` and managed settings only. Rules in a repo's `.claude/settings.json` are read, recognized, and deliberately ignored, because a cloned repo must not be able to talk the classifier into trusting it.
 

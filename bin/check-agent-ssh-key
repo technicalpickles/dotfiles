@@ -275,29 +275,9 @@ fi
 # --- 6. ~/.claude/settings.json + gitconfig include ---
 # Verify GIT_CONFIG_GLOBAL is wired to a gitconfig include file, the file
 # exists, and it overrides the settings that matter: user.email (or git
-# won't attribute to the agent), gpg.ssh.program=ssh-keygen (or signing
-# falls through to 1Password's op-ssh-sign and fails), and that ssh ends up
-# using this role's agent key rather than the human laptop key.
-#
-# That last one has two valid shapes, and which one a role uses is a design
-# decision rather than an accident:
-#
-#   core.sshCommand set     git names the key itself (work role, which needs
-#                           -F /dev/null to shut out the `Host *` block's
-#                           IdentityFile).
-#   core.sshCommand absent  ~/.ssh/config does it, through Match blocks keyed
-#                           on $CLAUDECODE and $DOTPICKLES_ROLE
-#                           (ssh/config.d/auth, ssh/config.d/agent-relay).
-#                           The home role works this way on purpose: the
-#                           harness injects GIT_SSH_COMMAND into every Bash
-#                           tool call, git resolves that ahead of
-#                           core.sshCommand, so a core.sshCommand override
-#                           there could never win. See claude/roles/home.jsonc.
-#
-# So assert the invariant both shapes share -- ssh resolves to this role's
-# key and nothing else -- instead of one mechanism's spelling. Asserting
-# core.sshCommand unconditionally is what made this check fail on the home
-# role after it deliberately dropped that override (bean dotfiles-4hu8).
+# won't attribute to the agent), core.sshCommand (or ssh will use
+# 1Password's IdentityAgent), and gpg.ssh.program=ssh-keygen (or signing
+# falls through to 1Password's op-ssh-sign and fails).
 if [[ -f "$SETTINGS" ]]; then
   git_config_global=$(jq -r '.env.GIT_CONFIG_GLOBAL // empty' "$SETTINGS")
   # Expand leading ~/ for the check (claudeconfig.sh writes absolute paths,
@@ -317,58 +297,42 @@ if [[ -f "$SETTINGS" ]]; then
     # Normalize ~/ in the sshCommand value so the check accepts either form.
     cfg_ssh_expanded="${cfg_ssh//\~\//$HOME/}"
 
-    key_selection_ok=false
-    key_selection_how=""
-    key_selection_detail=""
-
+    # Key selection has two valid mechanisms, so check the outcome rather
+    # than one spelling. The work role pins the key with core.sshCommand;
+    # the home role deliberately dropped it, because ssh/config.d/auth's
+    # $CLAUDECODE Match block already selects the key exclusively and
+    # ssh/config.d/agent-relay adds the relay ProxyCommand -- and because
+    # Claude Code's sandbox injects a GIT_SSH_COMMAND that outranks
+    # core.sshCommand anyway (see ssh/CLAUDE.md). When there's no override,
+    # ask ssh itself what it would resolve under this role.
     if [[ -n "$cfg_ssh" ]]; then
-      if [[ "$cfg_ssh_expanded" == *"$KEY_PATH"* ]]; then
-        key_selection_ok=true
-        key_selection_how="core.sshCommand"
-      else
-        key_selection_detail="core.sshCommand is set but does not use $KEY_PATH (got: '$cfg_ssh')"
-      fi
+      key_selected_by="core.sshCommand"
+      [[ "$cfg_ssh_expanded" == *"$KEY_PATH"* ]] && key_ok=yes || key_ok=no
+      key_got="$cfg_ssh"
     else
-      # Ask ssh what it would actually do. The Match blocks test $CLAUDECODE
-      # and $DOTPICKLES_ROLE in a subshell at connect time, so set both --
-      # otherwise this resolves the interactive shape (every stock key in
-      # ~/.ssh, IdentitiesOnly no) and reports a false failure. -G resolves
-      # config and exits; it never dials the host, so the relay's
-      # ProxyCommand does not run.
-      ssh_resolved=$(CLAUDECODE=1 DOTPICKLES_ROLE="$ROLE" ssh -G git@github.com 2> /dev/null || true)
-      resolved_ids=$(awk '$1 == "identityfile" { print $2 }' <<< "$ssh_resolved")
-      resolved_only=$(awk '$1 == "identitiesonly" { print $2 }' <<< "$ssh_resolved")
-      resolved_count=$(grep -c . <<< "$resolved_ids")
-      resolved_expanded="${resolved_ids//\~\//$HOME/}"
-
-      if [[ -z "$ssh_resolved" ]]; then
-        key_selection_detail="no core.sshCommand, and 'ssh -G git@github.com' failed, so key selection can't be verified"
-      elif [[ "$resolved_count" != 1 ]]; then
-        # More than one candidate means the human laptop key is still in play:
-        # IdentityFile is additive and IdentitiesOnly does not drop
-        # config-supplied identities, so ssh can authenticate as the human.
-        key_selection_detail="ssh resolves $resolved_count identities for git@github.com, want exactly 1 ($KEY_PATH): $(tr '\n' ' ' <<< "$resolved_ids")"
-      elif [[ "$resolved_expanded" != "$KEY_PATH" ]]; then
-        key_selection_detail="ssh resolves $resolved_expanded, want $KEY_PATH"
-      elif [[ "$resolved_only" != "yes" ]]; then
-        key_selection_detail="ssh resolves IdentitiesOnly=$resolved_only, want yes (the agent can otherwise offer other keys)"
+      key_selected_by="ssh_config"
+      resolved=$(CLAUDECODE=1 DOTPICKLES_ROLE="$ROLE" ssh -G git@github.com 2> /dev/null)
+      resolved_ids=$(printf '%s\n' "$resolved" | awk '/^identityfile /{print $2}')
+      resolved_only=$(printf '%s\n' "$resolved" | awk '/^identitiesonly /{print $2}')
+      key_got="identityfile: ${resolved_ids//$'\n'/, } (identitiesonly: ${resolved_only:-no})"
+      if [[ "${resolved_ids//\~\//$HOME/}" == *"$KEY_PATH"* && "$resolved_only" == "yes" ]]; then
+        key_ok=yes
       else
-        key_selection_ok=true
-        key_selection_how="~/.ssh/config"
+        key_ok=no
       fi
     fi
 
     if [[ "$cfg_email" != "$EMAIL" ]]; then
       check_fail "$expanded_path missing user.email=$EMAIL" \
         "got: '$cfg_email'"
+    elif [[ "$key_ok" != "yes" ]]; then
+      check_fail "agent key $KEY_PATH not selected via $key_selected_by" \
+        "got: $key_got"
     elif [[ "$cfg_gpg" != "ssh-keygen" ]]; then
       check_fail "$expanded_path missing gpg.ssh.program=ssh-keygen" \
         "got: '$cfg_gpg' (1Password's op-ssh-sign will block agent signing)"
-    elif ! $key_selection_ok; then
-      check_fail "$IDENTITY agent key is not what ssh would use for github.com" \
-        "$key_selection_detail"
     else
-      check_pass "Agent gitconfig include wired up ($expanded_path; key via $key_selection_how)"
+      check_pass "Agent gitconfig include wired up ($expanded_path)"
     fi
   fi
 else
@@ -389,12 +353,24 @@ fi
 #   - fingerprint assertion: we parse the -v trace's "Server accepts key" line and
 #     require the accepted fingerprint to equal THIS key's. Belt-and-suspenders so a
 #     future config leak can never let a different key satisfy the check silently.
+# -F /dev/null gives the isolation this check wants, but it also discards
+# ssh/config.d/agent-relay's ProxyCommand -- so inside a Claude Code sandbox
+# the probe dials port 22 directly and gets blocked, failing for a reason
+# that has nothing to do with the key. Re-add the relay by hand (same
+# 127.0.0.1:1080 gost proxy) when running in an agent session, so the check
+# behaves identically sandboxed and unsandboxed. See ssh/CLAUDE.md.
+RELAY_OPT=()
+if [[ -n "${CLAUDECODE:-}" ]]; then
+  RELAY_OPT=(-o "ProxyCommand=ncat --proxy 127.0.0.1:1080 --proxy-type socks5 %h %p")
+fi
+
 info "Testing SSH auth to github.com (this may take a second)..."
 ssh_out=$(ssh -v -F /dev/null -i "$KEY_PATH" \
   -o IdentitiesOnly=yes \
   -o IdentityAgent=SSH_AUTH_SOCK \
   -o StrictHostKeyChecking=accept-new \
   -o ConnectTimeout=10 \
+  "${RELAY_OPT[@]}" \
   -T git@github.com 2>&1 || true)
 accepted_fp=$(echo "$ssh_out" | grep "Server accepts key:" | grep -oE 'SHA256:[A-Za-z0-9+/]+' | head -1)
 if echo "$ssh_out" | grep -q "successfully authenticated"; then
@@ -437,7 +413,14 @@ if [[ ${#SSO_ORG_PROBES[@]} -gt 0 ]]; then
   info "Checking per-org SAML SSO authorization (this may take a few seconds)..."
   # Mirror the live agent sshCommand: -F /dev/null so ~/.ssh/config's additive
   # `Host *` IdentityFile can't leak the human laptop key into the probe.
+  # Same relay caveat as step 7: -F /dev/null drops the agent-relay
+  # ProxyCommand, so add it back in agent sessions. Setting GIT_SSH_COMMAND
+  # here also deliberately overrides the one Claude Code's sandbox injects,
+  # which refuses SSH by policy (ssh/CLAUDE.md).
   agent_ssh="ssh -F /dev/null -i $KEY_PATH -o IdentitiesOnly=yes -o IdentityAgent=SSH_AUTH_SOCK -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10"
+  if [[ -n "${CLAUDECODE:-}" ]]; then
+    agent_ssh="$agent_ssh -o 'ProxyCommand=ncat --proxy 127.0.0.1:1080 --proxy-type socks5 %h %p'"
+  fi
   for probe in "${SSO_ORG_PROBES[@]}"; do
     org="${probe%%:*}"
     repo="${probe#*:}"

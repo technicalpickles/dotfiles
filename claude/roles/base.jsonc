@@ -58,7 +58,7 @@
     "NODE_USE_ENV_PROXY": "1",
   },
 
-  // Auto mode classifier rules (see ADR 0055).
+  // Auto mode classifier rules (see ADR 0056).
   //
   // These are plain-English strings spliced into the system prompt of the LLM
   // that adjudicates tool calls while defaultMode is "auto". Claude Code only

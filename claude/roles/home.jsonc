@@ -17,8 +17,39 @@
   // core.sshCommand, and gpg.ssh.program (resets 1Password's op-ssh-sign to
   // ssh-keygen). Leading ~/ is expanded by claudeconfig.sh before writing
   // settings.json (GIT_CONFIG_GLOBAL itself does not expand ~).
+  // GIT_SSH_COMMAND is set to plain `ssh` to *defeat* the value Claude Code's
+  // sandbox injects into every Bash tool call (a hardcoded template in the
+  // CLI binary: `ssh -o ControlMaster=no -o ControlPath=none -o
+  // ProxyCommand='nc -X 5 -x localhost:<per-session-port> %h %p'`). That
+  // points git at the harness's own SOCKS proxy, which refuses SSH outright:
+  // it answers the handshake itself as SSH-2.0-policy_refusal ("This proxy
+  // requires authentication, and this client did not offer an authentication
+  // method"), drops the connection after KEXINIT, and never dials the real
+  // host -- surfacing to git as `ssh_dispatch_run_fatal: Connection to
+  // UNKNOWN port 65535: Broken pipe`. This is NOT github.com missing from
+  // sandbox.network.allowedDomains below; a denied host gives SOCKS error 2
+  // on :443, which is a different failure.
+  //
+  // git resolves GIT_SSH_COMMAND ahead of core.sshCommand and ssh_config, so
+  // the injected value silently defeats the agent-ssh-relay (ssh/CLAUDE.md)
+  // no matter what git config says -- that's why claude-agent-home carries no
+  // core.sshCommand override; it could never win. Setting it to bare `ssh`
+  // hands resolution back to ~/.ssh/config, whose $CLAUDECODE Match blocks
+  // already pick the home agent key and route github.com through the gost
+  // relay.
+  //
+  // IMPORTANT: this entry does NOT win inside the sandbox. Verified from a
+  // session started after ./claudeconfig.sh -- the harness injects its value
+  // after role env, so sandboxed Bash calls still see the proxy command and
+  // git-over-SSH still fails. What this entry buys is the unsandboxed case
+  // (dangerouslyDisableSandbox, where no proxy exists and no injection
+  // happens): there `GIT_SSH_COMMAND=ssh` is what lands, and git reaches
+  // github.com through the relay. Sandboxed, the only workarounds are an
+  // explicit `GIT_SSH_COMMAND=ssh git ...` per command, or running the git
+  // command unsandboxed. See bean dotfiles-mo7y and ssh/CLAUDE.md.
   "env": {
     "GIT_CONFIG_GLOBAL": "~/.gitconfig.d/claude-agent-home",
+    "GIT_SSH_COMMAND": "ssh",
   },
 
   "sandbox": {
@@ -33,7 +64,7 @@
   // Auto mode: base.jsonc already describes the home posture (no org, no
   // cloud, public dotfiles repo, "None configured" across the org-shaped
   // slots), so this only adds what is specific to this machine. A bullet
-  // here replaces the base bullet carrying the same **Label**. See ADR 0055.
+  // here replaces the base bullet carrying the same **Label**. See ADR 0056.
   "autoMode": {
     "environment": [
       "### Org-wide",
@@ -78,6 +109,47 @@
           {
             "type": "command",
             "command": "jq -c '(.tool_input.command // \"\") as $c | ($c | test(\"\\\\btask\\\\s+([0-9]{1,6})\\\\s+(done|annotate|modify|depends|delete|start|stop)\\\\b\")) as $risky | if $risky then ($c | capture(\"\\\\btask\\\\s+(?<id>[0-9]{1,6})\\\\s+(?<verb>done|annotate|modify|depends|delete|start|stop)\\\\b\")) as $m | {hookSpecificOutput:{hookEventName:\"PreToolUse\", permissionDecision:\"allow\", additionalContext:\"This mutates taskwarrior task \\($m.id) by its plain numeric ID (`\\($m.verb)`). Numeric IDs are reused as the pending list reorders -- if this ID was captured more than a couple of commands ago (or anything else touched taskwarrior in between), re-resolve it first: `task \\($m.id) info` (or re-grep by description) to confirm it still points at the task you mean. See the taskwarrior skill Durable references section.\"}} else {} end' 2>/dev/null || true",
+          },
+        ],
+      },
+    ],
+
+    // THIS is what makes GIT_SSH_COMMAND=ssh actually stick inside the
+    // sandbox -- not the role "env" block above, which loses because Claude
+    // Code injects its own GIT_SSH_COMMAND after user env. $CLAUDE_ENV_FILE is
+    // a different, later channel: the CLI reads it into a cached "session
+    // environment" script, and it's only populated for SessionStart/Setup/
+    // CwdChanged/FileChanged hooks. It wins.
+    //
+    // Verified on 2.1.263 from a fresh session: `env` shows a bare
+    // GIT_SSH_COMMAND=ssh, and sandboxed `git fetch`/`ls-remote` against
+    // git@github.com: succeed through the agent-ssh-relay. No
+    // dangerouslyDisableSandbox needed for agent git any more.
+    //
+    // Upstream bug: anthropics/claude-code#70684 (open since 2026-06-24, still
+    // unfixed on 2.1.263) and its sharper duplicate #82255 (closed as stale,
+    // not fixed). Root cause is in sandbox-runtime's generateProxyEnvVars():
+    // the macOS branch builds a SOCKS5 `nc -X 5` ProxyCommand with no
+    // credentials even when a proxy auth token is set, while the Linux branch
+    // passes `proxyauth` to socat. The proxy then refuses with an
+    // SSH-2.0-policy_refusal banner.
+    //
+    // Most people in that thread need an HTTP CONNECT helper or an insteadOf
+    // rewrite to HTTPS, because the harness proxy is their only way out. We
+    // don't: the agent-ssh-relay on 127.0.0.1:1080 already works sandboxed
+    // (localhost is allowed), so bare `ssh` is all we need. This hook was
+    // reported not to work on 2.1.191 back in June, which is why the thread
+    // moved on to helper scripts -- it does work on 2.1.263. If a future
+    // version reorders the env again, the symptom is the broken-pipe error
+    // returning; fall back to `GIT_SSH_COMMAND=ssh git ...` per command.
+    // See bean dotfiles-mo7y.
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'export GIT_SSH_COMMAND=ssh' >> \"$CLAUDE_ENV_FILE\"",
           },
         ],
       },
