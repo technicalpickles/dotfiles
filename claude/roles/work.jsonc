@@ -12,6 +12,10 @@
     "GIT_CONFIG_GLOBAL": "~/.gitconfig.d/claude-agent-work",
     // too many
     "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
+    // Loses to the harness's injected GIT_SSH_COMMAND inside the sandbox --
+    // the SessionStart hook below is what actually makes this stick. See
+    // ADR 0055 and home.jsonc for the full explanation.
+    "GIT_SSH_COMMAND": "ssh",
   },
 
   // Work-specific permissions
@@ -85,6 +89,19 @@
           {
             "type": "command",
             "command": "~/.pickles/bin/pickletown claude-hook session-start",
+          },
+        ],
+      },
+      // Makes GIT_SSH_COMMAND=ssh actually stick inside the sandbox, where
+      // the role env block above loses to the harness's later injection.
+      // $CLAUDE_ENV_FILE is read afterward into a cached session-environment
+      // script and wins. See ADR 0055 and home.jsonc for the full writeup.
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'export GIT_SSH_COMMAND=ssh' >> \"$CLAUDE_ENV_FILE\"",
           },
         ],
       },

@@ -1,26 +1,30 @@
 # Agent git identity for Claude Code under DOTPICKLES_ROLE=work.
-# See doc/adr/0031-role-scoped-agent-git-identity.md.
+# See doc/adr/0031-role-scoped-agent-git-identity.md and
+# doc/adr/0055-agent-git-over-ssh-through-the-relay.md.
 #
-# Referenced via GIT_CONFIG_GLOBAL in claude/roles/work.jsonc. The
-# [include] pulls in the real global gitconfig first (transitively pulling
-# in gitconfig.d fragments via ~/.gitconfig's own includes). Later sections
-# here override: user.email, core.sshCommand for the agent SSH key, and
-# gpg.ssh.program=ssh-keygen to defeat the 1Password op-ssh-sign default.
+# Referenced via GIT_CONFIG_GLOBAL in claude/roles/work.jsonc. The [include]
+# below pulls in the shared behavior fragments directly -- NOT ~/.gitconfig
+# itself, mirroring claude-agent-home, so a future work-role rewrite added to
+# ~/.gitconfig.local can never leak into agent sessions the way home's did
+# before d865817.
+#
+# Later sections here override: user.email and gpg.ssh.program=ssh-keygen to
+# defeat the 1Password op-ssh-sign default (which needs interactive Touch
+# ID). No core.sshCommand override: ssh/config.d/auth's Match block already
+# selects the work agent key exclusively, and ssh/config.d/agent-relay's
+# Match block already routes through the com.technicalpickles.agent-ssh-relay
+# LaunchAgent's SOCKS5 relay (see ssh/CLAUDE.md) -- both keyed on
+# $CLAUDECODE, so plain `ssh` already does the right thing for agent sessions
+# without git needing to know about it.
 [include]
-	path = ~/.gitconfig
+	path = ~/.gitconfig.d/common
+	path = ~/.gitconfig.d/alias
+	path = ~/.gitconfig.d/color
+	path = ~/.gitconfig.d/signing
 [user]
 	email = josh.nichols+agent@gusto.com
 	signingkey = ~/.ssh/agents/work/id_ed25519.pub
 [core]
-	# -F /dev/null makes ssh ignore ~/.ssh/config entirely. Without it, the
-	# `Host *` block's `IdentityFile ~/.ssh/id_ed25519` (the human laptop key)
-	# leaks in as a second candidate identity: IdentityFile is additive, and
-	# IdentitiesOnly=yes does not drop it. ssh could then auth to GitHub as the
-	# human, or hard-fail headless if the agent can't sign the laptop key
-	# ("sign_and_send_pubkey: ... communication with agent failed"). With -F we
-	# use ONLY the agent key. IdentityAgent=SSH_AUTH_SOCK still resolves (env
-	# var, not config) and points at the agent holding the unlocked agent key.
-	sshCommand = ssh -F /dev/null -i ~/.ssh/agents/work/id_ed25519 -o IdentitiesOnly=yes -o IdentityAgent=SSH_AUTH_SOCK
 	# fsmonitor's IPC daemon misbehaves under the Claude Code sandbox, surfacing
 	# "could not read IPC response" on every git op even when nothing is wrong.
 	# Disable it for agent sessions only — your interactive shell still inherits
@@ -32,14 +36,9 @@
 	format = ssh
 [gpg "ssh"]
 	program = ssh-keygen
-# The Claude Code sandbox denies outbound port 22 at the TCP connect level, so
-# any SSH remote (push/fetch/pull/clone) fails sandboxed regardless of which
-# key or agent would authenticate -- confirmed in pickletown bean gt-o2jy.
-# HTTPS to github.com already works sandboxed (that's the path gh/WebFetch
-# use), so rewrite SSH remotes to HTTPS and hand auth off to gh's credential
-# helper. This only affects agent sessions (this file is only reachable via
-# GIT_CONFIG_GLOBAL) -- your interactive shell keeps using SSH normally.
-[url "https://github.com/"]
-	insteadOf = git@github.com:
-[credential "https://github.com"]
-	helper = !gh auth git-credential
+# gist.github.com isn't in the agent-ssh-relay allowlist (config/gost/
+# agent-ssh-relay.yml only lists github.com:22), so it still goes over
+# HTTPS via gh's credential helper.
+[credential "https://gist.github.com"]
+	helper =
+	helper = !/opt/homebrew/bin/gh auth git-credential

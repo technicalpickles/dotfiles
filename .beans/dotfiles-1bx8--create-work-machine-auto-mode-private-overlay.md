@@ -1,10 +1,11 @@
 ---
 # dotfiles-1bx8
 title: Create work-machine auto mode private overlay
-status: todo
+status: in-progress
 type: task
+priority: normal
 created_at: 2026-09-09T01:24:44Z
-updated_at: 2026-09-09T01:24:44Z
+updated_at: 2026-09-09T16:27:47Z
 ---
 
 On the work machine, the `work` role generates with base.jsonc's placeholder autoMode environment ("Organization: None configured" and friends). That is wrong there: a classifier told there is no organization reads an upload to an internal host as an upload to a stranger.
