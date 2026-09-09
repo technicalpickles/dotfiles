@@ -1,2 +1,22 @@
+# Xcode's system gitconfig
+# (/Library/Developer/CommandLineTools/usr/share/git-core/gitconfig) already
+# sets credential.helper = osxkeychain, and git runs *every* configured
+# helper. Setting it again here made git invoke osxkeychain twice on every
+# credential store.
+#
+# The empty value first clears whatever earlier scopes contributed, so this
+# file is authoritative: osxkeychain runs exactly once, and it keeps working
+# if Apple's gitconfig ever stops setting it (which deleting this file would
+# have left us silently depending on).
+#
+# Verified 2026-09-09 by counting store attempts. They're normally invisible,
+# because the write succeeds -- under the Claude Code sandbox the keychain
+# write is denied and each attempt prints "failed to store: 100001", which
+# makes them countable: 2 before this change, 1 after.
+#
+# Nothing included ahead of this file sets credential.helper (see the include
+# order in ~/.gitconfig.local, written by gitconfig.sh), so the reset costs
+# nothing today -- but keep that in mind if an earlier include ever wants one.
 [credential]
+	helper =
 	helper = osxkeychain
