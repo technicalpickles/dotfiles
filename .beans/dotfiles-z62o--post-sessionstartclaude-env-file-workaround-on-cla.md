@@ -1,11 +1,11 @@
 ---
 # dotfiles-z62o
 title: Post SessionStart/CLAUDE_ENV_FILE workaround on claude-code#70684
-status: todo
+status: completed
 type: task
 priority: normal
 created_at: 2026-09-09T00:59:04Z
-updated_at: 2026-09-09T00:59:04Z
+updated_at: 2026-09-09T01:05:55Z
 ---
 
 The upstream thread (anthropics/claude-code#70684, open since 2026-06-24) currently concludes that no config-level fix restores sandboxed git-over-SSH on macOS. That conclusion is stale.
@@ -19,5 +19,7 @@ Caveat to state honestly in the comment: bare `ssh` only gets you a working conn
 See bean dotfiles-mo7y for the full investigation. There is also a queued local Claude Code feedback draft covering the same ground -- redundant with the issue, do not also send it.
 
 ## Checklist
-- [ ] Draft the comment (keep it short: version tested, the hook, the env-ordering explanation, the local-relay caveat)
-- [ ] Post to https://github.com/anthropics/claude-code/issues/70684
+- [x] Draft the comment (keep it short: version tested, the hook, the env-ordering explanation, the local-relay caveat)
+- [x] Post to https://github.com/anthropics/claude-code/issues/70684
+
+Posted 2026-09-08: https://github.com/anthropics/claude-code/issues/70684#issuecomment-5594177457
