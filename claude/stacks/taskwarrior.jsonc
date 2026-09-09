@@ -2,6 +2,16 @@
   "permissions": {
     "allow": ["Bash(task:*)"],
   },
+
+  // Auto mode carve-out for the same CLI. Note the asymmetry with the
+  // permissions entry above: that one is unscoped, this one names the repo,
+  // because that is the scope the /auto-mode-setup recon actually supported.
+  // Taskwarrior is the backlog system everywhere (claude/rules/taskwarrior.md),
+  // so this probably wants widening -- but widening a classifier allow rule is
+  // a deliberate call, not a tidy-up. See ADR 0056.
+  "autoMode": {
+    "allow": ["Bash(task:*) in technicalpickles/dotfiles"],
+  },
   "sandbox": {
     "filesystem": {
       "allowWrite": ["~/.task"],

@@ -61,6 +61,20 @@
     },
   },
 
+  // Auto mode: base.jsonc already describes the home posture (no org, no
+  // cloud, public dotfiles repo, "None configured" across the org-shaped
+  // slots), so this only adds what is specific to this machine. A bullet
+  // here replaces the base bullet carrying the same **Label**. See ADR 0056.
+  "autoMode": {
+    "environment": [
+      "### Org-wide",
+      "**Trusted internal domains**: `brineworks.tail2023b7.ts.net` (Tailscale tailnet, this machine's own node) — allowlisted in the sandbox above; nothing else is internal",
+      "### User-specific",
+      "**Trusted repo**: technicalpickles/dotfiles (public) and the rest of `~/github.com/technicalpickles/` — each repo's own work is fine to push to its own origin; content ported from another repo or session is not",
+      "routine under technicalpickles/: work on the pickled-coi VM (an OrbStack VM, mirrors most of `~/github.com/technicalpickles/` under its own `~/projects/`) is ordinary development, not a remote-host escalation — see ~/github.com/CLAUDE.md",
+    ],
+  },
+
   // Nudge (non-blocking) when a Write/Edit lands a bare numeric task/plan-step
   // ID in a durable, resumed-later artifact (.parkinglot handoffs, .beans,
   // auto-memory files). See claude/rules/taskwarrior.md and bean
