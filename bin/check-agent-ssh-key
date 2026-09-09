@@ -297,12 +297,37 @@ if [[ -f "$SETTINGS" ]]; then
     # Normalize ~/ in the sshCommand value so the check accepts either form.
     cfg_ssh_expanded="${cfg_ssh//\~\//$HOME/}"
 
+    # Key selection has two valid mechanisms, so check the outcome rather
+    # than one spelling. The work role pins the key with core.sshCommand;
+    # the home role deliberately dropped it, because ssh/config.d/auth's
+    # $CLAUDECODE Match block already selects the key exclusively and
+    # ssh/config.d/agent-relay adds the relay ProxyCommand -- and because
+    # Claude Code's sandbox injects a GIT_SSH_COMMAND that outranks
+    # core.sshCommand anyway (see ssh/CLAUDE.md). When there's no override,
+    # ask ssh itself what it would resolve under this role.
+    if [[ -n "$cfg_ssh" ]]; then
+      key_selected_by="core.sshCommand"
+      [[ "$cfg_ssh_expanded" == *"$KEY_PATH"* ]] && key_ok=yes || key_ok=no
+      key_got="$cfg_ssh"
+    else
+      key_selected_by="ssh_config"
+      resolved=$(CLAUDECODE=1 DOTPICKLES_ROLE="$ROLE" ssh -G git@github.com 2> /dev/null)
+      resolved_ids=$(printf '%s\n' "$resolved" | awk '/^identityfile /{print $2}')
+      resolved_only=$(printf '%s\n' "$resolved" | awk '/^identitiesonly /{print $2}')
+      key_got="identityfile: ${resolved_ids//$'\n'/, } (identitiesonly: ${resolved_only:-no})"
+      if [[ "${resolved_ids//\~\//$HOME/}" == *"$KEY_PATH"* && "$resolved_only" == "yes" ]]; then
+        key_ok=yes
+      else
+        key_ok=no
+      fi
+    fi
+
     if [[ "$cfg_email" != "$EMAIL" ]]; then
       check_fail "$expanded_path missing user.email=$EMAIL" \
         "got: '$cfg_email'"
-    elif [[ "$cfg_ssh_expanded" != *"$KEY_PATH"* ]]; then
-      check_fail "$expanded_path missing core.sshCommand using $KEY_PATH" \
-        "got: '$cfg_ssh'"
+    elif [[ "$key_ok" != "yes" ]]; then
+      check_fail "agent key $KEY_PATH not selected via $key_selected_by" \
+        "got: $key_got"
     elif [[ "$cfg_gpg" != "ssh-keygen" ]]; then
       check_fail "$expanded_path missing gpg.ssh.program=ssh-keygen" \
         "got: '$cfg_gpg' (1Password's op-ssh-sign will block agent signing)"
@@ -328,12 +353,24 @@ fi
 #   - fingerprint assertion: we parse the -v trace's "Server accepts key" line and
 #     require the accepted fingerprint to equal THIS key's. Belt-and-suspenders so a
 #     future config leak can never let a different key satisfy the check silently.
+# -F /dev/null gives the isolation this check wants, but it also discards
+# ssh/config.d/agent-relay's ProxyCommand -- so inside a Claude Code sandbox
+# the probe dials port 22 directly and gets blocked, failing for a reason
+# that has nothing to do with the key. Re-add the relay by hand (same
+# 127.0.0.1:1080 gost proxy) when running in an agent session, so the check
+# behaves identically sandboxed and unsandboxed. See ssh/CLAUDE.md.
+RELAY_OPT=()
+if [[ -n "${CLAUDECODE:-}" ]]; then
+  RELAY_OPT=(-o "ProxyCommand=ncat --proxy 127.0.0.1:1080 --proxy-type socks5 %h %p")
+fi
+
 info "Testing SSH auth to github.com (this may take a second)..."
 ssh_out=$(ssh -v -F /dev/null -i "$KEY_PATH" \
   -o IdentitiesOnly=yes \
   -o IdentityAgent=SSH_AUTH_SOCK \
   -o StrictHostKeyChecking=accept-new \
   -o ConnectTimeout=10 \
+  "${RELAY_OPT[@]}" \
   -T git@github.com 2>&1 || true)
 accepted_fp=$(echo "$ssh_out" | grep "Server accepts key:" | grep -oE 'SHA256:[A-Za-z0-9+/]+' | head -1)
 if echo "$ssh_out" | grep -q "successfully authenticated"; then
@@ -376,7 +413,14 @@ if [[ ${#SSO_ORG_PROBES[@]} -gt 0 ]]; then
   info "Checking per-org SAML SSO authorization (this may take a few seconds)..."
   # Mirror the live agent sshCommand: -F /dev/null so ~/.ssh/config's additive
   # `Host *` IdentityFile can't leak the human laptop key into the probe.
+  # Same relay caveat as step 7: -F /dev/null drops the agent-relay
+  # ProxyCommand, so add it back in agent sessions. Setting GIT_SSH_COMMAND
+  # here also deliberately overrides the one Claude Code's sandbox injects,
+  # which refuses SSH by policy (ssh/CLAUDE.md).
   agent_ssh="ssh -F /dev/null -i $KEY_PATH -o IdentitiesOnly=yes -o IdentityAgent=SSH_AUTH_SOCK -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10"
+  if [[ -n "${CLAUDECODE:-}" ]]; then
+    agent_ssh="$agent_ssh -o 'ProxyCommand=ncat --proxy 127.0.0.1:1080 --proxy-type socks5 %h %p'"
+  fi
   for probe in "${SSO_ORG_PROBES[@]}"; do
     org="${probe%%:*}"
     repo="${probe#*:}"

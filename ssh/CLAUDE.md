@@ -46,6 +46,26 @@ This exists as an alternative to routing agent git operations over HTTPS (`home/
 
 Check the relay is running with `./launchagents.sh status com.technicalpickles.agent-ssh-relay`.
 
+### The `GIT_SSH_COMMAND` conflict
+
+Claude Code's sandbox injects its own `GIT_SSH_COMMAND` into every Bash tool call, pointing git at the harness's SOCKS proxy on a per-session localhost port. Git resolves that env var ahead of both `core.sshCommand` and `ssh_config`, so it silently defeats the relay above -- git never even reaches the `Match` blocks. That's why `home/.gitconfig.d/claude-agent-home` carries no `core.sshCommand` override: it could never win.
+
+The harness proxy refuses SSH by design rather than failing to tunnel it. It answers the handshake itself as `SSH-2.0-policy_refusal` ("This proxy requires authentication, and this client did not offer an authentication method"), drops the connection after KEXINIT, and never dials the real host. Git surfaces this as:
+
+```
+ssh_dispatch_run_fatal: Connection to UNKNOWN port 65535: Broken pipe
+```
+
+This is not a missing `allowedDomains` entry -- a denied host gives `SOCKS error 2` on :443, a different failure. It is also not specific to the desktop app; it reproduces identically in the terminal CLI.
+
+See [ADR 0055](../doc/adr/0055-agent-git-over-ssh-through-the-relay.md) for why agent git is on SSH at all and what each layer is responsible for. The fix is the `SessionStart` hook in `claude/roles/home.jsonc`, which appends `export GIT_SSH_COMMAND=ssh` to `$CLAUDE_ENV_FILE`. That hands resolution back to `~/.ssh/config`, where the relay lives. Verified on 2.1.263: sandboxed `git fetch`/`ls-remote` against `git@github.com:` succeed, no `dangerouslyDisableSandbox` needed.
+
+**The channel matters, and only one of them works.** The role `env` block also sets `GIT_SSH_COMMAND=ssh`, and it loses -- the harness injects its value after role env, so sandboxed Bash calls get the proxy command regardless. `$CLAUDE_ENV_FILE` is read later, into a cached session-environment script, and wins. Two other routes are dead ends: there's no opt-out flag (the injection is unconditional, part of a blanket proxy block alongside `ALL_PROXY`, `FTP_PROXY`, `RSYNC_PROXY` and the Docker vars), and a shell startup file can't undo it either, because the shell snapshot only captures functions, aliases, setopts and `PATH`, so a bare `unset` in `.zshrc` never arrives.
+
+If the broken-pipe error comes back after a CLI upgrade, check `env | grep GIT_SSH_COMMAND` first -- it means the ordering changed and the hook stopped winning. Fall back to `GIT_SSH_COMMAND=ssh git ...` per command until it's sorted.
+
+Upstream this is [anthropics/claude-code#70684](https://github.com/anthropics/claude-code/issues/70684), open since 2026-06-24 and unfixed as of 2.1.263, plus its sharper duplicate #82255 (closed as stale, not fixed). Root cause is in `sandbox-runtime`'s `generateProxyEnvVars()`: the macOS branch builds the SOCKS5 `nc -X 5` ProxyCommand with no credentials even when a proxy auth token is set, while the Linux branch passes `proxyauth` to `socat`. The proxy then refuses with an `SSH-2.0-policy_refusal` banner. Most of that thread reaches for an HTTP CONNECT helper or an `insteadOf` rewrite to HTTPS, because the harness proxy is their only way out -- we don't need either, since the relay on localhost already works.
+
 ## Inbound SSH (being SSH'd into, e.g. over Tailscale)
 
 **On the target machine (home role only):**
