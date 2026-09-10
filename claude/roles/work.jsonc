@@ -32,29 +32,10 @@
     ],
   },
 
-  // Work-specific sandbox (source: agent-safehouse)
-  "sandbox": {
-    "network": {
-      "allowedDomains": [
-        // AWS SSO login + STS/OIDC token exchange
-        "portal.sso.us-west-2.amazonaws.com",
-        "oidc.us-west-2.amazonaws.com",
-        "sts.us-west-2.amazonaws.com",
-        // Bedrock (Claude Code via Bedrock, plus direct model calls)
-        "bedrock.us-west-2.amazonaws.com",
-        "bedrock-runtime.us-west-2.amazonaws.com",
-        "api.ecr.us-west-2.amazonaws.com",
-        // Buildkite artifact downloads
-        "gusto-buildkite-artifacts-us-west-2.s3.us-west-2.amazonaws.com",
-        // Gusto internal services
-        "app.gusto-dev.com",
-        "devotel.uw2.staging.zp-int.com",
-        "flight-deck.prod.zp-int.com",
-        "gusto.runlayer.com",
-        "http-intake.logs.us5.datadoghq.com",
-      ],
-    },
-  },
+  // Work-specific sandbox: all of it (AWS SSO/Bedrock/ECR endpoints, Gusto
+  // internal hostnames, the buildkite artifacts bucket) lives in the private
+  // overlay now, not here -- this repo is public. See requiresPrivateOverlay
+  // below and ADR 0056.
 
   // Auto mode classifier rules: intentionally absent from this file.
   //
@@ -65,14 +46,15 @@
   //
   // They just cannot live here: this repo is public, and a filled-in work
   // environment block spells out org name, internal services, deploy targets
-  // and protected namespaces in one place. Some of that already leaks through
-  // the sandbox allowlist above; the classifier block would be a much fuller
-  // picture.
+  // and protected namespaces in one place.
   //
   // They live in ~/.config/dotpickles/roles/work.jsonc instead, which
   // claudeconfig.sh merges last. Generate it by running /auto-mode-setup on
   // the work machine and moving the autoMode block it writes into that file.
-  // See ADR 0056.
+  // See ADR 0056. The sandbox block above lives in that same overlay file.
+  // On this machine that overlay path is a symlink into pickleton (private,
+  // versioned: config/dotpickles/roles/work.jsonc there), not a hand-carried
+  // file.
   //
   // The flag below is not a Claude Code setting -- claudeconfig.sh strips it
   // and uses it to warn when the overlay is missing, so this role never
