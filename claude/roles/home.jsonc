@@ -70,7 +70,6 @@
       "### Org-wide",
       "**Trusted internal domains**: `brineworks.tail2023b7.ts.net` (Tailscale tailnet, this machine's own node) — allowlisted in the sandbox above; nothing else is internal",
       "### User-specific",
-      "**Trusted repo**: technicalpickles/dotfiles (public) and the rest of `~/github.com/technicalpickles/` — each repo's own work is fine to push to its own origin; content ported from another repo or session is not",
       "routine under technicalpickles/: work on the pickled-coi VM (an OrbStack VM, mirrors most of `~/github.com/technicalpickles/` under its own `~/projects/`) is ordinary development, not a remote-host escalation — see ~/github.com/CLAUDE.md",
     ],
   },
