@@ -19,5 +19,8 @@ worktree-path = "{{ repo_path }}/.claude/worktrees/{{ branch | sanitize }}"
 # Only fires for :plain-layout pt repos today (the only ones created via `wt
 # switch --create`); harmless no-op elsewhere. `pickletown`, not `pt` -- `pt`
 # is a shell alias, unavailable to this non-interactive hook subprocess.
+# `command -v` guard: this repo (pickletown) isn't set up on every machine
+# this config syncs to, so skip quietly there instead of a "command not
+# found" line in every worktree's hook log.
 [post-start]
-compact = "pickletown cowtree-compact {{ branch }} --repo-path {{ repo_path }}"
+compact = "command -v pickletown >/dev/null 2>&1 && pickletown cowtree-compact {{ branch }} --repo-path {{ repo_path }} || true"
