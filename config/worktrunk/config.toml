@@ -10,3 +10,14 @@
 # ~/worktrees hub in favor of nested paths already covered by the sandbox's
 # implicit cwd allowance -- see claude/rules/worktrees.md.
 worktree-path = "{{ repo_path }}/.claude/worktrees/{{ branch | sanitize }}"
+
+# cowtree's default compaction donor is the repo's primary worktree, and it
+# hard-aborts the whole repo's compaction if that donor is dirty rather than
+# falling through to a clean sibling. `pt cowtree-compact` picks a clean
+# donor first (or skips if every worktree in the repo is dirty) -- see
+# pickleton's projects/pt-tooling/design/2026-09-11-plain-layout-bulk-migration-and-cowtree.md.
+# Only fires for :plain-layout pt repos today (the only ones created via `wt
+# switch --create`); harmless no-op elsewhere. `pickletown`, not `pt` -- `pt`
+# is a shell alias, unavailable to this non-interactive hook subprocess.
+[post-start]
+compact = "pickletown cowtree-compact {{ branch }} --repo-path {{ repo_path }}"
