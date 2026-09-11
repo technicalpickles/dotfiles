@@ -61,16 +61,27 @@
     },
   },
 
-  // Auto mode: base.jsonc already describes the home posture (no org, no
-  // cloud, public dotfiles repo, "None configured" across the org-shaped
-  // slots), so this only adds what is specific to this machine. A bullet
-  // here replaces the base bullet carrying the same **Label**. See ADR 0056.
+  // Auto mode: base.jsonc holds the role-invariant, "None configured"
+  // picture; this adds what's specific to this machine and its personal
+  // repos. A bullet here replaces the base bullet carrying the same
+  // **Label**. See ADR 0056 and claude/README.md's Auto Mode Rules table
+  // ("Home-only additions" -> roles/home.jsonc).
+  //
+  // The dev-VM-vs-production split below is the key thing this role adds:
+  // pickled-coi is disposable and safe to experiment on; picklelab/picklehome
+  // is real infrastructure (including physical-world effects: HVAC, the
+  // garage door) and should get the same caution as any other prod system.
   "autoMode": {
     "environment": [
       "### Org-wide",
       "**Trusted internal domains**: `brineworks.tail2023b7.ts.net` (Tailscale tailnet, this machine's own node) — allowlisted in the sandbox above; nothing else is internal",
+      "**Sensitive remote targets**: any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment; also `picklelab` (personal homelab host, reached over Tailscale) and anything deployed there via the `picklehome` repo, even though the name itself doesn't say \"prod\"",
+      "**Protected deployment namespaces / environments**: the personal homelab — the `picklelab` host and whatever `picklehome` (`~/github.com/technicalpickles/picklehome`, public) deploys onto it: home automation with physical-world effects (HVAC via `climate/`, the garage door via `garage/`) plus always-on app services like `brineworks-server` (see that repo's `docs/dev-vs-prod-pipeline.md`). Real production — treat `ssh picklelab`, and any `docker compose`/`just deploy-*`/`just climate-*`/`just garage-*` command that mutates state there, with the same caution as any other prod system",
       "### User-specific",
-      "routine under technicalpickles/: work on the pickled-coi VM (an OrbStack VM, mirrors most of `~/github.com/technicalpickles/` under its own `~/projects/`) is ordinary development, not a remote-host escalation — see ~/github.com/CLAUDE.md",
+      "**Primary use of Claude Code**: personal software projects — dotfiles/dev-environment tooling (this repo), homelab ops (`picklehome`), and app development (e.g. `brineworks`) — spread across repos under `~/github.com/technicalpickles/` and the `pickled-coi` VM's mirror of them",
+      "**Org-specific CLIs**: `beans` (agentic issue tracker), `herdr` (plugin manager, `config/herdr/plugins.toml`), `claudeconfig.sh`, `sshconfig.sh`, `gitconfig.sh`, `bin/adr` — all in `technicalpickles/dotfiles`, routine there",
+      "routine under technicalpickles/dotfiles: edits to `claude/`, `.claude/rules/`, `home/`, `config/`, `ssh/config.d/` followed by the documented regeneration scripts (`claudeconfig.sh`, `sshconfig.sh`, `gitconfig.sh`)",
+      "routine under technicalpickles/: work on the pickled-coi VM (an OrbStack VM, mirrors most of `~/github.com/technicalpickles/` under its own `~/projects/`) is ordinary development, not a remote-host escalation — see ~/github.com/CLAUDE.md. `picklelab`/`picklehome` (above) is the opposite of pickled-coi: real infrastructure, not a sandbox to experiment on freely",
     ],
   },
 

@@ -76,9 +76,14 @@
   // role or stack bullet with the same **Label** replaces the one here rather
   // than sitting alongside it.
   //
-  // Base holds the role-invariant picture: this repo, this laptop, and the
-  // shipped "None configured" text for the org-shaped slots (correct as-is
-  // under the home role). work.jsonc overrides the slots Gusto changes.
+  // Base holds the role-invariant picture: facts that hold no matter which
+  // repo or machine a session starts on (dynamic trusted-repo/visibility
+  // wording, not one named repo), plus the shipped "None configured" text
+  // for the org-shaped slots (correct as-is under the home role). Facts
+  // specific to one machine or repo do NOT belong here -- they leak into
+  // every role that merges this file, including work. Put those in
+  // home.jsonc (or work's private overlay) instead; see ADR 0056 and
+  // claude/README.md's Auto Mode Rules table for where things go.
   // Roles and stacks omit "$defaults" -- the generator guarantees it.
   "autoMode": {
     "allow": ["$defaults", "Bash(herdr:*) in technicalpickles/dotfiles"],
@@ -109,10 +114,8 @@
       "**Protected deployment namespaces / environments**: None configured — fall back to the Sensitive remote targets heuristic",
       "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or name segment",
       "### User-specific",
-      "**Primary use of Claude Code**: personal dotfiles / developer tooling maintenance (shell configs, git settings, macOS preferences, Claude Code's own configuration)",
+      "**Primary use of Claude Code**: software development and infrastructure/tooling maintenance across whatever repo and machine the session is running on — this is a multi-project setup, not one project; infer the specific purpose of the current repo from its own README/CLAUDE.md rather than assuming a single fixed project",
       "**Trusted repo**: The git repository the agent started in (its working directory) and its configured remote(s). When the repo's public/private visibility is given — by the Repository visibility entry or the user's own message — use it to scope what is OK to commit or push there: confidential material is fine in a private repo; in a public one, only that repo's own work is — and content ported, repointed, or first read from outside this session's repo is not its own work, whoever directed the port. Visibility scopes confidential material only: secrets and sensitive data (personal & entrusted) are never cleared into any repo by its visibility.",
-      "**Org-specific CLIs**: `beans` (agentic issue tracker, this repo), `herdr` (plugin manager, this repo — `config/herdr/plugins.toml`), `claudeconfig.sh`, `sshconfig.sh`, `gitconfig.sh`, `bin/adr` — all repo-local scripts/CLIs, routine under this repo",
-      "routine under technicalpickles/dotfiles: edits to `claude/`, `.claude/rules/`, `home/`, `config/`, `ssh/config.d/` followed by the documented regeneration scripts (`claudeconfig.sh`, `sshconfig.sh`, `gitconfig.sh`)",
     ],
   },
 
