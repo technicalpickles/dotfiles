@@ -19,7 +19,26 @@
     "GIT_CONFIG_GLOBAL": "~/.gitconfig.d/claude-agent-home",
   },
 
-  // No other overrides yet. Add sandbox rules here if a concrete COI-host
+  // No other sandbox overrides yet. Add rules here if a concrete COI-host
   // workflow needs them -- don't copy home's sandbox block as-is, its
   // allowWrite is a macOS Library path and its allowedDomains are Mac-specific.
+
+  // Auto mode: this VM has no org/cloud context of its own, so base.jsonc's
+  // "None configured" picture is otherwise fine here, same as under home.
+  // But claudeconfig.sh only ever merges base + ONE role, so home.jsonc's
+  // bullets don't reach a session that starts with DOTPICKLES_ROLE=coi-host
+  // -- the one thing worth carrying over is the dev-VM-vs-production
+  // distinction, since a session here could just as easily `ssh picklelab`
+  // or run a `just deploy-*` as one on the laptop. Duplicated from
+  // home.jsonc rather than shared (no cross-role include mechanism exists);
+  // keep the two in sync if this changes. See ADR 0056.
+  "autoMode": {
+    "environment": [
+      "### Org-wide",
+      "**Sensitive remote targets**: any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment; also `picklelab` (personal homelab host, reached over Tailscale) and anything deployed there via the `picklehome` repo, even though the name itself doesn't say \"prod\"",
+      "**Protected deployment namespaces / environments**: the personal homelab — the `picklelab` host and whatever `picklehome` (`~/github.com/technicalpickles/picklehome` on the Mac, public) deploys onto it: home automation with physical-world effects (HVAC via `climate/`, the garage door via `garage/`) plus always-on app services like `brineworks-server` (see that repo's `docs/dev-vs-prod-pipeline.md`). Real production — treat `ssh picklelab`, and any `docker compose`/`just deploy-*`/`just climate-*`/`just garage-*` command that mutates state there, with the same caution as any other prod system",
+      "### User-specific",
+      "this VM (pickled-coi) is itself the disposable dev sandbox that mirrors most of technicalpickles/ repos under its own `~/projects/` -- ordinary development here is not a remote-host escalation. `picklelab`/`picklehome` (above) is different: real infrastructure, not something to experiment on freely, even though it's one `ssh` away like anything else",
+    ],
+  },
 }
