@@ -16,3 +16,5 @@ bypasses:
     whitelist: true
     matchers:
       - github.com:22
+      - picklelab:22
+      - picklelab.tail2023b7.ts.net:22
