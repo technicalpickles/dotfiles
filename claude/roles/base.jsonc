@@ -90,7 +90,6 @@
     "soft_deny": [
       "$defaults",
       "Bash(rm -rf:*) in technicalpickles/dotfiles — repo docs show a prior EPERM/sandbox workaround pattern around forced writes; keep destructive rm under review",
-      "Push to origin over SSH (git@github.com:) — repo docs say agent sessions rewrite this to HTTPS; a literal SSH push attempt is unexpected and worth a second look",
     ],
     "environment": [
       "### Org-wide",
