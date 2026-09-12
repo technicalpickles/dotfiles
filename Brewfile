@@ -7,6 +7,7 @@ brew 'tmux'
 brew 'sesh'
 brew 'herdr'
 brew 'worktrunk'
+brew 'markjaquith/tap/cowtree' # APFS copy-on-write worktree compaction, used by worktrunk's post-start hook (config/worktrunk/config.toml)
 
 # git
 brew 'git-lfs'
