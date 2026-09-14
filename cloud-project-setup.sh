@@ -14,7 +14,7 @@ MANIFEST="$DIR/claude/marketplaces.jsonc"
 
 usage() {
   cat << 'EOF'
-Usage: claude-project-setup.sh [TARGET_DIR] [--profile NAME] [--list-profiles] [--dry-run]
+Usage: cloud-project-setup.sh [TARGET_DIR] [--profile NAME] [--list-profiles] [--dry-run]
 
 Writes <TARGET_DIR>/.claude/settings.json with extraKnownMarketplaces +
 enabledPlugins for the chosen profile, MERGING into any existing settings
@@ -68,7 +68,7 @@ while [ $# -gt 0 ]; do
       ;;
     -*)
       echo "Error: unknown option: $1" >&2
-      echo "Run 'claude-project-setup.sh --help' for usage." >&2
+      echo "Run 'cloud-project-setup.sh --help' for usage." >&2
       exit 2
       ;;
     *)
@@ -116,7 +116,7 @@ if ! generated="$(echo "$manifest_json" | jq -e --arg profile "$PROFILE" '
     }
 ' 2>&1)"; then
   echo "Error: $generated" >&2
-  echo "Run 'claude-project-setup.sh --list-profiles' to see valid profiles." >&2
+  echo "Run 'cloud-project-setup.sh --list-profiles' to see valid profiles." >&2
   exit 2
 fi
 
