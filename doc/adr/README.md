@@ -55,3 +55,4 @@
 - [54. sync-authorized-keys-from-1password-for-inbound-ssh](0054-sync-authorized-keys-from-1password-for-inbound-ssh.md)
 - [55. agent-git-over-ssh-through-the-relay](0055-agent-git-over-ssh-through-the-relay.md)
 - [56. auto-mode-classifier-rules-in-role-sources](0056-auto-mode-classifier-rules-in-role-sources.md)
+- [57. local-cross-repo-filesystem-access](0057-local-cross-repo-filesystem-access.md)

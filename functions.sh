@@ -256,7 +256,7 @@ dotpickles_detect_role() {
 dotpickles_detect_role
 
 # Read a JSON or JSONC file to stdout, stripping comments and trailing commas.
-# Shared by claudeconfig.sh and claude-project-setup.sh.
+# Shared by claudeconfig.sh, cloud-project-setup.sh, and local-project-setup.sh.
 #
 # Uses a single python3 parser rather than the node path it once had. The node
 # path stripped comments with regexes that were not string-aware, so a glob like

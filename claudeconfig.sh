@@ -44,7 +44,7 @@ while [ $# -gt 0 ]; do
 done
 
 # read_json (JSONC parser) now lives in functions.sh, shared with
-# claude-project-setup.sh.
+# cloud-project-setup.sh and local-project-setup.sh.
 
 # Detect role (uses existing DOTPICKLES_ROLE from environment)
 ROLE="${DOTPICKLES_ROLE:-home}"
@@ -578,7 +578,7 @@ configure_marketplaces() {
   mkdir -p "$marketplaces_dir"
 
   # Marketplaces come from the shared manifest (single source of truth, also
-  # read by claude-project-setup.sh). Format per line: "marketplace-id:owner/repo".
+  # read by cloud-project-setup.sh). Format per line: "marketplace-id:owner/repo".
   local manifest="$DIR/claude/marketplaces.jsonc"
   if [ ! -f "$manifest" ]; then
     echo "Error: $manifest not found"
