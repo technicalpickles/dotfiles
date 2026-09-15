@@ -248,14 +248,21 @@ These keys in `~/.claude/settings.json` are preserved across regenerations:
 - `enabledPlugins`: plugin activation state
 - `extraKnownMarketplaces`: managed by `configure_marketplaces()` in claudeconfig.sh
 
-## Marketplaces and per-project plugins
+## Per-repo project setup
+
+Two scripts stamp settings into an individual repo's `.claude/`, each solving
+a different visibility problem: `cloud-project-setup.sh` writes what a _cloud_
+session needs to see (so it must be committed), `local-project-setup.sh`
+writes what only _this machine_ needs (so it must not be).
+
+### Marketplaces and per-project plugins (cloud)
 
 `marketplaces.jsonc` is the single source of truth for marketplaces (alias ->
 GitHub repo) and named plugin `profiles` (`core`, `dev`; default `dev`). Two
 consumers read it:
 
 - `claudeconfig.sh` clones the marketplaces globally (`configure_marketplaces()`).
-- `claude-project-setup.sh [DIR] [--profile NAME] [--dry-run]` writes a repo's
+- `cloud-project-setup.sh [DIR] [--profile NAME] [--dry-run]` writes a repo's
   **committed** `.claude/settings.json` (`extraKnownMarketplaces` + `enabledPlugins`)
   so Claude Code on the web picks the plugins up. It merges into existing settings
   (permissions/hooks survive). See [ADR 0041](../doc/adr/0041-project-level-claude-plugin-bootstrap.md).
@@ -263,6 +270,28 @@ consumers read it:
 Plugin keys are `<plugin>@<marketplace-alias>`; the alias is the key in
 `marketplaces`, and plugin names must match each repo's
 `.claude-plugin/marketplace.json`.
+
+### Cross-repo filesystem access (local)
+
+`cross-repo-access.jsonc` maps a repo name to the sibling repos its sessions
+routinely need to read/write directly (e.g. a `pickleclaw` session running
+`git`/deploy commands against `picklehome`). The sandbox only auto-grants
+write access to a session's own working directory, so without this, those
+cross-repo commands fail with `Operation not permitted` and fall back to
+`dangerouslyDisableSandbox`.
+
+- `local-project-setup.sh [DIR] [--dry-run]` writes a repo's **gitignored**
+  `.claude/settings.local.json` (`permissions.additionalDirectories`), listing
+  each sibling as a directory alongside `DIR` (works under both
+  `~/github.com/technicalpickles/` and pickled-coi's `~/projects/`). It merges
+  into existing local settings the same way `cloud-project-setup.sh` merges
+  into committed settings. See [ADR 0057](../doc/adr/0057-local-cross-repo-filesystem-access.md).
+
+This one is deliberately the opposite of the cloud case: the paths are
+machine-specific, so they belong in the gitignored `settings.local.json`, not
+the committed `settings.json`. Since it's gitignored, re-run this script on
+any other machine (or a fresh clone) where the same repo needs the same
+cross-repo access.
 
 ## MCP servers
 

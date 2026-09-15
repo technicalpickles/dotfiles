@@ -3,7 +3,7 @@
   //
   // Consumed by:
   //   - claudeconfig.sh         -> configure_marketplaces() clones these globally
-  //   - claude-project-setup.sh -> writes a repo's committed .claude/settings.json
+  //   - cloud-project-setup.sh  -> writes a repo's committed .claude/settings.json
   //                                (extraKnownMarketplaces + enabledPlugins) so
   //                                Claude Code on the web picks the plugins up.
   //

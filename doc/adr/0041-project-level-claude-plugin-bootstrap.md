@@ -6,6 +6,12 @@ Date: 2026-06-28
 
 Accepted
 
+Note (2026-09-14): `claude-project-setup.sh` was renamed to
+`cloud-project-setup.sh` to distinguish it from the new
+`local-project-setup.sh` (see [ADR 0057](0057-local-cross-repo-filesystem-access.md)),
+which solves an unrelated, machine-local problem. The decision below is
+unchanged; only the filename is.
+
 ## Context
 
 Claude Code on the web (cloud) clones a repo fresh into an ephemeral container

@@ -1,0 +1,20 @@
+{
+  // Single source of truth for which personal repos' Claude Code sessions
+  // routinely reach into a sibling repo directly (git add/commit/push, deploy
+  // scripts, etc. run with `cd`/`git -C` against the sibling).
+  //
+  // The sandbox only auto-grants write access to a session's own working
+  // directory (plus its worktree's main-repo .git). A command that `cd`s into
+  // a different repo entirely gets "Operation not permitted" on that repo's
+  // .git/index.lock, .git/config, or .git/FETCH_HEAD, and falls back to
+  // dangerouslyDisableSandbox. See ADR 0057.
+  //
+  // Consumed by local-project-setup.sh, which resolves each sibling as a
+  // directory alongside the target repo and writes it into the target's
+  // gitignored .claude/settings.local.json as permissions.additionalDirectories.
+  //
+  // Keys and values are repo directory names (not paths) -- local-project-setup.sh
+  // resolves the actual path per machine.
+  "pickleclaw": ["picklehome", "openclaw-workspace"],
+  "picklehome": ["pickleclaw"],
+}
