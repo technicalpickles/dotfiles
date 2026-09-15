@@ -18,6 +18,7 @@ claude/
 │   ├── beans.jsonc        # Beans issue tracker
 │   ├── buildkite.jsonc    # Buildkite CI
 │   ├── colima.jsonc       # Colima container runtime
+│   ├── crit.jsonc         # crit code review tool (Tailscale remote-review pattern)
 │   ├── docker.jsonc       # Docker container management
 │   ├── docs.jsonc         # Reference documentation sites
 │   ├── git.jsonc          # Git operations
