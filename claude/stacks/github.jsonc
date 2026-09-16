@@ -36,6 +36,17 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
     ],
+    // Creating a repo (especially --public) is visible-to-others and not
+    // meaningfully undone by deleting it after the fact, same class as
+    // git push --force/reset --hard in base.jsonc's ask list. It had no
+    // allow/deny/ask rule anywhere else, so outside auto mode it already
+    // prompted by falling through to the default "ask" -- this entry exists
+    // so it also prompts *in* auto mode, where an uncovered command is
+    // instead handed to a per-action classifier that decides whether to
+    // interrupt, and isn't guaranteed to flag repo creation as needing a
+    // human. Confirmed once: a `gh repo create ... --public` ran under
+    // auto mode with no prompt at all before this rule existed.
+    "ask": ["Bash(gh repo create:*)"],
   },
 
   // source: agent-safehouse
