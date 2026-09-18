@@ -101,7 +101,7 @@
       "**Default / protected branches**: `main` (protected, per gh); no rulesets configured",
       "**CI/CD deploy targets**: None configured",
       "**Network posture**: None configured",
-      "**Host containment**: None configured — assume Claude Code runs on an ordinary developer machine with open internet; note repo docs describe a Seatbelt/sandbox layer (outbound port 22 blocked at TCP-connect by default; on this `home`-role machine, agent git/ssh to relay-allowlisted hosts like github.com is routed around that block via a local SOCKS5 relay, per ADR 0055 -- not actually restricted there; some paths under `~/.claude/` denied for writes) but this is local sandboxing, not a declared network/identity containment boundary — the classifier cannot verify sandbox state from commands alone",
+      "**Host containment**: None configured — assume Claude Code runs on an ordinary developer machine with open internet; note repo docs describe a Seatbelt/sandbox layer (on this `home`-role machine, agent git/ssh to relay-allowlisted hosts like github.com works normally via a local SOCKS5 relay per ADR 0055 -- not a containment signal; other hosts/roles hit a genuine port-22 network-policy deny; some paths under `~/.claude/` denied for writes) but this is local sandboxing, not a declared network/identity containment boundary — the classifier cannot verify sandbox state from commands alone",
       "**Source control**: The trusted repo and its remote(s) only (no additional orgs configured) — as scoped by the Trusted repo and Repository visibility entries above",
       "**Trusted internal domains**: None configured",
       "**Trusted cloud buckets**: None configured",
