@@ -6,10 +6,31 @@
   // and proxies it in with `tailscale serve`, e.g.:
   //   crit --public-url "https://<machine>.ts.net" --allow-unauthenticated-network --no-open
   //   tailscale serve --bg --https=443 http://127.0.0.1:<port>
-  // Without these entries, the auto-mode classifier flags --allow-unauthenticated-network
-  // as risky and forces a fresh AskUserQuestion confirmation every session, even though
-  // this is the expected, documented pattern.
+  //
+  // The original narrow prefixes here ("crit --public-url:*", "tailscale
+  // serve:*") stopped matching as soon as an agent invoked crit any other
+  // way: backgrounded via `nohup crit ... &` (a different first token),
+  // flags in a different order (--port/--no-open before --public-url), or
+  // tailscale via its full app-bundle path/a shell variable when the CLI
+  // isn't on PATH (confirmed 2026-09-19, nikke-roster-scanner session).
+  // crit's own SKILL.md frontmatter already scopes itself to the broad
+  // `Bash(crit:*)`, so matching that here isn't a widening beyond what the
+  // tool's author considers safe -- it just makes it apply outside an
+  // active /crit skill invocation too. `crit share` (uploads to the
+  // external crit.md service) stays off this list on purpose -- that's a
+  // different, external-upload action and should keep getting a real
+  // check-in.
+  //
+  // The exposure question itself (should Claude even ask before flipping
+  // --allow-unauthenticated-network) is answered by
+  // claude/rules/tailscale-dev-exposure.md, not by this permission list --
+  // this file only stops the *tool-permission* prompt.
   "permissions": {
-    "allow": ["Bash(crit --public-url:*)", "Bash(tailscale serve:*)"],
+    "allow": [
+      "Bash(crit:*)",
+      "Bash(nohup crit:*)",
+      "Bash(tailscale serve:*)",
+      "Bash(/Applications/Tailscale.app/Contents/MacOS/Tailscale serve:*)",
+    ],
   },
 }

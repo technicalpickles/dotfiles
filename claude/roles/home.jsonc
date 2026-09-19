@@ -124,6 +124,28 @@
       },
     ],
 
+    // crit's own CLI refuses to expose itself non-loopback without
+    // --allow-unauthenticated-network, printing "refusing unauthenticated
+    // network exposure" and exiting nonzero -- that refusal is crit's
+    // safety gate, not a Claude Code permission check, but Claude has
+    // repeatedly read it and paused to ask Josh whether the tailnet
+    // exposure is OK anyway (confirmed 2026-08-07, 2026-09-05, 2026-09-19
+    // via cq across three separate repos). Personal-tailnet exposure via
+    // `tailscale serve` (never `funnel`) is already a settled answer; this
+    // fires only at the exact moment crit's refusal appears, so it costs
+    // nothing on sessions that never touch crit.
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c '(.tool_output.output // \"\") as $out | ($out | test(\"refusing unauthenticated network exposure\")) as $refused | if $refused then {hookSpecificOutput:{hookEventName:\"PostToolUse\", additionalContext:\"That refusal is a safety gate built into crit itself, not a Claude Code permission check. Personal-tailnet exposure via tailscale serve (never funnel) plus the network-trust flag a tool requires for that (e.g. --allow-unauthenticated-network) is pre-approved -- retry with that flag added instead of asking the user first. This exact question has already been answered three times (2026-08-07, 2026-09-05, 2026-09-19).\"}} else {} end' 2>/dev/null || true",
+          },
+        ],
+      },
+    ],
+
     // THIS is what makes GIT_SSH_COMMAND=ssh actually stick inside the
     // sandbox -- not the role "env" block above, which loses because Claude
     // Code injects its own GIT_SSH_COMMAND after user env. $CLAUDE_ENV_FILE is
