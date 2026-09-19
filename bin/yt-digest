@@ -10,7 +10,7 @@
 # ]
 # ///
 """
-yt_infographics.py — pull everything worth summarizing out of a YouTube (or
+yt_digest.py — pull everything worth summarizing out of a YouTube (or
 any yt-dlp-supported) video: the spoken transcript AND clean on-screen
 infographic/slide text, merged into one chronological document.
 
@@ -47,18 +47,24 @@ requiring `brew install ffmpeg`. `claude_agent_sdk` still shells out to the
 Claude Code's own auth, not something pip can vendor).
 
 Usage:
-    ./yt_infographics.py "https://www.youtube.com/watch?v=..." \\
+    ./yt_digest.py "https://www.youtube.com/watch?v=..." \\
         --out-dir ./out --scene-threshold 0.3 --model claude-haiku-4-5
 
     # or, without chmod +x:
-    uv run yt_infographics.py "https://www.youtube.com/watch?v=..."
+    uv run yt_digest.py "https://www.youtube.com/watch?v=..."
 
     # Re-run just the triage/vision stages on an already-downloaded video
     # (also reuses an existing transcript if one was already fetched):
-    ./yt_infographics.py --skip-download --out-dir ./out
+    ./yt_digest.py --skip-download --out-dir ./out
 
     # No captions wanted, infographics only:
-    ./yt_infographics.py "https://..." --no-transcript
+    ./yt_digest.py "https://..." --no-transcript
+
+    # Talking-head video, captions only -- skips download, keyframes, OCR,
+    # and vision entirely (this is a manual opt-in, not auto-detected: pick
+    # it yourself when you already know the video has no on-screen text
+    # worth extracting, e.g. a capture workflow for a talking-head clip):
+    ./yt_digest.py "https://..." --transcript-only
 """
 from __future__ import annotations
 
@@ -438,7 +444,7 @@ def print_output_tree(out_dir: Path) -> None:
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("url", nargs="?", help="Video URL (any yt-dlp-supported source)")
-    p.add_argument("--out-dir", type=Path, default=Path("./yt-infographics-out"))
+    p.add_argument("--out-dir", type=Path, default=Path("./yt-digest-out"))
     p.add_argument("--skip-download", action="store_true", help="Reuse an existing video.mp4 in --out-dir")
     p.add_argument("--scene-threshold", type=float, default=0.3, help="ffmpeg scene-change sensitivity (lower = more frames)")
     p.add_argument("--min-real-words", type=int, default=15, help="Triage: min real-word count to flag a frame as a candidate")
@@ -447,15 +453,37 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--model", default="claude-haiku-4-5", help="Model for the vision re-read pass")
     p.add_argument("--concurrency", type=int, default=4, help="Concurrent vision reads")
     p.add_argument("--no-transcript", action="store_true", help="Skip fetching/parsing the spoken-word transcript")
+    p.add_argument("--transcript-only", action="store_true", help="Fetch and clean only the spoken transcript -- skip video download, keyframes, OCR, and vision entirely")
     p.add_argument("--langs", nargs="+", default=["en"], help="Preferred caption languages, in order")
     p.add_argument("--transcript-chunk-seconds", type=float, default=30.0, help="Paragraph length when chunking the transcript")
-    return p.parse_args()
+    args = p.parse_args()
+    if args.transcript_only and args.no_transcript:
+        p.error("--transcript-only and --no-transcript are contradictory")
+    return args
 
 
 async def async_main() -> None:
     args = parse_args()
     out_dir = args.out_dir.resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.transcript_only:
+        if not args.url:
+            sys.exit("A video URL is required for --transcript-only")
+        vtt_path = download_transcript(args.url, out_dir, args.langs)
+        if not vtt_path:
+            sys.exit("--transcript-only requested but no captions were found")
+        cues = parse_vtt(vtt_path)
+        transcript_chunks = chunk_transcript(cues, args.transcript_chunk_seconds)
+        print(f"[transcript] {len(cues)} cues chunked into {len(transcript_chunks)} paragraphs")
+        transcript_lines = ["# Spoken transcript\n"] + [
+            f"## {timecode(t)}\n\n{text}" for t, text in transcript_chunks
+        ]
+        (out_dir / "transcript.md").write_text("\n\n".join(transcript_lines))
+        print(f"[report] wrote {out_dir / 'transcript.md'}")
+        print_output_tree(out_dir)
+        return
+
     frames_dir = out_dir / "frames"
 
     if not args.skip_download:
