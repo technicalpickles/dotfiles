@@ -80,6 +80,11 @@ if [[ -n "$HOMEBREW_PREFIX" ]]; then
   export PATH="${PATH//$HOMEBREW_PREFIX\/sbin:/}"
   export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
 fi
+# pinned wrappers (e.g. qmd -> mise exec node@24) must beat mise shims
+if [[ -d "$HOME/.pickles/bin" ]]; then
+  export PATH="${PATH//$HOME\/.pickles\/bin:/}"
+  export PATH="$HOME/.pickles/bin:$PATH"
+fi
 if [[ -d "$HOME/.cargo/bin" ]]; then
   export PATH="${PATH//$HOME\/.cargo\/bin:/}"
   export PATH="$HOME/.cargo/bin:$PATH"
