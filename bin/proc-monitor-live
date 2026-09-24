@@ -1,33 +1,102 @@
 #!/usr/bin/env bash
 
-# spotlight-monitor-live
+# proc-monitor-live
 #
-# Purpose: Real-time monitoring of Spotlight processes with live updates
-# Created: 2025-10-08
-# Updated: 2025-10-28 - Moved to bin/ with consistent naming
-# Usage: spotlight-monitor-live [process_filter]
+# Purpose: Real-time monitoring of a background process's filesystem activity
+# Created: 2025-10-08 (as spotlight-monitor-live)
+# Updated: 2026-09-24 - Generalized beyond Spotlight to any process via presets
+# Usage: proc-monitor-live [-p preset] [-f pattern] [process_filter]
 #
-# This script provides a live view of what Spotlight is currently indexing.
+# This script provides a live view of what a process is currently touching on disk.
 # Press Ctrl+C to stop and see summary statistics.
 #
-# Monitored processes: mds, mds_stores, mdworker, mdworker_shared, mdsync
-# Process filter examples: "mds_stores", "mds|mdworker", or leave empty for all
+# Presets (see list_presets below): spotlight, opendirectoryd, falcon
+# Or pass a raw fs_usage process-name pattern via -f/--pattern (e.g. "mds_stores", "mds|mdworker")
 #
 # Based on: https://apple.stackexchange.com/questions/144474/mds-and-mds-stores-constantly-consuming-cpu
 
 set -euo pipefail
 
-# Process filter: empty means all mds-related processes
-PROCESS_FILTER="${1:-}"
+list_presets() {
+  cat << 'EOF'
+Available presets:
+  spotlight       mds, mds_stores, mdworker, mdworker_shared, mdsync
+  opendirectoryd  opendirectoryd
+  falcon          com.crowdstrike.falcon.Agent
+EOF
+}
 
-# Build process filter
-if [ -z "$PROCESS_FILTER" ]; then
-  # Monitor all spotlight-related processes
-  PROCESS_PATTERN="mds"
-  PROCESS_DESC="all Spotlight processes (mds, mds_stores, mdworker, mdworker_shared, mdsync)"
+preset_pattern() {
+  case "$1" in
+    spotlight) echo "mds" ;;
+    opendirectoryd) echo "opendirectoryd" ;;
+    falcon) echo "com.crowdstrike.falcon.Agent" ;;
+    *)
+      echo "Unknown preset: $1" >&2
+      list_presets >&2
+      exit 1
+      ;;
+  esac
+}
+
+preset_desc() {
+  case "$1" in
+    spotlight) echo "all Spotlight processes (mds, mds_stores, mdworker, mdworker_shared, mdsync)" ;;
+    opendirectoryd) echo "opendirectoryd" ;;
+    falcon) echo "CrowdStrike Falcon (com.crowdstrike.falcon.Agent)" ;;
+  esac
+}
+
+usage() {
+  cat << EOF
+Usage: $(basename "$0") [-p preset] [-f pattern] [pattern]
+
+  -p, --preset NAME     Use a named preset (see below). Default: spotlight
+  -f, --pattern REGEX   Raw fs_usage process-name pattern, overrides preset
+  -h, --help            Show this help
+
+A single positional arg is accepted for back-compat as a raw pattern.
+
+$(list_presets)
+EOF
+}
+
+PRESET="spotlight"
+PATTERN=""
+POSITIONAL=()
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -p | --preset)
+      PRESET="$2"
+      shift 2
+      ;;
+    -f | --pattern)
+      PATTERN="$2"
+      shift 2
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      POSITIONAL+=("$1")
+      shift
+      ;;
+  esac
+done
+
+# Back-compat positional arg: [pattern]
+if [ "${#POSITIONAL[@]}" -ge 1 ] && [ -z "$PATTERN" ]; then
+  PATTERN="${POSITIONAL[0]}"
+fi
+
+if [ -n "$PATTERN" ]; then
+  PROCESS_PATTERN="$PATTERN"
+  PROCESS_DESC="$PATTERN"
 else
-  PROCESS_PATTERN="$PROCESS_FILTER"
-  PROCESS_DESC="$PROCESS_FILTER"
+  PROCESS_PATTERN="$(preset_pattern "$PRESET")"
+  PROCESS_DESC="$(preset_desc "$PRESET")"
 fi
 
 TEMP_FILE=$(mktemp)
@@ -58,13 +127,13 @@ get_extension() {
 
 # Print header
 clear 2> /dev/null || true
-echo "🔍 Real-Time Spotlight Activity Monitor"
+echo "🔍 Real-Time Process Activity Monitor"
 echo "========================================"
 echo ""
 echo "Monitoring: $PROCESS_DESC"
 echo "Press Ctrl+C to stop and see summary"
 echo ""
-echo "Recent files being indexed:"
+echo "Recent files being accessed:"
 echo "──────────────────────────────────────────────────────────────────────────────"
 
 # Counter for display

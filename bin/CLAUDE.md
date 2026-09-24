@@ -20,8 +20,11 @@ Spotlight is kept enabled (Alfred requires it) but specific directories are excl
 - `bin/spotlight-expand-patterns`: Expand gitignore-style patterns to concrete paths
 - `bin/spotlight-add-exclusion`: Add a directory via AppleScript UI automation
 - `bin/spotlight-list-exclusions`: List current exclusions from VolumeConfiguration.plist
-- `bin/spotlight-analyze-activity`: Identify high-activity directories Spotlight is indexing
-- `bin/spotlight-monitor-live`: Live monitoring of Spotlight process activity
+
+## Process Filesystem Activity
+
+- `bin/proc-analyze-activity`: Analyze filesystem activity for a background process over a time window. Presets (`-p`): `spotlight` (mds/mdworker/etc, default), `opendirectoryd`, `falcon` (`com.crowdstrike.falcon.Agent`); or pass a raw `fs_usage` process pattern via `-f`/`--pattern`.
+- `bin/proc-monitor-live`: Same presets, live/real-time view instead of a fixed-duration capture.
 
 ## Claude Code Utilities
 

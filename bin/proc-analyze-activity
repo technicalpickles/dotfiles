@@ -1,0 +1,235 @@
+#!/usr/bin/env bash
+
+# proc-analyze-activity
+#
+# Purpose: Analyze what directories and files a background process is actively touching
+# Created: 2025-10-08 (as spotlight-analyze-activity)
+# Updated: 2026-09-24 - Generalized beyond Spotlight to any process via presets
+# Usage: proc-analyze-activity [-p preset] [-f pattern] [-d duration] [duration_in_seconds] [process_filter]
+#
+# This script monitors filesystem activity for a process (or process group) and identifies:
+# - Most frequently accessed directories
+# - File types being accessed most often
+# - Potential high-volume directories to exclude from indexing/scanning
+#
+# Presets (see list_presets below): spotlight, opendirectoryd, falcon
+# Or pass a raw fs_usage process-name pattern via -f/--pattern (e.g. "mds_stores", "mds|mdworker")
+#
+# Based on: https://apple.stackexchange.com/questions/144474/mds-and-mds-stores-constantly-consuming-cpu
+
+set -euo pipefail
+
+list_presets() {
+  cat << 'EOF'
+Available presets:
+  spotlight       mds, mds_stores, mdworker, mdworker_shared, mdsync
+  opendirectoryd  opendirectoryd
+  falcon          com.crowdstrike.falcon.Agent
+EOF
+}
+
+preset_pattern() {
+  case "$1" in
+    spotlight) echo "mds" ;;
+    opendirectoryd) echo "opendirectoryd" ;;
+    falcon) echo "com.crowdstrike.falcon.Agent" ;;
+    *)
+      echo "Unknown preset: $1" >&2
+      list_presets >&2
+      exit 1
+      ;;
+  esac
+}
+
+preset_desc() {
+  case "$1" in
+    spotlight) echo "all Spotlight processes (mds, mds_stores, mdworker, mdworker_shared, mdsync)" ;;
+    opendirectoryd) echo "opendirectoryd" ;;
+    falcon) echo "CrowdStrike Falcon (com.crowdstrike.falcon.Agent)" ;;
+  esac
+}
+
+usage() {
+  cat << EOF
+Usage: $(basename "$0") [-p preset] [-f pattern] [-d duration] [duration] [pattern]
+
+  -p, --preset NAME     Use a named preset (see below). Default: spotlight
+  -f, --pattern REGEX   Raw fs_usage process-name pattern, overrides preset
+  -d, --duration SECS   How long to capture. Default: 30
+  -h, --help            Show this help
+
+Positional args are accepted for back-compat: [duration] [pattern].
+
+$(list_presets)
+EOF
+}
+
+PRESET="spotlight"
+PATTERN=""
+DURATION=""
+POSITIONAL=()
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -p | --preset)
+      PRESET="$2"
+      shift 2
+      ;;
+    -f | --pattern)
+      PATTERN="$2"
+      shift 2
+      ;;
+    -d | --duration)
+      DURATION="$2"
+      shift 2
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      POSITIONAL+=("$1")
+      shift
+      ;;
+  esac
+done
+
+# Back-compat positional args: [duration] [pattern]
+if [ "${#POSITIONAL[@]}" -ge 1 ] && [ -z "$DURATION" ]; then
+  DURATION="${POSITIONAL[0]}"
+fi
+if [ "${#POSITIONAL[@]}" -ge 2 ] && [ -z "$PATTERN" ]; then
+  PATTERN="${POSITIONAL[1]}"
+fi
+
+DURATION="${DURATION:-30}"
+
+if [ -n "$PATTERN" ]; then
+  PROCESS_PATTERN="$PATTERN"
+  PROCESS_DESC="$PATTERN"
+else
+  PROCESS_PATTERN="$(preset_pattern "$PRESET")"
+  PROCESS_DESC="$(preset_desc "$PRESET")"
+fi
+
+TEMP_FILE=$(mktemp)
+
+echo "🔍 Monitoring ${PROCESS_DESC} for ${DURATION} seconds..."
+echo "   Pattern: $PROCESS_PATTERN"
+echo "   (This requires sudo access)"
+echo ""
+
+# Cleanup function
+cleanup() {
+  rm -f "$TEMP_FILE"
+}
+trap cleanup EXIT
+
+# Run fs_usage and capture output
+echo "   Starting capture... (Press Ctrl+C to stop early)"
+sudo timeout "${DURATION}s" fs_usage -w -f filesys "$PROCESS_PATTERN" 2> /dev/null > "$TEMP_FILE" || true
+
+echo ""
+echo "📊 Analysis Results"
+echo "==================="
+echo ""
+
+# Extract file paths and analyze
+# fs_usage output format includes paths that we need to extract
+# Typical line: "    12:13:46.660891    WrData[S]       D=0x03a7d92b  B=0x1000   /dev/disk1s1  /path/to/file"
+
+# Function to extract and count directories
+analyze_directories() {
+  echo "🗂️  Top 20 Directories by Access Count:"
+  echo "────────────────────────────────────────"
+
+  # Extract paths (everything after the last field that looks like /dev/disk or timestamp)
+  grep -o '/[^ ]*' "$TEMP_FILE" \
+    | grep -v '^/dev/' \
+    | grep -v '^\s*$' \
+    | sed 's|/[^/]*$||' \
+    | sort | uniq -c | sort -rn | head -20 \
+    | awk '{printf "%6d  %s\n", $1, $2}'
+
+  echo ""
+}
+
+# Function to analyze file types
+analyze_file_types() {
+  echo "📄 Top File Types by Access Count:"
+  echo "────────────────────────────────────────"
+
+  # Extract file extensions
+  grep -o '/[^ ]*\.[a-zA-Z0-9]*' "$TEMP_FILE" \
+    | sed 's/.*\.//' \
+    | sort | uniq -c | sort -rn | head -15 \
+    | awk '{printf "%6d  .%s\n", $1, $2}'
+
+  echo ""
+}
+
+# Function to identify high-volume directories (good candidates for exclusion)
+identify_candidates() {
+  echo "💡 High-Volume Directories (Consider excluding, if applicable):"
+  echo "────────────────────────────────────────────────────────────────────"
+
+  # Find directories with >50 accesses
+  grep -o '/[^ ]*' "$TEMP_FILE" \
+    | grep -v '^/dev/' \
+    | grep -v '^\s*$' \
+    | sed 's|/[^/]*$||' \
+    | sort | uniq -c | sort -rn \
+    | awk '$1 > 50 {printf "   • %s (%d accesses)\n", $2, $1}'
+
+  echo ""
+}
+
+# Function to show real-time sample
+show_sample() {
+  echo "📝 Sample of Recent Activity (last 10 unique paths):"
+  echo "────────────────────────────────────────────────────"
+
+  grep -o '/[^ ]*' "$TEMP_FILE" \
+    | grep -v '^/dev/' \
+    | grep -v '^\s*$' \
+    | tail -20 | sort -u | tail -10 \
+    | sed 's/^/   /'
+
+  echo ""
+}
+
+# Run analyses
+analyze_directories
+analyze_file_types
+show_sample
+identify_candidates
+
+# Summary and recommendations
+echo "🎯 Recommendations:"
+echo "──────────────────"
+if [ "$PRESET" = "spotlight" ] && [ -z "$PATTERN" ]; then
+  echo "1. Add high-volume directories to: System Preferences → Spotlight → Privacy"
+  echo "2. Consider excluding cache directories (~/Library/Caches, etc.)"
+  echo "3. Exclude build artifacts, node_modules, vendor directories if present"
+  echo "4. For external drives, disable indexing unless needed"
+  echo ""
+  echo "📖 To add exclusions:"
+  echo "   Method 1 (RECOMMENDED): Use pattern-based exclusions"
+  echo "      • Edit: ~/.config/spotlight-exclusions"
+  echo "      • Run: bin/spotlight-apply-exclusions ~/.config/spotlight-exclusions"
+  echo ""
+  echo "   Method 2: Manual GUI (one-off exclusions)"
+  echo "      • System Settings → Spotlight → Search Privacy → Click '+' → Select folder"
+  echo ""
+  echo "   Method 3: Rename directory"
+  echo "      • mv /path/to/dir /path/to/dir.noindex"
+  echo ""
+  echo "See doc/spotlight-exclusions.md for complete documentation."
+else
+  echo "1. High-volume directories above are what's driving this process's I/O."
+  echo "2. There's usually no user-facing exclusion mechanism for opendirectoryd or"
+  echo "   Falcon (unlike Spotlight) -- if the load looks abnormal, that's a signal"
+  echo "   for IT/Security, not something to tune locally."
+fi
+echo ""
+echo "Total lines captured: $(wc -l < "$TEMP_FILE")"

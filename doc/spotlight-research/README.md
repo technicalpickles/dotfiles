@@ -35,14 +35,14 @@ Complete implementation plan for the pattern-based exclusion system using gitign
 
 This research led to these production tools in `bin/`:
 
-| Tool                         | Purpose                                                |
-| ---------------------------- | ------------------------------------------------------ |
-| `spotlight-add-exclusion`    | AppleScript-based GUI automation for adding exclusions |
-| `spotlight-list-exclusions`  | Lists exclusions from all volumes (Data + root)        |
-| `spotlight-expand-patterns`  | Expands gitignore-style patterns to directory paths    |
-| `spotlight-apply-exclusions` | Batch applies exclusions from pattern file             |
-| `spotlight-analyze-activity` | Analyzes what Spotlight is actively indexing           |
-| `spotlight-monitor-live`     | Live monitoring of Spotlight process activity          |
+| Tool                         | Purpose                                                                                 |
+| ---------------------------- | --------------------------------------------------------------------------------------- |
+| `spotlight-add-exclusion`    | AppleScript-based GUI automation for adding exclusions                                  |
+| `spotlight-list-exclusions`  | Lists exclusions from all volumes (Data + root)                                         |
+| `spotlight-expand-patterns`  | Expands gitignore-style patterns to directory paths                                     |
+| `spotlight-apply-exclusions` | Batch applies exclusions from pattern file                                              |
+| `proc-analyze-activity`      | Analyzes filesystem activity for a process (presets: spotlight, opendirectoryd, falcon) |
+| `proc-monitor-live`          | Live monitoring of process filesystem activity (same presets)                           |
 
 ## Architecture Decisions
 
