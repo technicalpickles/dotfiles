@@ -166,7 +166,7 @@ sudo fs_usage -w -f filesys "$PROCESS_PATTERN" 2> /dev/null | while IFS= read -r
       echo ""
       echo "Quick Stats (top 3 directories so far):"
       sort "$STATS_FILE" | uniq -c | sort -rn | head -3 \
-        | awk '{printf "  • %s (%d accesses)\n", $2, $1}'
+        | awk '{printf "  • %s (%d accesses)\n", $2, $1}' || true
       echo "──────────────────────────────────────────────────────────────────────────────"
     fi
   fi
@@ -182,7 +182,7 @@ echo ""
 if [ -s "$STATS_FILE" ]; then
   echo "Top Directories:"
   sort "$STATS_FILE" | uniq -c | sort -rn | head -15 \
-    | awk '{printf "  %4d  %s\n", $1, $2}'
+    | awk '{printf "  %4d  %s\n", $1, $2}' || true
 else
   echo "  No data collected"
 fi

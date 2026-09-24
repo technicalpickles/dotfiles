@@ -149,7 +149,7 @@ analyze_directories() {
     | grep -v '^\s*$' \
     | sed 's|/[^/]*$||' \
     | sort | uniq -c | sort -rn | head -20 \
-    | awk '{printf "%6d  %s\n", $1, $2}'
+    | awk '{printf "%6d  %s\n", $1, $2}' || true
 
   echo ""
 }
@@ -163,7 +163,7 @@ analyze_file_types() {
   grep -o '/[^ ]*\.[a-zA-Z0-9]*' "$TEMP_FILE" \
     | sed 's/.*\.//' \
     | sort | uniq -c | sort -rn | head -15 \
-    | awk '{printf "%6d  .%s\n", $1, $2}'
+    | awk '{printf "%6d  .%s\n", $1, $2}' || true
 
   echo ""
 }
