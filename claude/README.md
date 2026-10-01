@@ -306,7 +306,7 @@ transports: `http` and `sse` (both url-based).
 
 ```jsonc
 "servers": {
-  "qmd": { "transport": "http", "url": "http://localhost:8181/mcp" },
+  "qmd": { "transport": "http", "url": "http://localhost:18181/mcp" },
 }
 ```
 

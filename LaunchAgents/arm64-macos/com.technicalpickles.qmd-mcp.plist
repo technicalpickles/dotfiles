@@ -8,7 +8,7 @@
     <array>
         <string>/bin/bash</string>
         <string>-c</string>
-        <string>$HOME/.pickles/bin/qmd mcp --http --port 8181</string>
+        <string>$HOME/.pickles/bin/qmd mcp --http --port 18181</string>
     </array>
     <!-- Long-lived query server: keep it running and restart if it dies. -->
     <key>RunAtLoad</key>

@@ -89,16 +89,16 @@ Runs QMD as an HTTP MCP server so Claude (and other agents) can search the vault
 
 **What it does:**
 
-- Runs `qmd mcp --http --port 8181` (via the `bin/qmd` wrapper), bound to `localhost` only
+- Runs `qmd mcp --http --port 18181` (via the `bin/qmd` wrapper), bound to `localhost` only
 - `KeepAlive` + `RunAtLoad`: stays up and restarts if it dies (long-lived query server)
 - Sets `QMD_METAL_KEEP_RESIDENCY=1` (qmd doctor recommends this for long-lived Metal processes)
-- Health check: `curl http://localhost:8181/health`; MCP endpoint is `POST /mcp`
+- Health check: `curl http://localhost:18181/health`; MCP endpoint is `POST /mcp`
 - Logs to `/tmp/com.technicalpickles.qmd-mcp.{out,err}`
 
 **Claude registration** (not managed here -- lives in `~/.claude.json` via the CLI):
 
 ```bash
-claude mcp add --transport http qmd http://localhost:8181/mcp --scope user
+claude mcp add --transport http qmd http://localhost:18181/mcp --scope user
 ```
 
 ### `home/com.technicalpickles.task-sync.plist`
