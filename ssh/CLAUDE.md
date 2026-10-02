@@ -77,6 +77,8 @@ Upstream this is [anthropics/claude-code#70684](https://github.com/anthropics/cl
 
 ## 1Password SSH Agent Allowlist
 
+> **Since 2026-10-02:** `~/.ssh/config` starts with an `av`-managed `Automic Vault SSH Agent` block that sets `IdentityAgent` to `~/.local/share/automic-vault/ssh-agent.sock` for all hosts, ahead of everything below. Agent sessions ssh unattended (no 1Password approval), so "1Password needs interactive approval" no longer holds for agent ssh. The rest of this section describes the 1Password agent path.
+
 `Host *` in `ssh/config.d/auth` points at the 1Password agent. By default 1Password offers every key in the unlocked vault. Per-role allowlists live at `config/1password/agent.toml.<role>` and are symlinked to `~/.config/1Password/ssh/agent.toml` by `sshconfig.sh` based on `$DOTPICKLES_ROLE`. See [ADR 0033](../doc/adr/0033-1password-ssh-agent-allowlist.md).
 
 To check what 1Password is currently offering:
