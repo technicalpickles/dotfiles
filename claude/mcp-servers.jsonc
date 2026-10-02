@@ -15,10 +15,10 @@
   // (both url-based). Stdio servers aren't modeled here yet.
   "servers": {
     // qmd semantic search over the Obsidian vault. Served by the
-    // com.technicalpickles.qmd-mcp LaunchAgent (localhost:8181, arm64 macOS).
+    // com.technicalpickles.qmd-mcp LaunchAgent (localhost:18181, arm64 macOS).
     "qmd": {
       "transport": "http",
-      "url": "http://localhost:8181/mcp",
+      "url": "http://localhost:18181/mcp",
     },
   },
 }

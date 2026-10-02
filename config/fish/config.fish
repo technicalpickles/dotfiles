@@ -66,6 +66,8 @@ if status is-interactive
     end
 end
 
+# pinned wrappers (e.g. qmd -> mise exec node@24) must beat mise shims
+fish_add_path --global --prepend --move "$HOME/.pickles/bin"
 if test -d "$HOME/.local/bin"
     fish_add_path --global --prepend --move "$HOME/.local/bin"
 end

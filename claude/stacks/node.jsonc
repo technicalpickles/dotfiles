@@ -36,7 +36,13 @@
   // source: agent-safehouse
   "sandbox": {
     "network": {
-      "allowedDomains": ["registry.npmjs.org", "nodejs.org"],
+      "allowedDomains": [
+        "registry.npmjs.org",
+        "nodejs.org",
+        // JSON Schema catalog; json.* redirects to www.*
+        "json.schemastore.org",
+        "www.schemastore.org",
+      ],
     },
     "filesystem": {
       "allowWrite": [

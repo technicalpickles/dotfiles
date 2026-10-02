@@ -424,41 +424,56 @@ Pattern expansion performance varies by pattern type:
 
 **Solution:** Install via Homebrew: `brew install fd`
 
-## Monitoring Spotlight Activity
+## Monitoring Process Activity
 
-Before excluding directories, it's helpful to identify which directories Spotlight is actively indexing and causing high resource usage.
+Before excluding directories, it's helpful to identify which directories a process is actively touching and causing high resource usage. `proc-analyze-activity` and `proc-monitor-live` generalize this beyond Spotlight -- they ship presets for `spotlight`, `opendirectoryd`, and `falcon` (CrowdStrike), or take a raw `fs_usage` process-name pattern via `-f`/`--pattern`.
 
-### Analyze Indexing Activity
+### Analyze Activity
 
-**`spotlight-analyze-activity`** - Analyzes what Spotlight is indexing over a period of time:
+**`proc-analyze-activity`** - Analyzes what a process is touching over a period of time:
 
 ```bash
-# Analyze for 60 seconds (default: 30)
-bin/spotlight-analyze-activity 60
+# Analyze Spotlight for 60 seconds (default preset: spotlight, default duration: 30)
+bin/proc-analyze-activity -d 60
 
-# Analyze specific process (e.g., only mds_stores)
-bin/spotlight-analyze-activity 30 mds_stores
+# Analyze CrowdStrike Falcon
+bin/proc-analyze-activity -p falcon -d 60
+
+# Analyze opendirectoryd
+bin/proc-analyze-activity -p opendirectoryd
+
+# Analyze a raw process-name pattern (e.g., only mds_stores)
+bin/proc-analyze-activity -d 30 -f mds_stores
+
+# Old positional form still works: [duration] [pattern]
+bin/proc-analyze-activity 30 mds_stores
 ```
 
 **Output includes:**
 
 - Top 20 directories by access count
-- Top file types being indexed
+- Top file types being accessed
 - Recent activity samples
-- High-volume directories (>50 accesses) - candidates for exclusion
+- High-volume directories (>50 accesses) - candidates for exclusion (Spotlight only; other presets don't have a user-facing exclusion mechanism)
 
-**Use case:** Run this when Spotlight is consuming high CPU to identify which directories are causing the load.
+**Use case:** Run this when a process is consuming high CPU to identify which directories are causing the load.
 
 ### Live Monitoring
 
-**`spotlight-monitor-live`** - Real-time view of Spotlight activity:
+**`proc-monitor-live`** - Real-time view of process activity:
 
 ```bash
-# Monitor all Spotlight processes
-bin/spotlight-monitor-live
+# Monitor all Spotlight processes (default preset)
+bin/proc-monitor-live
 
-# Monitor specific process
-bin/spotlight-monitor-live mdworker
+# Monitor CrowdStrike Falcon
+bin/proc-monitor-live -p falcon
+
+# Monitor opendirectoryd
+bin/proc-monitor-live -p opendirectoryd
+
+# Monitor a raw process-name pattern
+bin/proc-monitor-live -f mdworker
 ```
 
 Press **Ctrl+C** to stop and see summary statistics.
@@ -470,7 +485,7 @@ Press **Ctrl+C** to stop and see summary statistics.
 1. **Monitor activity** when Spotlight is using high resources:
 
    ```bash
-   bin/spotlight-analyze-activity 60
+   bin/proc-analyze-activity -d 60
    ```
 
 2. **Identify high-volume directories** from the output:
@@ -507,7 +522,7 @@ Press **Ctrl+C** to stop and see summary statistics.
 
 6. **Verify improvement** with live monitoring:
    ```bash
-   bin/spotlight-monitor-live
+   bin/proc-monitor-live
    ```
    You should see reduced activity after exclusions are applied.
 
@@ -738,8 +753,8 @@ Then use `spotlight-add-exclusion` to exclude only the specific directories you 
 - `bin/spotlight-list-exclusions` - List exclusions from all volumes
 - `bin/spotlight-expand-patterns` - Expand gitignore-style patterns
 - `bin/spotlight-apply-exclusions` - Batch apply exclusions
-- `bin/spotlight-analyze-activity` - Analyze indexing activity
-- `bin/spotlight-monitor-live` - Live monitoring of Spotlight processes
+- `bin/proc-analyze-activity` - Analyze process filesystem activity (presets: spotlight, opendirectoryd, falcon)
+- `bin/proc-monitor-live` - Live monitoring of process filesystem activity (same presets)
 
 ## Future Improvements
 

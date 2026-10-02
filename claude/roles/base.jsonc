@@ -187,13 +187,13 @@
       "Bash(sudo fdisk:*)",
       "Bash(sudo parted:*)",
       "Bash(rm -rf /:*)",
-      "Bash(rm -rf /*:*)",
+      "Bash(rm -rf /*)",
       "Bash(rm -rf ~:*)",
-      "Bash(rm -rf ~/*:*)",
+      "Bash(rm -rf ~/*)",
       "Bash(rm -rf $HOME:*)",
       "Bash(rm -rf .:*)",
       "Bash(rm -rf ..:*)",
-      "Bash(rm -rf ../*:*)",
+      "Bash(rm -rf ../*)",
       // Claude habitually falls back to `find /` or `find ~` (with a
       // -maxdepth guard) when it doesn't know where a binary/config/repo
       // lives, instead of `which`, `mise which`, `brew --prefix`, `Glob`,
