@@ -6,6 +6,15 @@ Date: 2026-08-22
 
 Accepted
 
+**Update 2026-10-02:** Automic Vault is live as the ssh agent. `~/.ssh/config` now opens
+with an `# BEGIN Automic Vault SSH Agent` block (managed by `av`, not this repo) that sets
+`IdentityAgent` to `~/.local/share/automic-vault/ssh-agent.sock` for every host, and
+`ssh -G picklelab` resolves there. Verified from a sandboxed agent session: `ssh picklelab`
+authenticates unattended with the `~/.ssh/agents/home` key served by that agent, no prompt.
+The "1Password needs TouchID per connection" problem described below is therefore no longer
+what blocks agent ssh; this ADR's `Match exec` override and the 1Password `Host *` text
+describe the earlier state.
+
 ## Context
 
 [ADR 0031](0031-role-scoped-agent-git-identity.md) solved the "1Password
