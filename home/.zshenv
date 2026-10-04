@@ -17,7 +17,11 @@
 _dotpickles_brew_stub_first() {
   local stub="${DOTPICKLES_BREW_STUB:-/usr/local/bin/brew}"
   [[ -u $stub ]] || return 0
-  path=("${stub:h}" ${path:#${stub:h}})
+  local dir="${stub%/*}"
+  PATH=":$PATH:"
+  PATH="${PATH//:$dir:/:}"
+  PATH="${PATH#:}"
+  export PATH="$dir:${PATH%:}"
 }
 
 _brew_stub="${DOTPICKLES_BREW_STUB:-/usr/local/bin/brew}"
