@@ -5,14 +5,15 @@ set -uo pipefail
 #
 # Health-check script for this dotfiles repo's install state. Reports
 # pass/fail for role detection, dotfile symlink health, LaunchAgent symlink
-# health, basic tool availability, and Appfile apps -- reusing the same helpers
-# functions.sh already provides rather than reinventing them.
+# health, and basic tool availability, plus warnings for missing Appfile apps
+# -- reusing the same helpers functions.sh already provides rather than
+# reinventing them.
 #
 # Read-only: it never repoints or creates anything. A dangling/misdirected
 # LaunchAgents symlink is reported as a FAIL here; repairing it is
 # symlinks.sh's job (see repoint_dangling_launchagents there).
 #
-# Exits 0 on all-pass, 1 if anything failed.
+# Exits 0 on all-pass, 1 if anything failed. Missing Appfile apps only warn.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
@@ -54,8 +55,8 @@ Health-check for this dotfiles repo's install state. Reports pass/fail for:
   - DOTPICKLES_ROLE detection
   - dotfile symlink health (home/* and config/*)
   - LaunchAgents symlink health (macOS only)
-  - basic tool availability (git, mise, brew)
-  - Appfile apps installed (macOS only)
+  - basic tool availability (git, mise, brew, hardened brew launcher on PATH)
+  - Appfile apps installed (macOS only; missing apps warn, they don't fail)
 
 Read-only -- never repoints or creates anything. Exits 0 if all checks pass,
 1 if any fail.
@@ -205,18 +206,31 @@ if running_macos; then
   else
     check_fail "brew not found"
   fi
+
+  # Hardened Homebrew (ADR 0058): the setuid launcher must be the brew on PATH.
+  brew_stub="${DOTPICKLES_BREW_STUB:-/usr/local/bin/brew}"
+  if [[ -u "$brew_stub" ]]; then
+    brew_on_path="$(command -v brew || true)"
+    if [[ "$brew_on_path" == "$brew_stub" ]]; then
+      check_pass "brew resolves to the hardened launcher ($brew_stub)"
+    else
+      check_fail "brew resolves to ${brew_on_path:-nothing}, not the hardened launcher $brew_stub" \
+        "start a new shell, or check that $(dirname "$brew_stub") comes before /opt/homebrew/bin on PATH"
+    fi
+  fi
 fi
 
 # --- 5. Appfile apps (macOS only) ---
 # Apps aren't Homebrew-managed under hardened Homebrew (ADR 0058); Appfile
-# lists them so a missing one shows up here.
+# lists them so a missing one shows up here. Missing apps warn instead of
+# failing: they're installed by hand and shouldn't make doctor exit 1.
 if running_macos; then
   missing_apps_out="$(cd "$DOTFILES_DIR" && missing_apps Appfile "Appfile.${DOTPICKLES_ROLE}")"
   if [[ -z "$missing_apps_out" ]]; then
     check_pass "all Appfile apps installed"
   else
     while IFS='|' read -r app url; do
-      check_fail "$app not installed" "install from $url"
+      warn "$app not installed (install from $url)"
     done <<< "$missing_apps_out"
   fi
 fi
