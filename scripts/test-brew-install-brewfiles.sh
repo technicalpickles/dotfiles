@@ -37,11 +37,15 @@ brew() {
   case "$1" in
     tap) [ $# -eq 1 ] && printf '%s\n' homebrew/core existing/tap ;;
     info)
+      [ -n "${BREW_INFO_FAIL:-}" ] && return 1
       if [[ " $* " == *" --cask "* ]]; then
         cat "$TEST_DIR/cask.json"
       else
         cat "$TEST_DIR/formula.json"
       fi
+      ;;
+    install)
+      [[ " $* " == *" ${BREW_INSTALL_FAIL:---none--} "* ]] && return 1
       ;;
   esac
   return 0
@@ -124,10 +128,49 @@ jq" \
 assert_eq "brew_install_brewfiles taps only missing taps, installs once per kind" \
   "brew tap
 brew tap new/tap
+brew tap markjaquith/tap
 brew info --json=v2 --formula gpg jq markjaquith/tap/cowtree
 brew install --formula jq markjaquith/tap/cowtree
 brew info --json=v2 --cask 1password-cli
 brew install --cask mitmproxy" \
   "$(cat "$CALLS")"
+
+# --- Test 6: failure paths never abort a caller running under set -e ---
+(
+  set -eo pipefail
+  : > "$TEST_DIR/stderr"
+  got="$(BREW_INFO_FAIL=1 missing_brew_packages formula gpg jq 2> "$TEST_DIR/stderr")"
+  assert_eq "brew info failure reports every name" "gpg
+jq" "$got"
+  assert_eq "brew info failure warns on stderr" \
+    "  → warning: brew info failed for formula entries; installing all of them" \
+    "$(cat "$TEST_DIR/stderr")"
+  exit "$FAIL"
+) || FAIL=1
+
+# --- Test 7: implicit tap, and case-insensitive tap match ---
+mkdir "$TEST_DIR/t7"
+cat > "$TEST_DIR/t7/Brewfile" << 'EOF'
+tap 'Existing/Tap'
+brew 'someuser/somerepo/thing'
+EOF
+: > "$CALLS"
+(
+  set -eo pipefail
+  cd "$TEST_DIR/t7" && DOTPICKLES_ROLE=nope brew_install_brewfiles > /dev/null
+) || FAIL=1
+assert_eq "implicit tap is tapped; mixed-case installed tap is not re-tapped" \
+  "brew tap someuser/somerepo" \
+  "$(grep '^brew tap .' "$CALLS")"
+
+# --- Test 8: install failure warns, continues, returns non-zero ---
+: > "$CALLS"
+(
+  set -eo pipefail
+  cd "$TEST_DIR" && DOTPICKLES_ROLE=nope BREW_INSTALL_FAIL=--formula brew_install_brewfiles > "$TEST_DIR/out"
+) && rc=0 || rc=$?
+assert_eq "failed install returns non-zero" "1" "$rc"
+assert_eq "failed install warns" "1" "$(grep -c 'warning: brew install --formula failed' "$TEST_DIR/out")"
+assert_eq "cask step still runs after formula failure" "1" "$(grep -c '^brew install --cask' "$CALLS")"
 
 exit "$FAIL"

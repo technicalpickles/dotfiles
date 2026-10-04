@@ -54,7 +54,7 @@ if running_macos; then
     load_brew_shellenv
   fi
 
-  brew_install_brewfiles
+  brew_install_brewfiles || echo "⚠️  some Brewfile packages failed to install"
 fi
 
 git submodule init

@@ -225,10 +225,17 @@ missing_brew_packages() {
     return 0
   fi
 
+  local json filter
   if [ "$kind" = formula ]; then
-    brew info --json=v2 --formula "$@" | jq -r '.formulae[] | select(.installed | length == 0) | .full_name'
+    filter='.formulae[] | select(.installed | length == 0) | .full_name'
   else
-    brew info --json=v2 --cask "$@" | jq -r '.casks[] | select(.installed == null) | .full_token'
+    filter='.casks[] | select(.installed == null) | .full_token'
+  fi
+  # Don't let one unresolvable name (or a brew failure) abort the caller, which
+  # may be running under `set -e`: fall back to treating everything as missing.
+  if ! json="$(brew info --json=v2 "--$kind" "$@")" || ! jq -r "$filter" <<< "$json"; then
+    echo "  → warning: brew info failed for $kind entries; installing all of them" >&2
+    printf '%s\n' "$@"
   fi
 }
 
@@ -241,11 +248,17 @@ brew_install_brewfiles() {
   local entries
   entries="$(brewfile_entries Brewfile "Brewfile.${DOTPICKLES_ROLE}")"
 
-  local installed_taps tap
+  # Taps to ensure: explicit `tap` lines plus the user/repo prefix of any
+  # tap-qualified name (user/repo/name). Brew lowercases tap names.
+  local installed_taps tap out rc=0
   installed_taps="$(brew tap)"
-  for tap in $(awk '$1 == "tap" { print $2 }' <<< "$entries"); do
-    if ! grep -qxF "$tap" <<< "$installed_taps"; then
-      brew tap "$tap" 2>&1 | sed 's/^/  → /'
+  for tap in $(awk '
+    $1 == "tap" { print $2 }
+    $1 != "tap" { n = split($2, p, "/"); if (n == 3) print p[1] "/" p[2] }
+  ' <<< "$entries" | awk '!seen[tolower($0)]++'); do
+    if ! grep -qxiF "$tap" <<< "$installed_taps"; then
+      out="$(brew tap "$tap" 2>&1)" || echo "  → warning: brew tap $tap failed"
+      [ -z "$out" ] || sed 's/^/  → /' <<< "$out"
     fi
   done
 
@@ -259,12 +272,18 @@ brew_install_brewfiles() {
     missing="$(missing_brew_packages "$kind" ${names[@]+"${names[@]}"})"
     if [ -n "$missing" ]; then
       # shellcheck disable=SC2086
-      brew install "--$kind" $missing 2>&1 | sed 's/^/  → /'
+      out="$(brew install "--$kind" $missing 2>&1)" && ok=1 || ok=0
+      [ -z "$out" ] || sed 's/^/  → /' <<< "$out"
+      if [ "$ok" = 0 ]; then
+        echo "  → warning: brew install --$kind failed (see above)"
+        rc=1
+      fi
     else
       echo "  → all ${kind} entries installed"
     fi
   done
   echo
+  return "$rc"
 }
 
 vim_plugins() {
