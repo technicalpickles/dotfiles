@@ -40,7 +40,7 @@ Migrate this machine (and the dotfiles install flow) to be compatible with autom
 |---|---|---|
 | cleanshot, dash, finicky, hammerspoon, obsidian, claude, claude-devtools | Brewfile | hammerspoon loses `hs` cask binary (use `hs.ipc.cliInstall()`); obsidian loses cask CLI link; claude-devtools: confirm it has an updater |
 | discord, google-chrome, slack, zoom, karabiner-elements, spotify, raycast, orbstack | Brewfile.home | karabiner/zoom are pkgs; uninstall via cask first is fine, then reinstall from vendor. `karabiner_cli` lives in the app bundle anyway. orbstack manages its own `~/.orbstack/bin`. Slack also on MAS |
-| granola, wispr-flow | Brewfile.work | work machine, same treatment |
+| wispr-flow | Brewfile.work | work machine, same treatment. granola dropped (no longer used at work, 2026-10-04) |
 | chatgpt, dropbox, google-drive, ghostty, jordanbaird-ice, open-webui, openclaw, playcover-community, telegram | ad hoc | ghostty loses cask-linked completions/manpage (shell integration from app bundle still works). Telegram also on MAS |
 
 Removing via `brew uninstall --cask` deletes the .app; instead, to keep apps in place, drop the Caskroom entry without touching /Applications (e.g. `rm -rf /opt/homebrew/Caskroom/<name>` while unhardened, then confirm the app still launches/updates). Decide per-app.
@@ -48,7 +48,7 @@ Removing via `brew uninstall --cask` deletes the .app; instead, to keep apps in 
 ## Declarative replacement for Brewfile casks
 
 - Formulae: replace `brew bundle` in `functions.sh` with: parse `tap`/`brew` lines, `brew tap` missing taps, compute missing formulae vs `brew list --formula`, one `brew install --formula ...` call. Fix `brew 'orbstack'`.
-- Apps: move `cask` lines to an apps manifest (e.g. `Appfile` / `apps.<role>`), each with bundle name + source (vendor URL or `mas` id). `install.sh` / `dotfiles-doctor` report missing apps with the download link instead of auto-installing (no unattended DMG downloads). Optional: `mas` for the couple of MAS-available apps.
+- Apps: move `cask` lines to an apps manifest (e.g. `Caskfile` / `apps.<role>`), each with bundle name + source (vendor URL or `mas` id). `install.sh` / `dotfiles-doctor` report missing apps with the download link instead of auto-installing (no unattended DMG downloads). Optional: `mas` for the couple of MAS-available apps.
 - Rejected: a second user-owned Homebrew just for casks. Makes `brew` ambiguous and reopens unattended agent installs the vault is meant to gate.
 
 ## Checklist
@@ -60,6 +60,7 @@ Removing via `brew uninstall --cask` deletes the .app; instead, to keep apps in 
 - [ ] Detach each app cask from Caskroom, confirm app still updates
 - [ ] ADR for "apps are not Homebrew-managed under hardened brew"
 - [ ] `av harden brew`, then `install.sh` end to end
+- [ ] Work machine: check whether Wispr Flow has another install path (IT-managed?) and fix `Caskfile.work` accordingly
 
 ## Plan
 
@@ -67,4 +68,4 @@ Removing via `brew uninstall --cask` deletes the .app; instead, to keep apps in 
 
 ## Status (2026-10-04)
 
-Repo work done on branch `hardened-brew` (ADR 0058, ollama agent, beans via mise, `brew_install_brewfiles`, stub-aware shells, Appfile + doctor, `scripts/detach-cask.sh`). Remaining: the plan's `cutover` task (user-run after merge). Follow-ups: dotfiles-gp5r (lefthook), dotfiles-i4a9 (bash login PATH order).
+Repo work done on branch `hardened-brew` (ADR 0058, ollama agent, beans via mise, `brew_install_brewfiles`, stub-aware shells, Caskfile + doctor, `scripts/detach-cask.sh`). Remaining: the plan's `cutover` task (user-run after merge). Follow-ups: dotfiles-gp5r (lefthook), dotfiles-i4a9 (bash login PATH order).

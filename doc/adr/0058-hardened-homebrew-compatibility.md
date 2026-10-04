@@ -35,7 +35,7 @@ Under it:
 - `install.sh` installs formulae (and CLI-only casks) with
   `brew_install_brewfiles` in `functions.sh`: one `brew install --formula`
   call for whatever is missing, so approval fires once.
-- Mac apps are listed in `Appfile`/`Appfile.<role>` and installed by hand from
+- Mac apps are listed in `Caskfile`/`Caskfile.<role>` and installed by hand from
   the vendor. They update themselves. `install.sh` and `bin/dotfiles-doctor`
   report missing ones with a download link; nothing downloads installers
   unattended.
@@ -55,5 +55,5 @@ Under it:
 - When `av harden brew` offers to rewrite shell startup files, answer N; the
   repo's files already handle both modes.
 - On every Mac, hardened or not, `install.sh` no longer installs app casks.
-  The apps listed in `Appfile*` (including the `Appfile.work` bundle names)
+  The apps listed in `Caskfile*` (including the `Caskfile.work` bundle names)
   are unverified until checked on the work machine.

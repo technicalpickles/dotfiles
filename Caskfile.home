@@ -1,4 +1,4 @@
-# Home-role apps. See Appfile for the format.
+# Home-role apps. See Caskfile for the format.
 Discord.app | https://discord.com/download
 Google Chrome.app | https://www.google.com/chrome/
 Slack.app | https://slack.com/downloads/mac

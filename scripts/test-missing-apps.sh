@@ -32,14 +32,14 @@ assert_eq() {
 mkdir -p "$TEST_DIR/Applications/Present.app" "$TEST_DIR/UserApps/In Home.app"
 export DOTPICKLES_APP_DIRS="$TEST_DIR/Applications:$TEST_DIR/UserApps"
 
-cat > "$TEST_DIR/Appfile" << 'EOF'
+cat > "$TEST_DIR/Caskfile" << 'EOF'
 # comment
 Present.app | https://example.com/present
 
   Absent One.app   |   https://example.com/absent
 In Home.app | https://example.com/home
 EOF
-cat > "$TEST_DIR/Appfile.role" << 'EOF'
+cat > "$TEST_DIR/Caskfile.role" << 'EOF'
 Also Absent.app | https://example.com/also
 EOF
 
@@ -47,21 +47,21 @@ EOF
 assert_eq "missing_apps reports absent apps" \
   "Absent One.app|https://example.com/absent
 Also Absent.app|https://example.com/also" \
-  "$(missing_apps "$TEST_DIR/Appfile" "$TEST_DIR/Appfile.role")"
+  "$(missing_apps "$TEST_DIR/Caskfile" "$TEST_DIR/Caskfile.role")"
 
 # --- Test 2: an app in the second dir (~/Applications) counts as installed ---
 assert_eq "missing_apps checks every app dir" \
   "" \
-  "$(missing_apps "$TEST_DIR/Appfile" | grep 'In Home' || true)"
+  "$(missing_apps "$TEST_DIR/Caskfile" | grep 'In Home' || true)"
 
-# --- Test 3: missing role Appfile is skipped silently ---
+# --- Test 3: missing role Caskfile is skipped silently ---
 assert_eq "missing_apps skips missing files" \
   "Absent One.app|https://example.com/absent" \
-  "$(missing_apps "$TEST_DIR/Appfile" "$TEST_DIR/Appfile.nope" 2>&1)"
+  "$(missing_apps "$TEST_DIR/Caskfile" "$TEST_DIR/Caskfile.nope" 2>&1)"
 
 # --- Test 4: report_missing_apps prints links, never installs ---
 assert_eq "report_missing_apps lists each missing app with its link" \
-  "📦 checking Appfile apps
+  "📦 checking Caskfile apps
   → missing Absent One.app: install from https://example.com/absent
   → missing Also Absent.app: install from https://example.com/also" \
   "$(cd "$TEST_DIR" && DOTPICKLES_ROLE=role report_missing_apps | sed '/^$/d')"

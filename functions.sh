@@ -297,9 +297,9 @@ brew_install_brewfiles() {
   return "$rc"
 }
 
-# Print "<Bundle>.app|<url>" for each Appfile entry not installed in any
+# Print "<Bundle>.app|<url>" for each Caskfile entry not installed in any
 # directory of DOTPICKLES_APP_DIRS (colon-separated, default /Applications
-# and ~/Applications). Appfile lines are "<Bundle>.app | <url>"; blank lines
+# and ~/Applications). Caskfile lines are "<Bundle>.app | <url>"; blank lines
 # and # comments are skipped, as are missing files.
 missing_apps() {
   local dirs="${DOTPICKLES_APP_DIRS:-/Applications:$HOME/Applications}"
@@ -323,12 +323,12 @@ missing_apps() {
   done
 }
 
-# Report Appfile apps that aren't installed. Apps aren't Homebrew-managed under
+# Report Caskfile apps that aren't installed. Apps aren't Homebrew-managed under
 # hardened Homebrew (ADR 0058), and this deliberately never downloads anything.
 report_missing_apps() {
-  echo "📦 checking Appfile apps"
+  echo "📦 checking Caskfile apps"
   local missing app url
-  missing="$(missing_apps Appfile "Appfile.${DOTPICKLES_ROLE}")"
+  missing="$(missing_apps Caskfile "Caskfile.${DOTPICKLES_ROLE}")"
   if [ -z "$missing" ]; then
     echo "  → all apps installed"
   else

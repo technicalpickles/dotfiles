@@ -84,7 +84,7 @@ the features that break:
 - `Brewfile` / `Brewfile.<role>` hold formulae, taps, and CLI-only casks.
   `install.sh` installs them with `brew_install_brewfiles` (`functions.sh`),
   not `brew bundle`.
-- `Appfile` / `Appfile.<role>` list Mac apps, installed by hand from the
+- `Caskfile` / `Caskfile.<role>` list Mac apps, installed by hand from the
   vendor. `install.sh` and `bin/dotfiles-doctor` report missing ones.
 - Long-running services are LaunchAgents in `LaunchAgents/`, never
   `brew services`. `scripts/test-launchagent-plists.sh` keeps them from

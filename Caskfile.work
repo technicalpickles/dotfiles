@@ -1,0 +1,4 @@
+# Work-role apps. See Caskfile for the format.
+# Wispr Flow: check on the work machine whether it comes from another install
+# path (e.g. IT-managed) before relying on this entry.
+Wispr Flow.app | https://wisprflow.ai/

@@ -1,0 +1,20 @@
+# Caskfile: the Mac apps that used to be Homebrew casks, now installed without
+# Homebrew. It's the GUI-app half of the Brewfile: Brewfile keeps formulae (and
+# CLI-only casks), this file keeps the apps. Not a Homebrew format; brew never
+# reads it.
+#
+# Why: hardened Homebrew (automic-vault) refuses app casks (ADR 0058). So
+# install these by hand from the vendor; they update themselves (except Finicky:
+# check its releases page now and then). install.sh and bin/dotfiles-doctor
+# only report missing ones, they never download anything.
+#
+# Caskfile.<role> adds role-specific apps.
+#
+# Format: <bundle name>.app | <where to get it>
+CleanShot X.app | https://cleanshot.com/
+Dash.app | https://kapeli.com/dash
+Finicky.app | https://github.com/johnste/finicky/releases
+Hammerspoon.app | https://www.hammerspoon.org/
+Obsidian.app | https://obsidian.md/download
+Claude.app | https://claude.com/download
+claude-devtools.app | https://github.com/matt1398/claude-devtools/releases

@@ -5,7 +5,7 @@ set -uo pipefail
 #
 # Health-check script for this dotfiles repo's install state. Reports
 # pass/fail for role detection, dotfile symlink health, LaunchAgent symlink
-# health, and basic tool availability, plus warnings for missing Appfile apps
+# health, and basic tool availability, plus warnings for missing Caskfile apps
 # -- reusing the same helpers functions.sh already provides rather than
 # reinventing them.
 #
@@ -13,7 +13,7 @@ set -uo pipefail
 # LaunchAgents symlink is reported as a FAIL here; repairing it is
 # symlinks.sh's job (see repoint_dangling_launchagents there).
 #
-# Exits 0 on all-pass, 1 if anything failed. Missing Appfile apps only warn.
+# Exits 0 on all-pass, 1 if anything failed. Missing Caskfile apps only warn.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
@@ -56,7 +56,7 @@ Health-check for this dotfiles repo's install state. Reports pass/fail for:
   - dotfile symlink health (home/* and config/*)
   - LaunchAgents symlink health (macOS only)
   - basic tool availability (git, mise, brew, hardened brew launcher on PATH)
-  - Appfile apps installed (macOS only; missing apps warn, they don't fail)
+  - Caskfile apps installed (macOS only; missing apps warn, they don't fail)
 
 Read-only -- never repoints or creates anything. Exits 0 if all checks pass,
 1 if any fail.
@@ -220,14 +220,14 @@ if running_macos; then
   fi
 fi
 
-# --- 5. Appfile apps (macOS only) ---
-# Apps aren't Homebrew-managed under hardened Homebrew (ADR 0058); Appfile
+# --- 5. Caskfile apps (macOS only) ---
+# Apps aren't Homebrew-managed under hardened Homebrew (ADR 0058); Caskfile
 # lists them so a missing one shows up here. Missing apps warn instead of
 # failing: they're installed by hand and shouldn't make doctor exit 1.
 if running_macos; then
-  missing_apps_out="$(cd "$DOTFILES_DIR" && missing_apps Appfile "Appfile.${DOTPICKLES_ROLE}")"
+  missing_apps_out="$(cd "$DOTFILES_DIR" && missing_apps Caskfile "Caskfile.${DOTPICKLES_ROLE}")"
   if [[ -z "$missing_apps_out" ]]; then
-    check_pass "all Appfile apps installed"
+    check_pass "all Caskfile apps installed"
   else
     while IFS='|' read -r app url; do
       warn "$app not installed (install from $url)"

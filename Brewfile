@@ -64,7 +64,7 @@ brew "hyperfine"
 
 
 # CLI-only casks are the only kind hardened Homebrew allows (ADR 0058).
-# Apps live in Appfile.
+# Apps live in Caskfile.
 cask '1password-cli'
 
 # trailing newline so make sure there's not a syntax error when joining with Brewfile.*
