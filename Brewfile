@@ -62,13 +62,9 @@ brew 'mise'
 # benchmarking
 brew "hyperfine"
 
-cask 'cleanshot'
-cask 'dash'
-cask 'finicky'
-cask 'hammerspoon'
-cask 'obsidian'
 
-cask 'claude'
-cask 'claude-devtools'
+# CLI-only casks are the only kind hardened Homebrew allows (ADR 0058).
+# Apps live in Appfile.
+cask '1password-cli'
 
 # trailing newline so make sure there's not a syntax error when joining with Brewfile.*

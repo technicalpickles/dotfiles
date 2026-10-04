@@ -5,8 +5,8 @@ set -uo pipefail
 #
 # Health-check script for this dotfiles repo's install state. Reports
 # pass/fail for role detection, dotfile symlink health, LaunchAgent symlink
-# health, and basic tool availability -- reusing the same helpers functions.sh
-# already provides rather than reinventing them.
+# health, basic tool availability, and Appfile apps -- reusing the same helpers
+# functions.sh already provides rather than reinventing them.
 #
 # Read-only: it never repoints or creates anything. A dangling/misdirected
 # LaunchAgents symlink is reported as a FAIL here; repairing it is
@@ -55,6 +55,7 @@ Health-check for this dotfiles repo's install state. Reports pass/fail for:
   - dotfile symlink health (home/* and config/*)
   - LaunchAgents symlink health (macOS only)
   - basic tool availability (git, mise, brew)
+  - Appfile apps installed (macOS only)
 
 Read-only -- never repoints or creates anything. Exits 0 if all checks pass,
 1 if any fail.
@@ -203,6 +204,20 @@ if running_macos; then
     check_pass "brew available"
   else
     check_fail "brew not found"
+  fi
+fi
+
+# --- 5. Appfile apps (macOS only) ---
+# Apps aren't Homebrew-managed under hardened Homebrew (ADR 0058); Appfile
+# lists them so a missing one shows up here.
+if running_macos; then
+  missing_apps_out="$(cd "$DOTFILES_DIR" && missing_apps Appfile "Appfile.${DOTPICKLES_ROLE}")"
+  if [[ -z "$missing_apps_out" ]]; then
+    check_pass "all Appfile apps installed"
+  else
+    while IFS='|' read -r app url; do
+      check_fail "$app not installed" "install from $url"
+    done <<< "$missing_apps_out"
   fi
 fi
 

@@ -55,6 +55,7 @@ if running_macos; then
   fi
 
   brew_install_brewfiles || echo "⚠️  some Brewfile packages failed to install"
+  report_missing_apps
 fi
 
 git submodule init

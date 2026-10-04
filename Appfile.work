@@ -1,0 +1,4 @@
+# Work-role apps. See Appfile for the format.
+# Bundle names not verified on the work machine yet; fix if doctor flags them.
+Granola.app | https://www.granola.ai/
+Wispr Flow.app | https://wisprflow.ai/

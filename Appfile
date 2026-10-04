@@ -1,0 +1,13 @@
+# Mac apps installed outside Homebrew. Hardened Homebrew (automic-vault) can't
+# manage app casks (ADR 0058), so install these from the vendor; they update
+# themselves (except Finicky: check its releases page now and then).
+# install.sh and bin/dotfiles-doctor report any that are missing.
+#
+# Format: <bundle name>.app | <where to get it>
+CleanShot X.app | https://cleanshot.com/
+Dash.app | https://kapeli.com/dash
+Finicky.app | https://github.com/johnste/finicky/releases
+Hammerspoon.app | https://www.hammerspoon.org/
+Obsidian.app | https://obsidian.md/download
+Claude.app | https://claude.com/download
+claude-devtools.app | https://github.com/matt1398/claude-devtools/releases

@@ -297,6 +297,48 @@ brew_install_brewfiles() {
   return "$rc"
 }
 
+# Print "<Bundle>.app|<url>" for each Appfile entry not installed in any
+# directory of DOTPICKLES_APP_DIRS (colon-separated, default /Applications
+# and ~/Applications). Appfile lines are "<Bundle>.app | <url>"; blank lines
+# and # comments are skipped, as are missing files.
+missing_apps() {
+  local dirs="${DOTPICKLES_APP_DIRS:-/Applications:$HOME/Applications}"
+  local file line app url dir found
+  for file in "$@"; do
+    [ -f "$file" ] || continue
+    while IFS= read -r line || [ -n "$line" ]; do
+      case "$line" in '' | '#'*) continue ;; esac
+      app="$(sed -E 's/^[[:space:]]+//; s/[[:space:]]*\|.*$//' <<< "$line")"
+      url="$(sed -E 's/^[^|]*\|[[:space:]]*//; s/[[:space:]]+$//' <<< "$line")"
+      [ -n "$app" ] || continue
+      found=0
+      while IFS= read -r dir; do
+        if [ -d "$dir/$app" ]; then
+          found=1
+          break
+        fi
+      done <<< "$(tr ':' '\n' <<< "$dirs")"
+      [ "$found" -eq 1 ] || echo "$app|$url"
+    done < "$file"
+  done
+}
+
+# Report Appfile apps that aren't installed. Apps aren't Homebrew-managed under
+# hardened Homebrew (ADR 0058), and this deliberately never downloads anything.
+report_missing_apps() {
+  echo "📦 checking Appfile apps"
+  local missing app url
+  missing="$(missing_apps Appfile "Appfile.${DOTPICKLES_ROLE}")"
+  if [ -z "$missing" ]; then
+    echo "  → all apps installed"
+  else
+    while IFS='|' read -r app url; do
+      echo "  → missing $app: install from $url"
+    done <<< "$missing"
+  fi
+  echo
+}
+
 vim_plugins() {
   echo "⌨️️ configuring vim"
   vim +PlugInstall +qall
