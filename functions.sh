@@ -200,9 +200,70 @@ repoint_dangling_launchagents() {
   done
 }
 
-brew_bundle() {
-  echo "🍻 running brew bundle"
-  cat Brewfile "Brewfile.${DOTPICKLES_ROLE}" 2> /dev/null | brew bundle --file=- 2>&1 | sed 's/^/  → /'
+# Print "<kind> <name>" for each live tap/brew/cask line in the given
+# Brewfiles, in order. Comments, blank lines, other directives, and missing
+# files are skipped.
+brewfile_entries() {
+  local file
+  for file in "$@"; do
+    [ -f "$file" ] || continue
+    sed -nE "s/^[[:space:]]*(tap|brew|cask)[[:space:]]+['\"]([^'\"]+)['\"].*/\1 \2/p" "$file"
+  done
+}
+
+# Print the names (one per line) of the given formulae or casks that aren't
+# installed. `brew info` resolves aliases (gpg -> gnupg, nvim -> neovim) the
+# same way brew does, so installed aliases don't look missing forever. Without
+# jq (fresh machine), print every name and let `brew install` skip the rest.
+missing_brew_packages() {
+  local kind="$1"
+  shift
+  [ $# -gt 0 ] || return 0
+
+  if ! command_available jq; then
+    printf '%s\n' "$@"
+    return 0
+  fi
+
+  if [ "$kind" = formula ]; then
+    brew info --json=v2 --formula "$@" | jq -r '.formulae[] | select(.installed | length == 0) | .full_name'
+  else
+    brew info --json=v2 --cask "$@" | jq -r '.casks[] | select(.installed == null) | .full_token'
+  fi
+}
+
+# Install what Brewfile + Brewfile.$DOTPICKLES_ROLE declare. Replaces
+# `brew bundle`, which hardened Homebrew refuses to run (ADR 0058). Missing
+# formulae and casks each go in a single `brew install` so the approval prompt
+# fires at most once per kind.
+brew_install_brewfiles() {
+  echo "🍻 installing Brewfile packages"
+  local entries
+  entries="$(brewfile_entries Brewfile "Brewfile.${DOTPICKLES_ROLE}")"
+
+  local installed_taps tap
+  installed_taps="$(brew tap)"
+  for tap in $(awk '$1 == "tap" { print $2 }' <<< "$entries"); do
+    if ! grep -qxF "$tap" <<< "$installed_taps"; then
+      brew tap "$tap" 2>&1 | sed 's/^/  → /'
+    fi
+  done
+
+  # Brewfile keyword for each kind: `brew 'x'` is a formula, `cask 'x'` a cask.
+  local kind word names missing
+  for kind in formula cask; do
+    word=brew
+    [ "$kind" = cask ] && word=cask
+    # shellcheck disable=SC2207
+    names=($(awk -v k="$word" '$1 == k { print $2 }' <<< "$entries"))
+    missing="$(missing_brew_packages "$kind" ${names[@]+"${names[@]}"})"
+    if [ -n "$missing" ]; then
+      # shellcheck disable=SC2086
+      brew install "--$kind" $missing 2>&1 | sed 's/^/  → /'
+    else
+      echo "  → all ${kind} entries installed"
+    fi
+  done
   echo
 }
 
@@ -215,7 +276,8 @@ vim_plugins() {
 # make sure op is logged in
 op_ensure_signed_in() {
   if ! which op > /dev/null 2> /dev/null; then
-    brew install 1password-cli
+    # 1password-cli is a cask; hardened brew pins bare installs to --formula.
+    brew install --cask 1password-cli
   fi
 
   if ! op whoami > /dev/null 2>&1; then

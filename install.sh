@@ -54,7 +54,7 @@ if running_macos; then
     load_brew_shellenv
   fi
 
-  brew_bundle
+  brew_install_brewfiles
 fi
 
 git submodule init
