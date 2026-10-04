@@ -53,4 +53,39 @@ check "unknown cask exits 0" 'HOMEBREW_PREFIX="$P" "$REPO_ROOT/scripts/detach-ca
 # --- Test 4: no args is a usage error ---
 check "no args exits 2" 'HOMEBREW_PREFIX="$P" "$REPO_ROOT/scripts/detach-cask.sh" > /dev/null 2>&1; [ $? -eq 2 ]'
 
+# --- Test 5: empty token is rejected ---
+check "--yes \"\" exits 2" 'HOMEBREW_PREFIX="$P" "$REPO_ROOT/scripts/detach-cask.sh" --yes "" > /dev/null 2>&1; [ $? -eq 2 ]'
+
+# --- Test 6: .. is rejected ---
+check "--yes .. exits 2" 'HOMEBREW_PREFIX="$P" "$REPO_ROOT/scripts/detach-cask.sh" --yes .. > /dev/null 2>&1; [ $? -eq 2 ]'
+
+# --- Test 7: flag after cask name is rejected ---
+mkdir -p "$P/Caskroom/testflag/1.0/.metadata"
+echo '{}' > "$P/Caskroom/testflag/1.0/.metadata/INSTALL_RECEIPT.json"
+check "foo --yes exits 2" 'HOMEBREW_PREFIX="$P" "$REPO_ROOT/scripts/detach-cask.sh" testflag --yes > /dev/null 2>&1; [ $? -eq 2 ]'
+check "flag error keeps Caskroom" '[ -d "$P/Caskroom/testflag" ]'
+
+# --- Test 8: cask with no receipt is skipped ---
+mkdir -p "$P/Caskroom/noreceipt/1.0"
+check "no receipt skipped" 'HOMEBREW_PREFIX="$P" "$REPO_ROOT/scripts/detach-cask.sh" --yes noreceipt 2>&1 | grep -q "skip noreceipt"'
+check "no receipt Caskroom survives" '[ -d "$P/Caskroom/noreceipt" ]'
+
+# --- Test 9: malformed receipt is skipped ---
+mkdir -p "$P/Caskroom/bad/1.0/.metadata"
+echo '{not json' > "$P/Caskroom/bad/1.0/.metadata/INSTALL_RECEIPT.json"
+check "malformed receipt skipped" 'HOMEBREW_PREFIX="$P" "$REPO_ROOT/scripts/detach-cask.sh" --yes bad 2>&1 | grep -q "skip bad"'
+check "malformed receipt Caskroom survives" '[ -d "$P/Caskroom/bad" ]'
+
+# --- Test 10: two casks in one call ---
+mkdir -p "$P/Caskroom/two1/1.0" "$P/Caskroom/two2/1.0" "$P/Caskroom/two1/.metadata" "$P/Caskroom/two2/.metadata"
+echo '{"uninstall_artifacts":[]}' > "$P/Caskroom/two1/.metadata/INSTALL_RECEIPT.json"
+echo '{"uninstall_artifacts":[]}' > "$P/Caskroom/two2/.metadata/INSTALL_RECEIPT.json"
+ln -s "$P/Caskroom/two1/1.0/two1" "$P/bin/two1"
+ln -s "$P/Caskroom/two2/1.0/two2" "$P/bin/two2"
+HOMEBREW_PREFIX="$P" "$REPO_ROOT/scripts/detach-cask.sh" --yes two1 two2 > /dev/null
+check "two casks: first removed" '[ ! -e "$P/Caskroom/two1" ]'
+check "two casks: second removed" '[ ! -e "$P/Caskroom/two2" ]'
+check "two casks: first link removed" '[ ! -L "$P/bin/two1" ]'
+check "two casks: second link removed" '[ ! -L "$P/bin/two2" ]'
+
 exit "$FAIL"

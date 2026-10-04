@@ -26,6 +26,33 @@ if [ $# -eq 0 ]; then
   exit 2
 fi
 
+# Check for flags in non-first position
+for arg in "$@"; do
+  if [[ "$arg" =~ ^- ]]; then
+    echo "usage: $0 [--yes] <cask>..." >&2
+    exit 2
+  fi
+done
+
+# Validate all tokens before any deletion
+for token in "$@"; do
+  if [ "$token" = "." ] || [ "$token" = ".." ] || ! [[ "$token" =~ ^[a-z0-9][a-z0-9@+._-]*$ ]]; then
+    echo "invalid cask name: '$token'" >&2
+    exit 2
+  fi
+done
+
+# Helper function to escape glob characters for use in find -lname
+escape_glob_pattern() {
+  local s="$1"
+  s="${s//\\/\\\\}"
+  s="${s//\*/\\*}"
+  s="${s//\?/\\?}"
+  s="${s//\[/\\[}"
+  s="${s//\]/\\]}"
+  printf '%s\n' "$s"
+}
+
 for token in "$@"; do
   caskroom="$prefix/Caskroom/$token"
   if [ ! -d "$caskroom" ]; then
@@ -37,11 +64,29 @@ for token in "$@"; do
   # bundles (e.g. Hammerspoon's `hs` points inside the .app).
   find_args=(-lname "*/Caskroom/$token/*")
   receipt="$caskroom/.metadata/INSTALL_RECEIPT.json"
-  if [ -f "$receipt" ] && command -v jq > /dev/null 2>&1; then
-    while IFS= read -r app; do
-      [ -n "$app" ] && find_args+=(-o -lname "*/$app/*")
-    done < <(jq -r '.uninstall_artifacts[]? | select(type == "object" and has("app")) | .app[] | strings' "$receipt")
+
+  # Handle receipt: missing, jq unavailable, or malformed
+  if [ ! -f "$receipt" ]; then
+    echo "skip $token: cannot read $receipt (file not found)" >&2
+    continue
   fi
+
+  if ! command -v jq > /dev/null 2>&1; then
+    echo "skip $token: cannot read $receipt (jq not found)" >&2
+    continue
+  fi
+
+  jq_out=$(jq -r '.uninstall_artifacts[]? | select(type == "object" and has("app")) | .app[] | strings' "$receipt" 2>&1) || {
+    echo "skip $token: cannot read $receipt (jq failed)" >&2
+    continue
+  }
+
+  while IFS= read -r app; do
+    if [ -n "$app" ]; then
+      escaped_app=$(escape_glob_pattern "$app")
+      find_args+=(-o -lname "*/$escaped_app/*")
+    fi
+  done <<< "$jq_out"
 
   links="$(find "$prefix/bin" "$prefix/sbin" "$prefix/share" -type l \( "${find_args[@]}" \) 2> /dev/null || true)"
 
