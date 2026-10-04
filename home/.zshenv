@@ -10,6 +10,16 @@
 # every launcher run is approval-gated, so set the env statically instead of
 # eval'ing `brew shellenv` on every zsh start. When `av harden brew` offers to
 # rewrite this file, answer N.
+#
+# _dotpickles_brew_stub_first moves the launcher's directory to the front of
+# PATH, ahead of /opt/homebrew/bin. .zprofile and .zshrc re-prepend
+# $HOMEBREW_PREFIX/bin, so they call it again right after (ADR 0058).
+_dotpickles_brew_stub_first() {
+  local stub="${DOTPICKLES_BREW_STUB:-/usr/local/bin/brew}"
+  [[ -u $stub ]] || return 0
+  path=("${stub:h}" ${path:#${stub:h}})
+}
+
 _brew_stub="${DOTPICKLES_BREW_STUB:-/usr/local/bin/brew}"
 if [[ -u $_brew_stub ]]; then
   export HOMEBREW_PREFIX=/opt/homebrew
@@ -96,12 +106,7 @@ if [[ -n "$HOMEBREW_PREFIX" ]]; then
   export PATH="${PATH//$HOMEBREW_PREFIX\/sbin:/}"
   export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
   # ADR 0058: hardened launcher dir must precede $HOMEBREW_PREFIX/bin
-  _brew_stub="${DOTPICKLES_BREW_STUB:-/usr/local/bin/brew}"
-  if [[ -u $_brew_stub ]]; then
-    export PATH="${PATH//${_brew_stub:h}:/}"
-    export PATH="${_brew_stub:h}:$PATH"
-  fi
-  unset _brew_stub
+  _dotpickles_brew_stub_first
 fi
 # pinned wrappers (e.g. qmd -> mise exec node@24) must beat mise shims
 if [[ -d "$HOME/.pickles/bin" ]]; then

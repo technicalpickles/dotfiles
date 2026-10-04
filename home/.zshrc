@@ -76,6 +76,8 @@ fi
 # Establish final PATH priority order (prepend in reverse order)
 if [[ -n "$HOMEBREW_PREFIX" ]]; then
   export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
+  # ADR 0058: hardened launcher dir must precede $HOMEBREW_PREFIX/bin
+  _dotpickles_brew_stub_first
 fi
 if [[ -d "$HOME/.local/share/mise/shims" ]]; then
   # Remove duplicates and re-add at front

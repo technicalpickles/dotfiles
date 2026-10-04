@@ -3,11 +3,11 @@
 # every launcher run is approval-gated, so in that mode set the env statically
 # instead of calling brew on every shell start.
 set -l brew_stub /usr/local/bin/brew
-set -q DOTPICKLES_BREW_STUB; and set brew_stub $DOTPICKLES_BREW_STUB
+test -n "$DOTPICKLES_BREW_STUB"; and set brew_stub $DOTPICKLES_BREW_STUB
 
 # avoid running this multiple times to avoid messing with the PATH
 if test -z "$HOMEBREW_PREFIX"
-    if test -u $brew_stub
+    if test -u "$brew_stub"
         set -gx HOMEBREW_PREFIX /opt/homebrew
         set -gx HOMEBREW_CELLAR /opt/homebrew/Cellar
     else
@@ -24,7 +24,7 @@ if test -z "$HOMEBREW_PREFIX"
         set -gx HOMEBREW_REPOSITORY "$HOMEBREW_PREFIX"
         fish_add_path --move -gP "$HOMEBREW_PREFIX/bin" "$HOMEBREW_PREFIX/sbin"
         # the launcher's directory must come before $HOMEBREW_PREFIX/bin
-        test -u $brew_stub; and fish_add_path --move -gP (dirname $brew_stub)
+        test -u "$brew_stub"; and fish_add_path --move -gP (dirname "$brew_stub")
         ! set -q MANPATH; and set MANPATH ''
         set -gx MANPATH "$HOMEBREW_PREFIX/share/man" $MANPATH
         ! set -q INFOPATH; and set INFOPATH ''
