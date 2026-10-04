@@ -64,3 +64,7 @@ Removing via `brew uninstall --cask` deletes the .app; instead, to keep apps in 
 ## Plan
 
 `doc/plans/2026-10-04-hardened-homebrew.md` (branch `hardened-brew`)
+
+## Status (2026-10-04)
+
+Repo work done on branch `hardened-brew` (ADR 0058, ollama agent, beans via mise, `brew_install_brewfiles`, stub-aware shells, Appfile + doctor, `scripts/detach-cask.sh`). Remaining: the plan's `cutover` task (user-run after merge). Follow-ups: dotfiles-gp5r (lefthook), dotfiles-i4a9 (bash login PATH order).
