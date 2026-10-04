@@ -30,8 +30,8 @@ Under it:
 ## Decision
 
 - Long-running services are dotfiles LaunchAgents (`LaunchAgents/`), pointing
-  at stable `/opt/homebrew/opt/<formula>/bin/...` paths, with logs outside
-  `/opt/homebrew`. This was already the pattern for gost and sleepwatcher.
+  at stable Homebrew paths such as `/opt/homebrew/opt/<formula>/bin/...` or
+  `/opt/homebrew/bin/...`, with logs outside `/opt/homebrew`. This was already the pattern for gost and sleepwatcher.
 - `install.sh` installs formulae (and CLI-only casks) with
   `brew_install_brewfiles` in `functions.sh`: one `brew install --formula`
   call for whatever is missing, so approval fires once.
@@ -39,9 +39,12 @@ Under it:
   the vendor. They update themselves. `install.sh` and `bin/dotfiles-doctor`
   report missing ones with a download link; nothing downloads installers
   unattended.
-- Shell setup (`home/.zshenv`, `config/fish/conf.d/__homebrew.fish`,
-  `load_brew_shellenv`) detects the launcher by its setuid bit and sets the
-  Homebrew env statically, so no brew process spawns per shell start.
+- Shell setup (`home/.zshenv`, `.zprofile`, `.zshrc`,
+  `config/fish/conf.d/__homebrew.fish`, and `home/.bash_profile` for bash
+  login shells) detects the launcher by its setuid bit, sets the Homebrew env
+  statically so no brew process spawns per shell start, and keeps the
+  launcher's directory ahead of `/opt/homebrew/bin`. `load_brew_shellenv` in
+  `functions.sh` does the same for install-time scripts only.
 
 ## Consequences
 
@@ -51,4 +54,6 @@ Under it:
   ambiguous and reopens the unattended installs the vault exists to gate.
 - When `av harden brew` offers to rewrite shell startup files, answer N; the
   repo's files already handle both modes.
-- Unhardened machines (work, containers) behave exactly as before.
+- On every Mac, hardened or not, `install.sh` no longer installs app casks.
+  The apps listed in `Appfile*` (including the `Appfile.work` bundle names)
+  are unverified until checked on the work machine.

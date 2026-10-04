@@ -1431,13 +1431,16 @@ When it asks to change shell startup references to `/usr/local/bin/brew`, answer
 
 ```bash
 command -v brew
+zsh -lic 'whence -p brew'
+fish -lc 'command -s brew'
+bash -lc 'command -v brew'
 echo $PATH | tr ' :' '\n\n' | grep -n -m2 -E '^/usr/local/bin$|^/opt/homebrew/bin$'
 brew services list
 bin/dotfiles-doctor
 curl -s localhost:11434/api/version
 ```
 
-Expected: `brew` is `/usr/local/bin/brew`; `/usr/local/bin` listed before `/opt/homebrew/bin`; no services loaded; doctor passes (including `all Appfile apps installed`); ollama still answers.
+Expected: `brew` is `/usr/local/bin/brew`, and the zsh, fish, and bash login checks each print `/usr/local/bin/brew`; `/usr/local/bin` listed before `/opt/homebrew/bin`; no services loaded; doctor passes (including `all Appfile apps installed`); ollama still answers.
 
 - [ ] **Step 8: Re-run install end to end**
 
