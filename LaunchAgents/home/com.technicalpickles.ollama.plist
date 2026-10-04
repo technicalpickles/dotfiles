@@ -15,8 +15,16 @@
     </array>
     <key>RunAtLoad</key>
     <true/>
+    <!-- Only keep it alive while ollama is installed, so launchd doesn't
+         respawn a missing binary forever. -->
     <key>KeepAlive</key>
-    <true/>
+    <dict>
+        <key>PathState</key>
+        <dict>
+            <key>/opt/homebrew/opt/ollama/bin/ollama</key>
+            <true/>
+        </dict>
+    </dict>
     <!-- Carried over from the Homebrew service definition. -->
     <key>EnvironmentVariables</key>
     <dict>
