@@ -76,6 +76,23 @@ The `brew_bundle()` function in [functions.sh:99-103](../functions.sh#L99-L103) 
 
 The [LaunchAgents/](../LaunchAgents/) directory contains `.plist` files for macOS launch agents. These are symlinked and can be managed with [launchagents.sh](../launchagents.sh).
 
+## Homebrew (hardened-compatible)
+
+The repo assumes automic-vault may harden Homebrew (ADR 0058), so it avoids
+the features that breaks:
+
+- `Brewfile` / `Brewfile.<role>` hold formulae, taps, and CLI-only casks.
+  `install.sh` installs them with `brew_install_brewfiles` (`functions.sh`),
+  not `brew bundle`.
+- `Appfile` / `Appfile.<role>` list Mac apps, installed by hand from the
+  vendor. `install.sh` and `bin/dotfiles-doctor` report missing ones.
+- Long-running services are LaunchAgents in `LaunchAgents/`, never
+  `brew services`. `scripts/test-launchagent-plists.sh` keeps them from
+  writing into `/opt/homebrew`.
+- Shell setup uses `/usr/local/bin/brew` when it's the setuid launcher.
+- `scripts/detach-cask.sh` drops an app cask from Homebrew without deleting
+  the app (only while unhardened).
+
 ## Synthetic Workspace Symlink (Work Only)
 
 On **work** machines running **macOS**, the installation automatically creates a `/workspace` symlink pointing to `~/workspace` via macOS's synthetic filesystem feature (`/etc/synthetic.conf`).

@@ -16,6 +16,8 @@ Pre-commit hooks via `lefthook`: Prettier formats staged files, TypeScript check
 
 There are no traditional unit tests. "Testing" means `npm run lint` + manual install verification.
 
+Manual harnesses live in `scripts/test-*.sh` (e.g. `scripts/test-brew-install-brewfiles.sh`); run the relevant one when touching the code it covers.
+
 **The sandbox denies outbound SSH (port 22) at the TCP connect level** — `ssh: connect to host github.com port 22: Operation not permitted`, failing before any identity/agent negotiation. Confirmed 2026-08-20 (pickletown bean gt-o2jy). Two different fixes now apply depending on role:
 
 - **`home` role**: agent sessions route SSH through `com.technicalpickles.agent-ssh-relay`, a local SOCKS5 proxy the sandbox's localhost allowance can reach (see [ssh/CLAUDE.md](ssh/CLAUDE.md), [ADR 0055](doc/adr/0055-agent-git-over-ssh-through-the-relay.md)). Both agent and interactive git use real SSH end to end — the interactive-only HTTPS rewrite this section used to describe was removed 2026-09-12 once the relay proved reliable; see git log on `gitconfig.sh` if that history is needed. No `dangerouslyDisableSandbox` needed for git/ssh to allowlisted hosts (`config/gost/agent-ssh-relay.yml`) any more.
