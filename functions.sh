@@ -35,6 +35,17 @@ brew_available() {
 }
 
 load_brew_shellenv() {
+  local stub="${DOTPICKLES_BREW_STUB:-/usr/local/bin/brew}"
+  # Hardened Homebrew (automic-vault, ADR 0058): a setuid launcher replaces
+  # direct use of /opt/homebrew/bin/brew, and must come first on PATH.
+  if test -u "$stub"; then
+    export HOMEBREW_PREFIX=/opt/homebrew
+    export HOMEBREW_CELLAR=/opt/homebrew/Cellar
+    export HOMEBREW_REPOSITORY=/opt/homebrew
+    export PATH="$(dirname "$stub"):/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+    return 0
+  fi
+
   if test -x /opt/homebrew/bin/brew; then
     brew=/opt/homebrew/bin/brew
   elif test -x /usr/local/bin/brew; then
