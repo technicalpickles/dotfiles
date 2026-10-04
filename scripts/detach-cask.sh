@@ -3,8 +3,10 @@
 #
 # Hardened Homebrew (ADR 0058) refuses to run while Caskroom holds app casks,
 # and `brew uninstall --cask` would delete the app itself. This removes the
-# cask's Caskroom entry and the symlinks brew made for it (binaries,
-# completions, manpages), leaving the .app in place to update itself.
+# cask's Caskroom entry plus symlinks under $prefix/{bin,sbin,share,etc} that
+# point into that Caskroom entry or into the cask's .app bundles (binaries,
+# completions, manpages), leaving the .app in place to update itself. Links
+# elsewhere, such as binaries a pkg installed, are left alone.
 #
 # Run only while Homebrew is NOT hardened (you must own the prefix).
 #
@@ -76,10 +78,14 @@ for token in "$@"; do
     continue
   fi
 
-  jq_out=$(jq -r '.uninstall_artifacts[]? | select(type == "object" and has("app")) | .app[] | strings' "$receipt" 2>&1) || {
-    echo "skip $token: cannot read $receipt (jq failed)" >&2
+  # jq's stderr goes to the skip message, never into the app-name list
+  jq_err_file="$(mktemp)"
+  if ! jq_out=$(jq -r '.uninstall_artifacts[]? | select(type == "object" and has("app")) | .app[] | strings' "$receipt" 2> "$jq_err_file"); then
+    echo "skip $token: cannot read $receipt (jq failed: $(head -n 1 "$jq_err_file"))" >&2
+    rm -f "$jq_err_file"
     continue
-  }
+  fi
+  rm -f "$jq_err_file"
 
   while IFS= read -r app; do
     if [ -n "$app" ]; then
@@ -88,7 +94,7 @@ for token in "$@"; do
     fi
   done <<< "$jq_out"
 
-  links="$(find "$prefix/bin" "$prefix/sbin" "$prefix/share" -type l \( "${find_args[@]}" \) 2> /dev/null || true)"
+  links="$(find "$prefix/bin" "$prefix/sbin" "$prefix/share" "$prefix/etc" -type l \( "${find_args[@]}" \) 2> /dev/null || true)"
 
   echo "$token:"
   if [ -n "$links" ]; then
