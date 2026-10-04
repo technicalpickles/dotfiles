@@ -70,7 +70,7 @@ Homebrew packages are managed through **merged Brewfiles**:
 - [Brewfile](../Brewfile): Common packages (fish, git, nvim, fzf, jq, etc.)
 - `Brewfile.$ROLE`: Role-specific additions (home or work)
 
-The `brew_bundle()` function in [functions.sh:99-103](../functions.sh#L99-L103) concatenates these files and pipes to `brew bundle`.
+`brew_install_brewfiles()` in functions.sh installs what these files declare (see Homebrew (hardened-compatible) below).
 
 ## LaunchAgents for macOS Automation
 
@@ -79,7 +79,7 @@ The [LaunchAgents/](../LaunchAgents/) directory contains `.plist` files for macO
 ## Homebrew (hardened-compatible)
 
 The repo assumes automic-vault may harden Homebrew (ADR 0058), so it avoids
-the features that breaks:
+the features that break:
 
 - `Brewfile` / `Brewfile.<role>` hold formulae, taps, and CLI-only casks.
   `install.sh` installs them with `brew_install_brewfiles` (`functions.sh`),
