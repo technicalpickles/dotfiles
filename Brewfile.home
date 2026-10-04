@@ -1,5 +1,6 @@
 brew 'orbstack'
 brew 'sleepwatcher'
+brew 'ollama' # served by LaunchAgents/home/com.technicalpickles.ollama.plist
 brew 'taskwarrior-tui'
 
 cask 'discord'
