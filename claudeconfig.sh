@@ -689,8 +689,27 @@ configure_mcp_servers() {
           echo "    ✗ Failed to register $name (continuing anyway)" >&2
         fi
         ;;
+      stdio)
+        local command
+        command=$(echo "$servers_json" | jq -r --arg n "$name" '.[$n].command // ""')
+        if [ -z "$command" ]; then
+          echo "  ✗ $name: transport 'stdio' requires a command; skipping" >&2
+          continue
+        fi
+        local args=()
+        local arg
+        while IFS= read -r arg; do
+          args+=("$arg")
+        done < <(echo "$servers_json" | jq -r --arg n "$name" '.[$n].args // [] | .[]')
+        echo "  + Registering $name (stdio -> $command${args[*]:+ ${args[*]}})..."
+        if claude mcp add --scope user "$name" -- "$command" "${args[@]}" > /dev/null 2>&1; then
+          echo "    ✓ Added to user config"
+        else
+          echo "    ✗ Failed to register $name (continuing anyway)" >&2
+        fi
+        ;;
       *)
-        echo "  ✗ $name: unsupported transport '$transport' (only http/sse); skipping" >&2
+        echo "  ✗ $name: unsupported transport '$transport' (only http/sse/stdio); skipping" >&2
         ;;
     esac
   done <<< "$names"
