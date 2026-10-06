@@ -1,0 +1,233 @@
+#!/usr/bin/env bash
+# Overnight diagnostic sweep: index every pickletown repo with codebase-memory-mcp,
+# one at a time, under a per-repo timeout, and record enough about each run to
+# figure out afterwards why a repo failed or hung.
+#
+# Usage: cbm-sweep [--timeout SECS] [--fresh] [--only repo1,repo2] [--out DIR]
+#
+#   --timeout  per-repo cap in seconds (default 900; slowest healthy repo in the
+#              2026-10-06 cycle was web at 375s)
+#   --fresh    delete each repo's existing db first, so every repo gets a cold,
+#              full index instead of an incremental no-op
+#   --only     comma-separated repo names (the <repo> in repos/<repo>), e.g. to
+#              retry the failures from a previous sweep
+#   --out      output dir (default ~/.cache/codebase-memory-mcp/sweeps/<stamp>)
+#
+# Must run outside the Claude Code sandbox: sample/vmmap/ps on the worker are
+# blocked in it. Holds the same lock as bin/cbm-reindex so the hourly job skips
+# while this runs. Wraps itself in caffeinate so the Mac doesn't sleep mid-sweep.
+#
+# Output, per sweep dir:
+#   results.jsonl          one JSON object per repo
+#   sweep.log              human-readable progress
+#   repos/<repo>/          stdout.json, stderr.log, samples.tsv, and on timeout:
+#                          stack-<pid>.txt, vmmap-<pid>.txt, lsof-<pid>.txt, cbm-log-tail.txt
+# Analyze with: cbm-sweep-report [DIR]
+
+set -o nounset -o pipefail
+
+if [[ -z "${CBM_SWEEP_CAFFEINATED:-}" ]] && command -v caffeinate > /dev/null; then
+  export CBM_SWEEP_CAFFEINATED=1
+  exec caffeinate -i "$0" "$@"
+fi
+
+TIMEOUT=900
+FRESH=false
+ONLY=''
+OUT=''
+while (($#)); do
+  case "$1" in
+    --timeout) TIMEOUT="$2"; shift 2 ;;
+    --fresh) FRESH=true; shift ;;
+    --only) ONLY="$2"; shift 2 ;;
+    --out) OUT="$2"; shift 2 ;;
+    -h | --help) sed -n '2,25p' "$0"; exit 0 ;;
+    *) echo "unknown arg: $1" >&2; exit 2 ;;
+  esac
+done
+
+readonly CBM="${CBM_BIN:-$HOME/.local/share/mise/shims/codebase-memory-mcp}"
+readonly REPOS="${PT_ROOT:-$HOME/pickleton}/repos"
+readonly CACHE="$HOME/.cache/codebase-memory-mcp"
+readonly LOCKDIR="$CACHE/.reindex.lock"
+readonly SAMPLE_EVERY=30
+OUT="${OUT:-$CACHE/sweeps/$(date +%Y%m%d-%H%M%S)}"
+mkdir -p "$OUT/repos"
+RESULTS="$OUT/results.jsonl"
+LOG="$OUT/sweep.log"
+
+log() { printf '%s %s\n' "$(date +%H:%M:%S)" "$*" | tee -a "$LOG"; }
+
+if ! mkdir "$LOCKDIR" 2> /dev/null; then
+  if [[ -r "$LOCKDIR/pid" ]] && ! kill -0 "$(cat "$LOCKDIR/pid")" 2> /dev/null; then
+    rm -rf "$LOCKDIR" && mkdir "$LOCKDIR"
+  else
+    echo "lock held by pid $(cat "$LOCKDIR/pid" 2> /dev/null) (cbm-reindex running?), aborting" >&2
+    exit 1
+  fi
+fi
+printf '%s' "$$" > "$LOCKDIR/pid"
+
+client_pid=''
+cleanup() {
+  [[ -n "$client_pid" ]] && kill "$client_pid" 2> /dev/null
+  rm -rf "$LOCKDIR"
+}
+trap cleanup EXIT
+trap 'log "interrupted"; exit 130' INT TERM
+
+# The CLI client hands the work to an index worker forked by the shared CBM
+# daemon, so the worker is NOT our child: killing the client may leave it
+# spinning. Find it by the repo_path in its argv.
+worker_pids() {
+  pgrep -u "$(id -u)" -f -- "--index-worker.*\"repo_path\":\"$1\"" || true
+}
+
+project_name() {
+  local p="${1#/}"
+  printf '%s' "${p//\//-}"
+}
+
+# Tracked files only, to approximate what CBM sees.
+repo_stats() {
+  local path="$1"
+  git -C "$path" ls-files -z 2> /dev/null |
+    (cd "$path" && xargs -0 /usr/bin/stat -f '%z %N' 2> /dev/null) |
+    sort -rn |
+    awk -v dir="$2" '
+      { n++; total += $1; if (n <= 15) print > (dir "/largest-files.txt") }
+      NR == 1 { lb = $1; $1 = ""; lf = substr($0, 2) }
+      END {
+        gsub(/\\/, "\\\\", lf); gsub(/"/, "\\\"", lf)
+        printf "{\"tracked_files\":%d,\"tracked_bytes\":%d,\"largest_file\":\"%s\",\"largest_bytes\":%d}", n, total, lf, lb
+      }'
+}
+
+capture_timeout_diagnostics() {
+  local dir="$1" path="$2" project="$3" pid
+  for pid in $(worker_pids "$path"); do
+    ps -o pid,ppid,etime,pcpu,rss,vsz,command -p "$pid" >> "$dir/ps.txt" 2>&1
+    sample "$pid" 5 -file "$dir/stack-$pid.txt" > /dev/null 2>&1
+    vmmap --summary "$pid" > "$dir/vmmap-$pid.txt" 2>&1
+    lsof -p "$pid" > "$dir/lsof-$pid.txt" 2>&1
+  done
+  local cbm_log
+  cbm_log=$(/bin/ls -t "$CACHE/logs/$project"-*.log 2> /dev/null | head -1)
+  [[ -n "$cbm_log" ]] && tail -200 "$cbm_log" > "$dir/cbm-log-tail.txt"
+  /bin/ls -l "$CACHE/$project".db* > "$dir/cache-files.txt" 2>&1
+}
+
+kill_run() {
+  local path="$1" pid
+  kill -TERM "$client_pid" 2> /dev/null
+  for pid in $(worker_pids "$path"); do kill -TERM "$pid" 2> /dev/null; done
+  sleep 5
+  kill -KILL "$client_pid" 2> /dev/null
+  for pid in $(worker_pids "$path"); do kill -KILL "$pid" 2> /dev/null; done
+  wait "$client_pid" 2> /dev/null
+  # A killed worker leaves its stage db behind.
+  rm -f "$CACHE/$(project_name "$path")".db.stage.*
+}
+
+record() {
+  jq -c -n --argjson a "$1" --argjson b "$2" '$a + $b' >> "$RESULTS"
+}
+
+log "sweep start: timeout=${TIMEOUT}s fresh=$FRESH only=${ONLY:-all} out=$OUT"
+log "cbm: $("$CBM" --version 2>&1 | head -1)"
+
+sweep_start=$SECONDS
+count=0
+for repo_dir in "$REPOS"/*/; do
+  repo_dir="${repo_dir%/}"
+  repo="$(basename "$repo_dir")"
+  if [[ -n "$ONLY" && ",$ONLY," != *",$repo,"* ]]; then continue; fi
+
+  if [[ -e "$repo_dir/worktrees/main/.git" ]]; then
+    path="$repo_dir/worktrees/main"
+  elif [[ -e "$repo_dir/checkout/.git" ]]; then
+    path="$repo_dir/checkout"
+  else
+    continue
+  fi
+  path="$(cd "$path" && pwd -P)"
+  project="$(project_name "$path")"
+  dir="$OUT/repos/$repo"
+  mkdir -p "$dir"
+  count=$((count + 1))
+
+  stats="$(repo_stats "$path" "$dir")"
+  [[ -z "$stats" ]] && stats='{}'
+
+  if [[ "$FRESH" == true ]]; then
+    rm -f "$CACHE/$project.db" "$CACHE/$project.db-wal" "$CACHE/$project.db-shm"
+  fi
+
+  log "[$count] $repo: start"
+  start=$SECONDS
+  "$CBM" cli --progress index_repository --repo-path "$path" \
+    > "$dir/stdout.json" 2> "$dir/stderr.log" &
+  client_pid=$!
+
+  printf 'elapsed\tworker_pid\tpcpu\trss_kb\n' > "$dir/samples.tsv"
+  peak_rss=0
+  status=''
+  next_sample=4
+  while kill -0 "$client_pid" 2> /dev/null; do
+    elapsed=$((SECONDS - start))
+    # First row at 4s: the daemon forks the worker a moment after the client starts.
+    for pid in $(worker_pids "$path"); do
+      read -r pcpu rss < <(ps -o pcpu=,rss= -p "$pid" 2> /dev/null) || continue
+      ((rss > peak_rss)) && peak_rss=$rss
+      if ((elapsed >= next_sample)); then
+        printf '%s\t%s\t%s\t%s\n' "$elapsed" "$pid" "$pcpu" "$rss" >> "$dir/samples.tsv"
+      fi
+    done
+    ((elapsed >= next_sample)) && next_sample=$((elapsed + SAMPLE_EVERY))
+    if ((elapsed >= TIMEOUT)); then
+      status=timeout
+      log "[$count] $repo: TIMEOUT at ${elapsed}s, capturing diagnostics"
+      capture_timeout_diagnostics "$dir" "$path" "$project"
+      kill_run "$path"
+      leftover="$(worker_pids "$path")"
+      [[ -n "$leftover" ]] && log "[$count] $repo: worker(s) survived kill: $leftover"
+      break
+    fi
+    sleep 2
+  done
+
+  rc=0
+  if [[ -z "$status" ]]; then
+    wait "$client_pid"
+    rc=$?
+    status=ok
+    ((rc != 0)) && status=error
+  fi
+  client_pid=''
+  secs=$((SECONDS - start))
+
+  # The index response is the last JSON line on stdout.
+  resp="$(grep '^{' "$dir/stdout.json" | tail -1)"
+  if [[ -n "$resp" ]] && jq -e . > /dev/null 2>&1 <<< "$resp"; then
+    fields="$(jq -c '{cbm_status: .status, nodes, edges, parse_partial_count, parse_unusable_count,
+      not_indexed_files_count, excluded_dirs: .excluded.count, cbm_logfile: .logfile}' <<< "$resp")"
+  else
+    fields='{}'
+  fi
+  # A zero exit with an error payload still counts as an error.
+  if [[ "$status" == ok ]] && [[ "$(jq -r '.cbm_status // "indexed"' <<< "$fields")" != indexed ]]; then
+    status=error
+  fi
+
+  base="$(jq -c -n --arg repo "$repo" --arg path "$path" --arg project "$project" \
+    --arg status "$status" --argjson rc "$rc" --argjson secs "$secs" \
+    --argjson timeout "$TIMEOUT" --argjson peak_rss_kb "$peak_rss" --argjson fresh "$FRESH" \
+    --arg dir "$dir" --arg at "$(date +%Y-%m-%dT%H:%M:%S%z)" \
+    '{repo:$repo, status:$status, secs:$secs, rc:$rc, timeout:$timeout, fresh:$fresh,
+      peak_rss_kb:$peak_rss_kb, path:$path, project:$project, dir:$dir, finished_at:$at}')"
+  record "$(jq -c -n --argjson a "$base" --argjson b "$fields" '$a + $b')" "$stats"
+  log "[$count] $repo: $status in ${secs}s"
+done
+
+log "sweep done: $count repos in $((SECONDS - sweep_start))s"
+log "report: cbm-sweep-report $OUT"
