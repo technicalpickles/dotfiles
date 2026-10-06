@@ -16,7 +16,10 @@
 set -o errexit -o nounset -o pipefail
 
 # launchd's PATH has no mise shims, but the shim resolves the tool itself.
-readonly CBM="$HOME/.local/share/mise/shims/codebase-memory-mcp"
+readonly CBM="${CBM_BIN:-$HOME/.local/share/mise/shims/codebase-memory-mcp}"
+# Per-repo cap. A hung call that's still alive would otherwise hold the lock
+# forever, and every later cycle would just log "skipping".
+readonly INDEX_TIMEOUT="${CBM_REINDEX_TIMEOUT:-1800}"
 readonly REPOS="${PT_ROOT:-$HOME/pickleton}/repos"
 readonly CACHE="$HOME/.cache/codebase-memory-mcp"
 readonly STATE="$CACHE/.last-reindex-digest"
@@ -67,17 +70,37 @@ stop_daemon() {
   pkill -TERM -u "$(id -u)" -f 'cbm-daemon-internal' > /dev/null 2>&1 || true
 }
 
-# Retries once per cycle after clearing the daemon, on any first failure, so a
-# changed error message doesn't break recovery.
-#
 # No --name: a session's project is always derived from its root path, and its
 # watcher only attaches when a db under that derived name exists. A custom name
 # here would build a second copy that sessions never query or keep fresh.
-index_with_recovery() {
-  local path="$1"
+#
+# macOS has no timeout(1). Runs the call in its own process group and kills the
+# whole group at the cap: killing only the direct child leaves any subprocess
+# holding our stdout pipe, so the $(...) capture would keep waiting. Exits 142.
+index_once() {
+  /usr/bin/perl -e '
+    my $cap = shift;
+    my $pid = fork() // die "fork: $!";
+    if (!$pid) { setpgrp(0, 0); exec @ARGV or die "exec: $!" }
+    setpgrp($pid, $pid);
+    $SIG{ALRM} = sub { kill "TERM", -$pid; sleep 5; kill "KILL", -$pid; exit 142 };
+    alarm $cap;
+    waitpid($pid, 0);
+    exit($? & 127 ? 128 + ($? & 127) : $? >> 8);
+  ' "$INDEX_TIMEOUT" "$CBM" cli --quiet index_repository --repo-path "$1"
+}
 
-  if out=$("$CBM" cli --quiet index_repository --repo-path "$path" 2>&1); then
-    return 0
+# Retries once per cycle after clearing the daemon, on any first failure, so a
+# changed error message doesn't break recovery. A timeout isn't retried: that
+# would just spend the cap twice on the same tree.
+index_with_recovery() {
+  local path="$1" rc=0
+
+  out=$(index_once "$path" 2>&1) || rc=$?
+  ((rc == 0)) && return 0
+  if ((rc == 142)); then
+    out="timed out after ${INDEX_TIMEOUT}s"
+    return 1
   fi
 
   if [[ "$daemon_stopped" == true ]]; then
@@ -86,7 +109,7 @@ index_with_recovery() {
   daemon_stopped=true
   stop_daemon
 
-  out=$("$CBM" cli --quiet index_repository --repo-path "$path" 2>&1) || return 1
+  out=$(index_once "$path" 2>&1) || return 1
 }
 
 start=$SECONDS
