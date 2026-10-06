@@ -1,0 +1,159 @@
+#!/usr/bin/env bash
+# Refresh the codebase-memory-mcp index for every pickletown repo.
+#
+# CBM's watcher only follows a repo while an MCP session is attached to it; its
+# shared daemon is a warm cache, not a watcher. With no session open nothing
+# reindexes, so this job keeps the rest of the corpus current.
+#
+# Corpus: each repo's default checkout under $PT_ROOT/repos, in either layout:
+#   repos/<repo>/worktrees/main   (bare layout)
+#   repos/<repo>/checkout         (plain layout; its .claude/worktrees are skipped)
+# Branch worktrees are left to CBM's own watcher while a session is open there.
+#
+# Adapted from ivy/dotfiles' cbm-reindex. Run hourly by the
+# com.technicalpickles.cbm-reindex LaunchAgent.
+
+set -o errexit -o nounset -o pipefail
+
+# launchd's PATH has no Homebrew (for gtimeout).
+PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+# Nor mise shims, but the shim resolves the tool itself.
+readonly CBM="${CBM_BIN:-$HOME/.local/share/mise/shims/codebase-memory-mcp}"
+# Per-repo cap. A hung call that's still alive would otherwise hold the lock
+# forever, and every later cycle would just log "skipping".
+readonly INDEX_TIMEOUT="${CBM_REINDEX_TIMEOUT:-1800}"
+readonly REPOS="${PT_ROOT:-$HOME/pickleton}/repos"
+readonly CACHE="$HOME/.cache/codebase-memory-mcp"
+readonly STATE="$CACHE/.last-reindex-digest"
+readonly LOCKDIR="$CACHE/.reindex.lock"
+
+# Repo names (the <repo> in repos/<repo>) to leave out. The loop is sequential
+# and CBM has no per-repo memory ceiling, so one tree it can't finish would
+# starve every repo after it.
+readonly EXCLUDE=()
+
+if [[ ! -x "$CBM" ]]; then
+  echo "codebase-memory-mcp not installed at $CBM, skipping reindex"
+  exit 0
+fi
+
+if ! command -v gtimeout > /dev/null; then
+  echo "gtimeout not found (brew install coreutils), skipping reindex"
+  exit 1
+fi
+
+if [[ ! -d "$REPOS" ]]; then
+  echo "$REPOS not present, skipping reindex"
+  exit 0
+fi
+
+log() {
+  printf '%s %s\n' "$(date +%Y-%m-%dT%H:%M:%S%z)" "$*"
+}
+
+# launchd fires on schedule whether or not the last cycle finished. mkdir is the
+# atomic primitive here; macOS doesn't ship flock(1).
+mkdir -p "$CACHE"
+if ! mkdir "$LOCKDIR" 2> /dev/null; then
+  if [[ -r "$LOCKDIR/pid" ]] && ! kill -0 "$(cat "$LOCKDIR/pid")" 2> /dev/null; then
+    rm -rf "$LOCKDIR"
+    mkdir "$LOCKDIR" 2> /dev/null || exit 0
+  else
+    log "another cbm-reindex cycle is running, skipping"
+    exit 0
+  fi
+fi
+printf '%s' "$$" > "$LOCKDIR/pid"
+trap 'rm -rf "$LOCKDIR"' EXIT
+
+out=''
+daemon_stopped=false
+
+# All CBM processes must be the exact same build. After a version bump, a warm
+# daemon from the old build rejects new work until it's gone. There's no
+# `daemon stop` subcommand (anything unknown starts a stdio server), but the
+# daemon's argv carries --cbm-daemon-internal.
+stop_daemon() {
+  pkill -TERM -u "$(id -u)" -f 'cbm-daemon-internal' > /dev/null 2>&1 || true
+}
+
+# No --name: a session's project is always derived from its root path, and its
+# watcher only attaches when a db under that derived name exists. A custom name
+# here would build a second copy that sessions never query or keep fresh.
+#
+# gtimeout (coreutils, in Brewfile) kills the whole process group, so a
+# subprocess can't keep our $(...) capture open past the cap.
+index_once() {
+  gtimeout --kill-after=10 "$INDEX_TIMEOUT" \
+    "$CBM" cli --quiet index_repository --repo-path "$1"
+}
+
+# Retries once per cycle after clearing the daemon, on any first failure, so a
+# changed error message doesn't break recovery. A timeout isn't retried: that
+# would just spend the cap twice on the same tree.
+index_with_recovery() {
+  local path="$1" rc=0
+
+  out=$(index_once "$path" 2>&1) || rc=$?
+  ((rc == 0)) && return 0
+  if ((rc == 124 || rc == 137)); then
+    out="timed out after ${INDEX_TIMEOUT}s"
+    return 1
+  fi
+
+  if [[ "$daemon_stopped" == true ]]; then
+    return 1
+  fi
+  daemon_stopped=true
+  stop_daemon
+
+  out=$(index_once "$path" 2>&1) || return 1
+}
+
+start=$SECONDS
+indexed=0
+failed=0
+digest_input=''
+
+for repo_dir in "$REPOS"/*/; do
+  repo_dir="${repo_dir%/}"
+  repo="$(basename "$repo_dir")"
+
+  for excluded in ${EXCLUDE[@]+"${EXCLUDE[@]}"}; do
+    [[ "$repo" == "$excluded" ]] && continue 2
+  done
+
+  if [[ -e "$repo_dir/worktrees/main/.git" ]]; then
+    path="$repo_dir/worktrees/main"
+  elif [[ -e "$repo_dir/checkout/.git" ]]; then
+    path="$repo_dir/checkout"
+  else
+    continue
+  fi
+  # The derived project name comes from this path; match the real path sessions see.
+  path="$(cd "$path" && pwd -P)"
+
+  # Untrusted source through a C parser: one crash must not end the cycle.
+  if ! index_with_recovery "$path"; then
+    log "index failed: $repo"
+    printf '%s\n' "$out"
+    failed=$((failed + 1))
+    continue
+  fi
+
+  # `|| true`: a response with no counts would otherwise abort the cycle under
+  # errexit+pipefail.
+  digest_input+="$repo $(printf '%s' "$out" | grep -oE '"(nodes|edges)":[0-9]+' | tr '\n' ' ' || true)"$'\n'
+  indexed=$((indexed + 1))
+done
+
+# Quiet when nothing changed, so the hourly log only shows cycles that did work.
+digest="$(printf '%s' "$digest_input" | shasum -a 256 | cut -d' ' -f1)"
+previous="$(cat "$STATE" 2> /dev/null || true)"
+
+if [[ "$digest" != "$previous" ]] || ((failed > 0)); then
+  log "reindex cycle: $((SECONDS - start))s, ${indexed} indexed, ${failed} failed"
+fi
+
+printf '%s\n' "$digest" > "$STATE"
