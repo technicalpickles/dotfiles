@@ -56,13 +56,6 @@ fi
 printf '%s' "$$" > "$LOCKDIR/pid"
 trap 'rm -rf "$LOCKDIR"' EXIT
 
-# Dot-free names: CBM takes a node's package from the second dot-delimited
-# segment of its qualified name, so a dot in the project name (the default
-# derived name includes $HOME, which has one) garbles package labels.
-project_name() {
-  printf '%s' "${1//[^A-Za-z0-9_-]/-}"
-}
-
 out=''
 daemon_stopped=false
 
@@ -76,10 +69,14 @@ stop_daemon() {
 
 # Retries once per cycle after clearing the daemon, on any first failure, so a
 # changed error message doesn't break recovery.
+#
+# No --name: a session's project is always derived from its root path, and its
+# watcher only attaches when a db under that derived name exists. A custom name
+# here would build a second copy that sessions never query or keep fresh.
 index_with_recovery() {
-  local path="$1" name="$2"
+  local path="$1"
 
-  if out=$("$CBM" cli --quiet index_repository --repo-path "$path" --name "$name" 2>&1); then
+  if out=$("$CBM" cli --quiet index_repository --repo-path "$path" 2>&1); then
     return 0
   fi
 
@@ -89,7 +86,7 @@ index_with_recovery() {
   daemon_stopped=true
   stop_daemon
 
-  out=$("$CBM" cli --quiet index_repository --repo-path "$path" --name "$name" 2>&1) || return 1
+  out=$("$CBM" cli --quiet index_repository --repo-path "$path" 2>&1) || return 1
 }
 
 start=$SECONDS
@@ -112,9 +109,11 @@ for repo_dir in "$REPOS"/*/; do
   else
     continue
   fi
+  # The derived project name comes from this path; match the real path sessions see.
+  path="$(cd "$path" && pwd -P)"
 
   # Untrusted source through a C parser: one crash must not end the cycle.
-  if ! index_with_recovery "$path" "$(project_name "$repo")"; then
+  if ! index_with_recovery "$path"; then
     log "index failed: $repo"
     printf '%s\n' "$out"
     failed=$((failed + 1))

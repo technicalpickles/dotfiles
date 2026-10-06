@@ -108,7 +108,7 @@ Keeps the codebase-memory-mcp graph current for every pickletown repo, not just 
 **What it does:**
 
 - Runs `bin/cbm-reindex` hourly (`StartInterval` 3600, not at load), as a `Background` process with low-priority I/O
-- Indexes each repo's default checkout under `~/pickleton/repos` (`worktrees/main` or `checkout`), named after the repo, skipping branch worktrees
+- Indexes each repo's default checkout under `~/pickleton/repos` (`worktrees/main` or `checkout`) under CBM's default path-derived project name, the same one a session there queries and watches, skipping branch worktrees
 - Logs only when node/edge counts changed or something failed, to `/tmp/com.technicalpickles.cbm-reindex.{out,err}`
 
 **Prerequisites:** `codebase-memory-mcp` installed by mise (`config/mise/conf.d/dotfiles.toml`). Add a repo name to `EXCLUDE` in the script if one can't finish indexing, since the loop is sequential.
