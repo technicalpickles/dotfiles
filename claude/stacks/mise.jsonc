@@ -30,6 +30,8 @@
         "mise.jdx.dev",
         "mise-versions.jdx.dev",
         "fnox.jdx.dev",
+        // Without it, SLSA/SBOM attestations silently go unverified (install still passes)
+        "tuf-repo-cdn.sigstore.dev",
       ],
     },
     "filesystem": {

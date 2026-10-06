@@ -69,6 +69,11 @@
         "productionresultssa5.blob.core.windows.net",
         "release-assets.githubusercontent.com",
         "results-receiver.actions.githubusercontent.com",
+        // `gh attestation verify`: GitHub's TUF root, the attestation bundle
+        // store, and the Sigstore public-good TUF root
+        "tuf-repo.github.com",
+        "tmaproduction.blob.core.windows.net",
+        "tuf-repo-cdn.sigstore.dev",
       ],
     },
     "filesystem": {
