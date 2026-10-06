@@ -15,7 +15,10 @@
 
 set -o errexit -o nounset -o pipefail
 
-# launchd's PATH has no mise shims, but the shim resolves the tool itself.
+# launchd's PATH has no Homebrew (for gtimeout).
+PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+# Nor mise shims, but the shim resolves the tool itself.
 readonly CBM="${CBM_BIN:-$HOME/.local/share/mise/shims/codebase-memory-mcp}"
 # Per-repo cap. A hung call that's still alive would otherwise hold the lock
 # forever, and every later cycle would just log "skipping".
@@ -33,6 +36,11 @@ readonly EXCLUDE=()
 if [[ ! -x "$CBM" ]]; then
   echo "codebase-memory-mcp not installed at $CBM, skipping reindex"
   exit 0
+fi
+
+if ! command -v gtimeout > /dev/null; then
+  echo "gtimeout not found (brew install coreutils), skipping reindex"
+  exit 1
 fi
 
 if [[ ! -d "$REPOS" ]]; then
@@ -74,20 +82,11 @@ stop_daemon() {
 # watcher only attaches when a db under that derived name exists. A custom name
 # here would build a second copy that sessions never query or keep fresh.
 #
-# macOS has no timeout(1). Runs the call in its own process group and kills the
-# whole group at the cap: killing only the direct child leaves any subprocess
-# holding our stdout pipe, so the $(...) capture would keep waiting. Exits 142.
+# gtimeout (coreutils, in Brewfile) kills the whole process group, so a
+# subprocess can't keep our $(...) capture open past the cap.
 index_once() {
-  /usr/bin/perl -e '
-    my $cap = shift;
-    my $pid = fork() // die "fork: $!";
-    if (!$pid) { setpgrp(0, 0); exec @ARGV or die "exec: $!" }
-    setpgrp($pid, $pid);
-    $SIG{ALRM} = sub { kill "TERM", -$pid; sleep 5; kill "KILL", -$pid; exit 142 };
-    alarm $cap;
-    waitpid($pid, 0);
-    exit($? & 127 ? 128 + ($? & 127) : $? >> 8);
-  ' "$INDEX_TIMEOUT" "$CBM" cli --quiet index_repository --repo-path "$1"
+  gtimeout --kill-after=10 "$INDEX_TIMEOUT" \
+    "$CBM" cli --quiet index_repository --repo-path "$1"
 }
 
 # Retries once per cycle after clearing the daemon, on any first failure, so a
@@ -98,7 +97,7 @@ index_with_recovery() {
 
   out=$(index_once "$path" 2>&1) || rc=$?
   ((rc == 0)) && return 0
-  if ((rc == 142)); then
+  if ((rc == 124 || rc == 137)); then
     out="timed out after ${INDEX_TIMEOUT}s"
     return 1
   fi
