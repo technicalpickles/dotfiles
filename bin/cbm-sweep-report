@@ -60,4 +60,9 @@ jq -rs 'map(select((.largest_bytes // 0) > 10485760)) | sort_by(-.largest_bytes)
   "  \(((.largest_bytes)/1048576)|floor)MB\t\(.status)\t\(.secs)s\t\(.repo)\t\(.largest_file)"' "$R" | column -t -s $'\t'
 
 echo
-echo "Retry failures: cbm-sweep --only $("$0" "$dir" --failed-only-names)"
+failed="$("$0" "$dir" --failed-only-names)"
+if [[ -n "$failed" ]]; then
+  echo "Retry failures: cbm-sweep --only $failed"
+else
+  echo "No failures."
+fi

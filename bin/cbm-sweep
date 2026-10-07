@@ -88,10 +88,13 @@ project_name() {
   printf '%s' "${p//\//-}"
 }
 
-# Tracked files only, to approximate what CBM sees.
+# Tracked files minus the ones gitignore/info/exclude hide, to approximate what
+# CBM sees (.cbmignore isn't applied).
 repo_stats() {
   local path="$1"
-  git -C "$path" ls-files -z 2> /dev/null |
+  git -C "$path" ls-files -c 2> /dev/null |
+    grep -vxF -f <(git -C "$path" ls-files -c -i --exclude-standard 2> /dev/null) |
+    tr '\n' '\0' |
     (cd "$path" && xargs -0 /usr/bin/stat -f '%z %N' 2> /dev/null) |
     sort -rn |
     awk -v dir="$2" '
