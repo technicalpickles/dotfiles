@@ -9,7 +9,10 @@ SWEEPS="$HOME/.cache/codebase-memory-mcp/sweeps"
 dir="${1:-$(/bin/ls -td "$SWEEPS"/*/ 2> /dev/null | head -1)}"
 dir="${dir%/}"
 R="$dir/results.jsonl"
-[[ -s "$R" ]] || { echo "no results in $dir" >&2; exit 1; }
+[[ -s "$R" ]] || {
+  echo "no results in $dir" >&2
+  exit 1
+}
 
 if [[ "${2:-}" == --failed-only-names ]]; then
   jq -r 'select(.status != "ok") | .repo' "$R" | paste -sd, -
@@ -44,10 +47,19 @@ for repo in $(jq -r 'select(.status != "ok") | .repo' "$R"); do
   for f in "$d"/lsof-*.txt; do
     [[ -e "$f" ]] || continue
     open=$(awk '$4 ~ /^[0-9]+[ru]$/ && $9 ~ /^\// {print $9}' "$f" | grep -v -E '\.dylib$|/dev/|cbm-daemon' | head -5)
-    [[ -n "$open" ]] && { echo "  open files:"; echo "$open" | sed 's/^/    /'; }
+    [[ -n "$open" ]] && {
+      echo "  open files:"
+      echo "$open" | sed 's/^/    /'
+    }
   done
-  [[ -s "$d/largest-files.txt" ]] && { echo "  largest tracked:"; head -5 "$d/largest-files.txt" | awk '{s=$1; $1=""; printf "    %7.1fMB %s\n", s/1048576, $0}'; }
-  [[ -s "$d/stderr.log" ]] && { echo "  stderr tail:"; tail -3 "$d/stderr.log" | cut -c1-200 | sed 's/^/    /'; }
+  [[ -s "$d/largest-files.txt" ]] && {
+    echo "  largest tracked:"
+    head -5 "$d/largest-files.txt" | awk '{s=$1; $1=""; printf "    %7.1fMB %s\n", s/1048576, $0}'
+  }
+  [[ -s "$d/stderr.log" ]] && {
+    echo "  stderr tail:"
+    tail -3 "$d/stderr.log" | cut -c1-200 | sed 's/^/    /'
+  }
 done
 
 echo
