@@ -28,6 +28,20 @@ if running_macos; then
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/macos
 fi
 
+# Automic Vault's GPG Signing Gate is the preferred signing backend when the app
+# is installed: no 1Password, approval/push-notification gating per launcher.
+# ~/.gitconfig.signing.local is generated (not tracked) so the claude-agent-*
+# configs can include it too; when AV is absent it isn't written and git
+# silently skips the include, leaving the SSH signing below in effect.
+# See home/.gitconfig.d/av-signing.
+rm -f ~/.gitconfig.signing.local
+av_signing=false
+if running_macos && [ -x "/Applications/Automic Vault.app/Contents/MacOS/av-gpg" ]; then
+  echo "  → enabling Automic Vault gpg signing"
+  av_signing=true
+  git config --file ~/.gitconfig.signing.local --add include.path ~/.gitconfig.d/av-signing
+fi
+
 signing=false
 case "$DOTPICKLES_ROLE" in
   home | container | claude-code-remote | coi-host)
@@ -38,7 +52,9 @@ case "$DOTPICKLES_ROLE" in
     echo "  → using home identity for git"
     git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/home-identity
 
-    if running_macos && test -d '/Applications/1Password.app/'; then
+    if [ "$av_signing" = true ]; then
+      : # signing handled by Automic Vault (above)
+    elif running_macos && test -d '/Applications/1Password.app/'; then
       echo "  → enabling 1password ssh key signing"
       signing=true
 
@@ -58,11 +74,13 @@ case "$DOTPICKLES_ROLE" in
     echo " → using work identify for git"
     git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/work-identity
 
-    echo "  → enabling work ssh key signing"
-    signing=true
+    if [ "$av_signing" != true ]; then
+      echo "  → enabling work ssh key signing"
+      signing=true
 
-    if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
-      git config --file ~/.gitconfig.local user.signingkey "$HOME/.ssh/id_ed25519.pub"
+      if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
+        git config --file ~/.gitconfig.local user.signingkey "$HOME/.ssh/id_ed25519.pub"
+      fi
     fi
     ;;
   *)
@@ -71,7 +89,9 @@ case "$DOTPICKLES_ROLE" in
     ;;
 esac
 
-if [ "$signing" = true ]; then
+if [ "$av_signing" = true ]; then
+  git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.signing.local
+elif [ "$signing" = true ]; then
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/signing
 fi
 

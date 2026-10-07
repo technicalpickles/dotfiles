@@ -49,7 +49,7 @@ Loads the role-scoped agent SSH keys ([ADR 0031](../doc/adr/0031-role-scoped-age
 
 **What it does:**
 
-- Runs `bin/load-agent-ssh-keys`, which `ssh-add --apple-use-keychain`s every `~/.ssh/agents/*/id_ed25519` that isn't already in the agent
+- Runs `bin/load-agent-ssh-keys`, which `ssh-add --apple-use-keychain`s every `~/.ssh/agents/*/id_ed25519` that isn't already in the agent, skipping keys Automic Vault's agent serves ([ADR 0058](../doc/adr/0058-automic-vault-for-git-signing-and-agent-ssh.md)). On AV machines it's effectively a no-op, and launchd jobs that sign or push go through AV, which may fail closed without a Verified Launcher.
 - `RunAtLoad` only -- launchd's agent is per-login-session, so one load at session start covers every scheduled job for that session
 - Logs to `/tmp/com.technicalpickles.agent-ssh-keys.{out,err}`
 

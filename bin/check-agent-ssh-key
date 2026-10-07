@@ -158,8 +158,27 @@ STAT=/usr/bin/stat
 echo -e "${BOLD}Checking agent SSH identity: ${ROLE}${NC}"
 echo
 
+# Where Automic Vault's SSH agent serves this key, AV holds the private half
+# and the file on disk should be gone (bin/retire-agent-ssh-key): checks 1, 2
+# and the live probes below go through AV's agent instead of the file. Decided
+# by what this machine actually has, not by role (bin/av-ssh-agent-holds-key).
+AV_SOCK=""
+if [[ -f "$PUB_PATH" ]]; then
+  AV_SOCK=$("$(dirname "${BASH_SOURCE[0]}")/av-ssh-agent-holds-key" "$PUB_PATH" 2> /dev/null || true)
+fi
+if [[ -n "$AV_SOCK" ]]; then
+  PROBE_ID_OPTS="-i $PUB_PATH -o IdentityAgent=$AV_SOCK"
+else
+  PROBE_ID_OPTS="-i $KEY_PATH -o IdentityAgent=SSH_AUTH_SOCK"
+fi
+
 # --- 1. Local key files ---
-if [[ -f "$KEY_PATH" && -f "$PUB_PATH" ]]; then
+if [[ -n "$AV_SOCK" ]]; then
+  check_pass "Key held by Automic Vault (public key at $PUB_PATH)"
+  if [[ -f "$KEY_PATH" ]]; then
+    warn "Private key still on disk at $KEY_PATH: an ungated copy that bypasses Automic Vault. Run: bin/retire-agent-ssh-key $IDENTITY"
+  fi
+elif [[ -f "$KEY_PATH" && -f "$PUB_PATH" ]]; then
   key_mode=$("$STAT" -f '%Lp' "$KEY_PATH")
   pub_mode=$("$STAT" -f '%Lp' "$PUB_PATH")
   if [[ "$key_mode" == "600" && "$pub_mode" == "644" ]]; then
@@ -187,7 +206,9 @@ LOCAL_FP=$(ssh-keygen -lf "$PUB_PATH" | awk '{print $2}')
 # (/var/run/com.apple.launchd.*/Listeners) -- that one is
 # com.technicalpickles.agent-ssh-keys' job, and passing here says nothing about
 # it. See LaunchAgents/README.md.
-if ssh-add -l 2> /dev/null | awk '{print $2}' | grep -Fxq "$LOCAL_FP"; then
+if [[ -n "$AV_SOCK" ]]; then
+  check_pass "Key served by Automic Vault's ssh agent ($AV_SOCK)"
+elif ssh-add -l 2> /dev/null | awk '{print $2}' | grep -Fxq "$LOCAL_FP"; then
   check_pass "Key loaded in ssh-agent (fingerprint: $LOCAL_FP)"
 else
   check_fail "Key not loaded in this shell's ssh-agent" \
@@ -365,9 +386,9 @@ if [[ -n "${CLAUDECODE:-}" ]]; then
 fi
 
 info "Testing SSH auth to github.com (this may take a second)..."
-ssh_out=$(ssh -v -F /dev/null -i "$KEY_PATH" \
+# shellcheck disable=SC2086 # PROBE_ID_OPTS is a deliberate word-split option list
+ssh_out=$(ssh -v -F /dev/null $PROBE_ID_OPTS \
   -o IdentitiesOnly=yes \
-  -o IdentityAgent=SSH_AUTH_SOCK \
   -o StrictHostKeyChecking=accept-new \
   -o ConnectTimeout=10 \
   "${RELAY_OPT[@]}" \
@@ -417,7 +438,7 @@ if [[ ${#SSO_ORG_PROBES[@]} -gt 0 ]]; then
   # ProxyCommand, so add it back in agent sessions. Setting GIT_SSH_COMMAND
   # here also deliberately overrides the one Claude Code's sandbox injects,
   # which refuses SSH by policy (ssh/CLAUDE.md).
-  agent_ssh="ssh -F /dev/null -i $KEY_PATH -o IdentitiesOnly=yes -o IdentityAgent=SSH_AUTH_SOCK -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10"
+  agent_ssh="ssh -F /dev/null $PROBE_ID_OPTS -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10"
   if [[ -n "${CLAUDECODE:-}" ]]; then
     agent_ssh="$agent_ssh -o 'ProxyCommand=ncat --proxy 127.0.0.1:1080 --proxy-type socks5 %h %p'"
   fi

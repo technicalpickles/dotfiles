@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# retire-agent-ssh-key [<identity>] [--yes]
+#
+# Delete the on-disk private half of an agent SSH key (~/.ssh/agents/<identity>/
+# id_ed25519) once Automic Vault holds it, keeping the .pub so ssh config,
+# gitconfig and check-agent-ssh-key can still name the key.
+#
+# Why: with AV's SSH agent serving the key, every auth and signature goes
+# through AV's gate (approval / per-launcher policy). A readable private key
+# file next to it is an ungated copy any same-user process can use instead,
+# which defeats the point. AV deliberately never deletes originals itself
+# (AV ADR 0044), so this does it, carefully.
+#
+# Refuses unless, on THIS machine:
+#   1. bin/av-ssh-agent-holds-key passes (ssh resolves to AV's agent and AV
+#      serves this exact public key), and
+#   2. a live `ssh -T git@github.com` succeeds using only AV's agent (no key
+#      file is reachable to the probe), with the expected fingerprint.
+# So a machine/role where AV isn't set up is a no-op, whatever the role.
+#
+# Not undoable from here: make sure the key is backed up (it's in 1Password per
+# config/1password/agent.toml.home) or that you're fine re-enrolling a new key
+# via bin/setup-agent-ssh-key.
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+die() {
+  echo -e "${RED}✗${NC} $*" >&2
+  exit 1
+}
+ok() { echo -e "${GREEN}✓${NC} $*"; }
+warn() { echo -e "${YELLOW}⚠${NC} $*"; }
+
+identity="${DOTPICKLES_ROLE:-}"
+yes=false
+for arg in "$@"; do
+  case "$arg" in
+    --yes | -y) yes=true ;;
+    -h | --help)
+      sed -n '4,25p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    -*) die "Unknown flag: $arg" ;;
+    *) identity="$arg" ;;
+  esac
+done
+[[ -n "$identity" ]] || die "usage: retire-agent-ssh-key <identity> [--yes] (or set DOTPICKLES_ROLE)"
+[[ "$identity" =~ ^[a-z][a-z0-9_-]*$ ]] || die "Invalid identity: '$identity'"
+
+key="$HOME/.ssh/agents/$identity/id_ed25519"
+pub="$key.pub"
+[[ -f "$pub" ]] || die "No public key at $pub"
+if [[ ! -f "$key" ]]; then
+  ok "$key already gone; nothing to do"
+  exit 0
+fi
+
+sock=$("$(dirname "${BASH_SOURCE[0]}")/av-ssh-agent-holds-key" -v "$pub") ||
+  die "Automic Vault isn't serving $pub here; leaving $key alone"
+ok "Automic Vault's agent serves this key ($sock)"
+
+fp=$(ssh-keygen -lf "$pub" | awk '{print $2}')
+
+# -F /dev/null + -i <the .pub>: the only identity is the public key, so the
+# signature can only come from AV's agent, never from the file. Re-add the
+# agent-ssh-relay in Claude sessions, same as check-agent-ssh-key.
+relay=()
+if [[ -n "${CLAUDECODE:-}" ]]; then
+  relay=(-o "ProxyCommand=ncat --proxy 127.0.0.1:1080 --proxy-type socks5 %h %p")
+fi
+echo "Probing github.com through Automic Vault only (may prompt for approval)..."
+out=$(ssh -v -F /dev/null -i "$pub" -o IdentitiesOnly=yes -o IdentityAgent="$sock" \
+  -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 "${relay[@]}" \
+  -T git@github.com 2>&1 || true)
+accepted=$(grep "Server accepts key:" <<< "$out" | grep -oE 'SHA256:[A-Za-z0-9+/]+' | head -1)
+if ! grep -q "successfully authenticated" <<< "$out" || [[ "$accepted" != "$fp" ]]; then
+  die "GitHub auth through Automic Vault failed; keeping $key.
+$(grep -iE 'denied|refused|error|fatal' <<< "$out" | head -3)"
+fi
+ok "GitHub accepts $fp via Automic Vault"
+
+if ! $yes; then
+  warn "About to permanently delete $key (keeping $pub)."
+  warn "Confirm it's backed up (1Password) or that you'd re-enroll with bin/setup-agent-ssh-key."
+  [[ -t 0 ]] || die "Not a terminal; re-run with --yes to confirm"
+  read -r -p "Delete it? [y/N] " answer
+  [[ "$answer" =~ ^[Yy]$ ]] || die "Aborted; nothing deleted"
+fi
+
+# Drop any copy already loaded into this shell's (non-AV) agent too.
+if [[ -n "${SSH_AUTH_SOCK:-}" && "$SSH_AUTH_SOCK" != "$sock" ]]; then
+  ssh-add -d "$pub" > /dev/null 2>&1 && ok "Removed from \$SSH_AUTH_SOCK agent"
+fi
+
+rm -f "$key" || die "Failed to delete $key"
+ok "Deleted $key"
+echo "Leftover you may want to clear by hand: a keychain passphrase entry for this"
+echo "path from earlier 'ssh-add --apple-use-keychain' runs (Keychain Access, search 'SSH:')."
