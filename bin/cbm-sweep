@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Overnight diagnostic sweep: index every pickletown repo with codebase-memory-mcp,
-# one at a time, under a per-repo timeout, and record enough about each run to
-# figure out afterwards why a repo failed or hung.
+# Overnight diagnostic sweep: index every repo in the cbm-reindex corpus with
+# codebase-memory-mcp, one at a time, under a per-repo timeout, and record enough
+# about each run to figure out afterwards why a repo failed or hung. See
+# bin/cbm-reindex for how the corpus is found (CBM_REPOS, PT_ROOT, fallback).
 #
 # Usage: cbm-sweep [--timeout SECS] [--fresh] [--only repo1,repo2] [--out DIR]
 #
@@ -47,7 +48,14 @@ while (($#)); do
 done
 
 readonly CBM="${CBM_BIN:-$HOME/.local/share/mise/shims/codebase-memory-mcp}"
-readonly REPOS="${PT_ROOT:-$HOME/pickleton}/repos"
+# Same corpus resolution as bin/cbm-reindex.
+if [[ -n "${CBM_REPOS:-}" ]]; then
+  readonly REPOS="$CBM_REPOS"
+elif [[ -n "${PT_ROOT:-}" || -d "$HOME/pickleton/repos" ]]; then
+  readonly REPOS="${PT_ROOT:-$HOME/pickleton}/repos"
+else
+  readonly REPOS="$HOME/github.com/technicalpickles"
+fi
 readonly CACHE="$HOME/.cache/codebase-memory-mcp"
 readonly LOCKDIR="$CACHE/.reindex.lock"
 readonly SAMPLE_EVERY=30
@@ -150,6 +158,8 @@ for repo_dir in "$REPOS"/*/; do
     path="$repo_dir/worktrees/main"
   elif [[ -e "$repo_dir/checkout/.git" ]]; then
     path="$repo_dir/checkout"
+  elif [[ -e "$repo_dir/.git" ]]; then
+    path="$repo_dir"
   else
     continue
   fi
