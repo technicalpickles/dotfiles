@@ -1,0 +1,10 @@
+{
+  // codebase-memory-mcp: `codebase-memory-mcp cli ...` from Bash needs its
+  // cache dir (indexes, daemon coordination, logs), or it dies with
+  // "secure CLI coordination could not be created (cache-canonicalize)".
+  "sandbox": {
+    "filesystem": {
+      "allowWrite": ["~/.cache/codebase-memory-mcp"],
+    },
+  },
+}

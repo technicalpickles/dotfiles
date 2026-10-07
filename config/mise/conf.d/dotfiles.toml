@@ -1,5 +1,7 @@
 [tools]
 bun = "1.3.14"
+# Pinned: all running instances must be the same build; bump, then restart agents.
+"github:DeusData/codebase-memory-mcp" = "0.11.0"
 fnox = "latest"
 go = "1.26"
 node = "lts"

@@ -11,9 +11,15 @@
   // change an existing server's url/transport, remove it first, then re-run:
   //   claude mcp remove <name> -s user && ./claudeconfig.sh
   //
-  // Each entry key is the server name. Supported transports: "http", "sse"
-  // (both url-based). Stdio servers aren't modeled here yet.
+  // Each entry key is the server name. Supported transports: "http" and "sse"
+  // (take "url"), and "stdio" (takes "command" plus optional "args" array).
   "servers": {
+    // DeusData/codebase-memory-mcp, installed via mise. Upstream's `install`
+    // also adds agents/skill/hooks to ~/.claude; deliberately not used.
+    "codebase-memory-mcp": {
+      "transport": "stdio",
+      "command": "codebase-memory-mcp",
+    },
     // qmd semantic search over the Obsidian vault. Served by the
     // com.technicalpickles.qmd-mcp LaunchAgent (localhost:18181, arm64 macOS).
     "qmd": {

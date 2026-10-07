@@ -101,6 +101,18 @@ Runs QMD as an HTTP MCP server so Claude (and other agents) can search the vault
 claude mcp add --transport http qmd http://localhost:18181/mcp --scope user
 ```
 
+### `com.technicalpickles.cbm-reindex.plist`
+
+Keeps the codebase-memory-mcp graph current for every pickletown repo, not just the ones with an open MCP session (CBM's own watcher only follows repos a session is attached to).
+
+**What it does:**
+
+- Runs `bin/cbm-reindex` hourly (`StartInterval` 3600, not at load), as a `Background` process with low-priority I/O
+- Indexes each repo's default checkout under `~/pickleton/repos` (`worktrees/main` or `checkout`) under CBM's default path-derived project name, the same one a session there queries and watches, skipping branch worktrees
+- Logs only when node/edge counts changed or something failed, to `/tmp/com.technicalpickles.cbm-reindex.{out,err}`
+
+**Prerequisites:** `codebase-memory-mcp` installed by mise (`config/mise/conf.d/dotfiles.toml`), and `gtimeout` from Homebrew `coreutils` (in `Brewfile`). Each repo's index call is capped at 30 minutes (`CBM_REINDEX_TIMEOUT`), so one hung call can't hold the lock forever. A repo that keeps timing out shows up as `index failed: <repo>` / `timed out` in the log; add it to `EXCLUDE` in the script.
+
 ### `home/com.technicalpickles.task-sync.plist`
 
 Syncs Taskwarrior (TaskChampion) history to the personal sync server so tasks stay in sync across machines.
