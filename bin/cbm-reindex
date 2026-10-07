@@ -5,9 +5,13 @@
 # shared daemon is a warm cache, not a watcher. With no session open nothing
 # reindexes, so this job keeps the rest of the corpus current.
 #
-# Corpus: each repo's default checkout under $PT_ROOT/repos, in either layout:
-#   repos/<repo>/worktrees/main   (bare layout)
-#   repos/<repo>/checkout         (plain layout; its .claude/worktrees are skipped)
+# Corpus root: $CBM_REPOS if set, else $PT_ROOT/repos (pickletown, default
+# ~/pickleton) if PT_ROOT is set or ~/pickleton/repos exists, else
+# ~/github.com/technicalpickles (machines without pickletown). Each repo's
+# default checkout under it, in any of these layouts:
+#   <root>/<repo>/worktrees/main   (bare layout)
+#   <root>/<repo>/checkout         (plain layout; its .claude/worktrees are skipped)
+#   <root>/<repo>                  (plain checkout, e.g. ~/github.com/<owner>/<repo>)
 # Branch worktrees are left to CBM's own watcher while a session is open there.
 #
 # Adapted from ivy/dotfiles' cbm-reindex. Run hourly by the
@@ -23,7 +27,13 @@ readonly CBM="${CBM_BIN:-$HOME/.local/share/mise/shims/codebase-memory-mcp}"
 # Per-repo cap. A hung call that's still alive would otherwise hold the lock
 # forever, and every later cycle would just log "skipping".
 readonly INDEX_TIMEOUT="${CBM_REINDEX_TIMEOUT:-1800}"
-readonly REPOS="${PT_ROOT:-$HOME/pickleton}/repos"
+if [[ -n "${CBM_REPOS:-}" ]]; then
+  readonly REPOS="$CBM_REPOS"
+elif [[ -n "${PT_ROOT:-}" || -d "$HOME/pickleton/repos" ]]; then
+  readonly REPOS="${PT_ROOT:-$HOME/pickleton}/repos"
+else
+  readonly REPOS="$HOME/github.com/technicalpickles"
+fi
 readonly CACHE="$HOME/.cache/codebase-memory-mcp"
 readonly STATE="$CACHE/.last-reindex-digest"
 readonly LOCKDIR="$CACHE/.reindex.lock"
@@ -128,6 +138,8 @@ for repo_dir in "$REPOS"/*/; do
     path="$repo_dir/worktrees/main"
   elif [[ -e "$repo_dir/checkout/.git" ]]; then
     path="$repo_dir/checkout"
+  elif [[ -e "$repo_dir/.git" ]]; then
+    path="$repo_dir"
   else
     continue
   fi
