@@ -56,10 +56,7 @@
     // host. Node 24+ only. Found via mcporter, but it is not mcporter-
     // specific -- it hits every fetch-based Node tool.
     "NODE_USE_ENV_PROXY": "1",
-    // Dolt phones home to eventsapi.dolthub.com after every command. In the
-    // sandbox that's a denied connection on each `dolt` call (pickletown's
-    // watch-note, beans, etc.); turning it off beats allowlisting a
-    // telemetry host.
+    // Dolt pings eventsapi.dolthub.com after every command; disable instead of allowlisting telemetry.
     "DOLT_DISABLE_EVENT_FLUSH": "1",
   },
 

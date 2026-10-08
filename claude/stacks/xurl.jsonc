@@ -1,6 +1,5 @@
 {
-  // X (Twitter) API access via xurl / xtweet (~/.pickles/bin/xtweet). Without
-  // this every tweet read needs dangerouslyDisableSandbox.
+  // X API access for xurl / xtweet
   "sandbox": {
     "network": {
       "allowedDomains": ["api.x.com"],

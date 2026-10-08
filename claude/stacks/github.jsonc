@@ -61,7 +61,7 @@
         "github.com",
         "pkg-containers.githubusercontent.com",
         "raw.githubusercontent.com",
-        // mise/aqua tool tarballs (`mise install`) and `gh release upload` / attachments
+        // `mise install` tarballs; `gh release upload`
         "codeload.github.com",
         "uploads.github.com",
         // git-lfs objects
