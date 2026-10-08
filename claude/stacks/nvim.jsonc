@@ -4,14 +4,8 @@
   },
 
   "sandbox": {
-    "network": {
-      "allowedDomains": [],
-    },
     "filesystem": {
-      "allowWrite": [
-        // npm
-        "~/.cache/nvim/",
-      ],
+      "allowWrite": ["~/.cache/nvim/"],
     },
   },
 }

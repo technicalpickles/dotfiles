@@ -86,11 +86,4 @@
       "Bash(claude-permissions cleanup -f)",
     ],
   },
-
-  // source: agent-safehouse
-  "sandbox": {
-    "network": {
-      "allowedDomains": ["formulae.brew.sh"],
-    },
-  },
 }

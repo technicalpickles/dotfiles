@@ -61,6 +61,9 @@
         "github.com",
         "pkg-containers.githubusercontent.com",
         "raw.githubusercontent.com",
+        // `mise install` tarballs; `gh release upload`
+        "codeload.github.com",
+        "uploads.github.com",
         // git-lfs objects
         "github-cloud.githubusercontent.com",
         "github-cloud.s3.amazonaws.com",

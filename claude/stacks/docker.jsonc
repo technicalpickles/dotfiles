@@ -36,6 +36,8 @@
       "allowedDomains": [
         "auth.docker.io",
         "registry-1.docker.io",
+        // registry-1 redirects layer blobs here
+        "production.cloudfront.docker.com",
         "hub.docker.com",
         "docs.docker.com",
       ],
