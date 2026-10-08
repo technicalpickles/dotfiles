@@ -38,6 +38,7 @@
     "network": {
       "allowedDomains": [
         "registry.npmjs.org",
+        "registry.yarnpkg.com",
         "nodejs.org",
         // JSON Schema catalog; json.* redirects to www.*
         "json.schemastore.org",

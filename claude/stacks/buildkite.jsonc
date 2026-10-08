@@ -4,6 +4,8 @@
     "network": {
       "allowedDomains": [
         "api.buildkite.com",
+        // bktide talks to the GraphQL API
+        "graphql.buildkite.com",
         "buildkite.com",
         "buildkiteartifacts.com",
       ],

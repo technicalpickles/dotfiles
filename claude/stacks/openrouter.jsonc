@@ -1,0 +1,10 @@
+{
+  // OpenRouter model gateway (Jev and other eval/benchmark callers). Allowing
+  // the domain drops the per-command `allowed_domains` gate, so any sandboxed
+  // command can reach it; the API key stays in fnox, which is the real gate.
+  "sandbox": {
+    "network": {
+      "allowedDomains": ["openrouter.ai"],
+    },
+  },
+}
