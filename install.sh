@@ -71,8 +71,7 @@ mkdir -p "$HOME/.config"
 ./miseconfig.sh
 link_directory_contents config
 
-# No brew on Coder workspaces, so mise stands in for it. fish/herdr go in the
-# gitignored global config.toml because conf.d/ also applies on macOS.
+# No brew on Coder; fish/herdr go in global config.toml since conf.d/ also applies on macOS.
 if [ "$DOTPICKLES_ROLE" = "work-coder" ]; then
   export PATH="$HOME/.local/bin:$PATH"
   if command_available mise; then
