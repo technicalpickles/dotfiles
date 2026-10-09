@@ -83,7 +83,21 @@ for tool in gh jq; do
 done
 
 # --- already exists? ---------------------------------------------------------
-existing=$(gh api user/gpg_keys --jq ".[] | select(.emails[]?.email == \"$email\") | .key_id" 2> /dev/null | head -1)
+# Matches on the email in the key's own user ID, so the agent credential
+# (joshua.nichols+personal-agent@...) never counts as this one. Uses the public
+# per-user endpoint: the authenticated /user/gpg_keys needs the admin:gpg_key
+# scope, and a failure there would look identical to "no key". Revoked and
+# expired keys don't count.
+login=$(gh api user --jq .login 2> /dev/null) || die "Couldn't ask GitHub who you are (gh auth status?)"
+github_keys_for_email() {
+  gh api "users/$login/gpg_keys" --paginate --jq ".[]
+    | select(.revoked | not)
+    | select(.expires_at == null or (.expires_at | fromdateiso8601) > now)
+    | select(.emails[]?.email == \"$email\")
+    | .key_id"
+}
+existing=$(github_keys_for_email) || die "Couldn't list GPG keys for $login from GitHub"
+existing=${existing%%$'\n'*}
 if [[ -n "$existing" ]]; then
   ok "GitHub already has a GPG key for $email ($existing); nothing to create"
   exit 0
@@ -179,7 +193,7 @@ fi
 
 echo
 info "3/3 Verify"
-if gh api user/gpg_keys --jq ".[] | select(.emails[]?.email == \"$email\") | .key_id" | grep -q .; then
+if [[ -n "$(github_keys_for_email)" ]]; then
   ok "GitHub lists the key for $email"
 else
   warn "GitHub doesn't list a key for $email yet; re-run with --check once it's added"
