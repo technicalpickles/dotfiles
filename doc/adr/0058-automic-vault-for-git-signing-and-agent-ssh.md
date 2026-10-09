@@ -84,6 +84,8 @@ resolves to AV's agent socket and that agent serves the key. It's the gate for:
   trusted, best effort (needs network and a writable `~/.gnupg`, which the Claude
   Code sandbox blocks). Without it AV-signed commits show `E` (no key) or `U`
   (untrusted) locally even though GitHub reports them verified.
+  It also imports GitHub's own `web-flow` signing key (squash merges, web UI
+  commits), pinned by fingerprint so a changed key is skipped, not trusted.
 - `user.signingkey` is ignored by `av-gpg` (it doesn't honour `-u`), so the
   leftover SSH `signingkey` values are harmless.
 - **Open risk:** unattended launchd jobs (e.g. scheduled commits) have no Verified

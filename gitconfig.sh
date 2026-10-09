@@ -120,6 +120,23 @@ if [ "$av_signing" = true ]; then
       echo "  → could not fetch $gpg_keys_url; skipping gpg key import"
     fi
     rm -f "$gpg_keys"
+
+    # GitHub's own commit-signing key (squash merges, web UI commits) so those
+    # show G too. Unlike the account keys above this is someone else's key, so
+    # pin the fingerprint: import and trust only that exact key, never whatever
+    # the URL happens to serve later. Verify against
+    # https://github.com/web-flow.gpg if GitHub rotates it.
+    github_fpr="968479A1AFF927E37D1A566BB5690EEEBB952194"
+    github_keys=$(mktemp)
+    if curl -fsS --max-time 15 https://github.com/web-flow.gpg -o "$github_keys" 2> /dev/null \
+      && gpg --batch --show-keys --with-colons "$github_keys" 2> /dev/null | grep -q "^fpr:::::::::$github_fpr:"; then
+      gpg --batch --quiet --import "$github_keys" 2> /dev/null \
+        && echo "$github_fpr:6:" | gpg --batch --import-ownertrust 2> /dev/null \
+        && echo "  → imported GitHub's commit-signing key"
+    else
+      echo "  → GitHub's signing key unavailable or fingerprint changed; skipping"
+    fi
+    rm -f "$github_keys"
   fi
 fi
 
