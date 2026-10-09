@@ -78,6 +78,12 @@ resolves to AV's agent socket and that agent serves the key. It's the gate for:
   alternate credential whose uid is the agent email, so they verify on GitHub. Your
   own commits need AV's _default_ credential to carry your own email and be
   uploaded to GitHub, or they show Unverified.
+- `av-gpg` only signs; verification (`git log --show-signature`, `%G?`) uses plain
+  `gpg`. On AV machines `gitconfig.sh` imports the public keys GitHub serves for
+  the account (`github.com/technicalpickles.gpg`) and marks them ultimately
+  trusted, best effort (needs network and a writable `~/.gnupg`, which the Claude
+  Code sandbox blocks). Without it AV-signed commits show `E` (no key) or `U`
+  (untrusted) locally even though GitHub reports them verified.
 - `user.signingkey` is ignored by `av-gpg` (it doesn't honour `-u`), so the
   leftover SSH `signingkey` values are harmless.
 - **Open risk:** unattended launchd jobs (e.g. scheduled commits) have no Verified

@@ -95,6 +95,34 @@ elif [ "$signing" = true ]; then
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/signing
 fi
 
+# av-gpg only signs; `git log --show-signature` / %G? verification goes to plain
+# gpg, which needs the signer's public key and some trust in it or every
+# AV-signed commit shows E (no key) or U (untrusted). GitHub already serves the
+# public keys on the account, so import those and mark them ultimately trusted
+# (it's my own account). Best effort: needs gpg, network, and a writable
+# ~/.gnupg (the Claude Code sandbox blocks it), and a miss only costs local
+# verification, not signing.
+if [ "$av_signing" = true ]; then
+  gpg_keys_url="https://github.com/technicalpickles.gpg"
+  if command_available gpg; then
+    gpg_keys=$(mktemp)
+    if curl -fsS --max-time 15 "$gpg_keys_url" -o "$gpg_keys" 2> /dev/null && [ -s "$gpg_keys" ]; then
+      if gpg --batch --quiet --import "$gpg_keys" 2> /dev/null; then
+        # primary key fingerprints are the first fpr: line after each pub: line
+        gpg --batch --show-keys --with-colons "$gpg_keys" 2> /dev/null \
+          | awk -F: '/^pub:/ {want=1; next} /^fpr:/ && want {print $10 ":6:"; want=0}' \
+          | gpg --batch --import-ownertrust 2> /dev/null \
+          && echo "  → imported GitHub gpg keys for local commit verification"
+      else
+        echo "  → could not write ~/.gnupg; skipping gpg key import (git log will show E/U for AV-signed commits)"
+      fi
+    else
+      echo "  → could not fetch $gpg_keys_url; skipping gpg key import"
+    fi
+    rm -f "$gpg_keys"
+  fi
+fi
+
 if fzf_available; then
   echo "  → enabling fzf specific settings"
 
