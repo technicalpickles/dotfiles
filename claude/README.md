@@ -13,25 +13,39 @@ claude/
 │   ├── home.jsonc                # Home role: agent git identity env, sandbox rules
 │   ├── work.jsonc                # Work role: AWS/Bedrock env, work permissions
 │   ├── container.jsonc           # Local container placeholder
+│   ├── coi-host.jsonc            # Host side of the pickled-coi VM
 │   └── claude-code-remote.jsonc  # Claude Code on the web: sandbox off, no agent id
 ├── stacks/
 │   ├── beans.jsonc        # Beans issue tracker
-│   ├── buildkite.jsonc    # Buildkite CI
+│   ├── buildkite.jsonc    # Buildkite CI + bktide
+│   ├── claude.jsonc       # Claude Code's own docs, plugin cache, cq, plannotator
+│   ├── codebase-memory-mcp.jsonc # codebase-memory-mcp cache dir
 │   ├── colima.jsonc       # Colima container runtime
 │   ├── crit.jsonc         # crit code review tool (Tailscale remote-review pattern)
+│   ├── datadog.jsonc      # Datadog API hosts
 │   ├── docker.jsonc       # Docker container management
 │   ├── docs.jsonc         # Reference documentation sites
+│   ├── dolt.jsonc         # Dolt CLI + pickletown datastore
+│   ├── dotslash.jsonc     # DotSlash launcher
+│   ├── duckdb.jsonc       # DuckDB / MotherDuck (cq)
 │   ├── git.jsonc          # Git operations
 │   ├── github.jsonc       # GitHub CLI
 │   ├── go.jsonc           # Go ecosystem
+│   ├── homebrew.jsonc     # Homebrew formulae API
 │   ├── mcp.jsonc          # MCP proxy tools
 │   ├── mise.jsonc         # mise version manager
 │   ├── node.jsonc         # Node.js ecosystem (npm, yarn, pnpm)
+│   ├── nvim.jsonc         # Neovim cache
+│   ├── obsidian.jsonc     # Obsidian vault / second-brain
+│   ├── openrouter.jsonc   # OpenRouter model gateway
 │   ├── python.jsonc       # Python ecosystem (pip, uv, pytest)
 │   ├── ruby.jsonc         # Ruby ecosystem (bundle, rake, rspec)
 │   ├── rust.jsonc         # Rust ecosystem (cargo, rustup)
 │   ├── shell.jsonc        # Shell utilities (jq, fd, grep, etc.)
-│   └── skills.jsonc       # Skill permissions
+│   ├── skills.jsonc       # Skill permissions
+│   ├── taskwarrior.jsonc  # Taskwarrior
+│   ├── xcode.jsonc        # Xcode/Swift toolchain
+│   └── xurl.jsonc         # X API (xurl / xtweet)
 ├── rules/                 # Topic-specific global instructions (symlinked per-file to ~/.claude/rules/;
 │                          #   role-scope one with a `dotpickles_role:` marker, see .claude/rules/claude-config.md)
 │   ├── sandbox-paths.md

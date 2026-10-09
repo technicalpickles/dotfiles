@@ -1,0 +1,8 @@
+{
+  // X API access for xurl / xtweet
+  "sandbox": {
+    "network": {
+      "allowedDomains": ["api.x.com"],
+    },
+  },
+}

@@ -108,7 +108,7 @@ Keeps the codebase-memory-mcp graph current for every pickletown repo, not just 
 **What it does:**
 
 - Runs `bin/cbm-reindex` hourly (`StartInterval` 3600, not at load), as a `Background` process with low-priority I/O
-- Indexes each repo's default checkout under `~/pickleton/repos` (`worktrees/main` or `checkout`) under CBM's default path-derived project name, the same one a session there queries and watches, skipping branch worktrees
+- Indexes each repo's default checkout under `~/pickleton/repos` (`worktrees/main` or `checkout`), or under `~/github.com/technicalpickles` (plain checkouts) on machines without pickletown (`CBM_REPOS` overrides), under CBM's default path-derived project name, the same one a session there queries and watches, skipping branch worktrees
 - Logs only when node/edge counts changed or something failed, to `/tmp/com.technicalpickles.cbm-reindex.{out,err}`
 
 **Prerequisites:** `codebase-memory-mcp` installed by mise (`config/mise/conf.d/dotfiles.toml`), and `gtimeout` from Homebrew `coreutils` (in `Brewfile`). Each repo's index call is capped at 30 minutes (`CBM_REINDEX_TIMEOUT`), so one hung call can't hold the lock forever. A repo that keeps timing out shows up as `index failed: <repo>` / `timed out` in the log; add it to `EXCLUDE` in the script.

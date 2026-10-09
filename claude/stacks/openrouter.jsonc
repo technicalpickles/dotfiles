@@ -1,0 +1,8 @@
+{
+  // OpenRouter model gateway. Domain-wide, so the API key (in fnox) is the real gate.
+  "sandbox": {
+    "network": {
+      "allowedDomains": ["openrouter.ai"],
+    },
+  },
+}

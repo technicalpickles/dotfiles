@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# Summarize a cbm-sweep run.
+# Usage: cbm-sweep-report [SWEEP_DIR]   (default: newest sweep)
+#        cbm-sweep-report [SWEEP_DIR] --failed-only-names   (comma list, for --only)
+
+set -o errexit -o nounset -o pipefail
+
+SWEEPS="$HOME/.cache/codebase-memory-mcp/sweeps"
+dir="${1:-$(/bin/ls -td "$SWEEPS"/*/ 2> /dev/null | head -1)}"
+dir="${dir%/}"
+R="$dir/results.jsonl"
+[[ -s "$R" ]] || {
+  echo "no results in $dir" >&2
+  exit 1
+}
+
+if [[ "${2:-}" == --failed-only-names ]]; then
+  jq -r 'select(.status != "ok") | .repo' "$R" | paste -sd, -
+  exit 0
+fi
+
+echo "Sweep: $dir"
+grep -E 'sweep (start|done)' "$dir/sweep.log" 2> /dev/null | sed 's/^/  /'
+echo
+jq -rs 'group_by(.status) | map("  \(.[0].status): \(length)") | .[]' "$R"
+jq -rs '"  total: \(length) repos, \(map(.secs) | add)s indexing, timeout=\(.[0].timeout)s, fresh=\(.[0].fresh)"' "$R"
+
+echo
+echo "== Failures"
+jq -rs '
+  map(select(.status != "ok")) | sort_by(.status, -.secs) | .[] |
+  "\n\(.repo)  [\(.status)] \(.secs)s rc=\(.rc) peak_rss=\((.peak_rss_kb/1024)|floor)MB",
+  "  tracked: \(.tracked_files // "?") files, \(((.tracked_bytes // 0)/1048576)|floor)MB; largest: \(.largest_file // "?") (\(((.largest_bytes // 0)/1048576*10|floor)/10)MB)",
+  "  diag: \(.dir)"' "$R"
+
+# Flat RSS at ~100% CPU reads as a spin on one file; climbing RSS as plain size.
+for repo in $(jq -r 'select(.status != "ok") | .repo' "$R"); do
+  d="$dir/repos/$repo"
+  echo
+  echo "-- $repo"
+  if [[ -s "$d/samples.tsv" ]]; then
+    echo "  samples (elapsed pcpu rss_mb): $(awk 'NR>1 {printf "%s/%s/%d ", $1, $3, $4/1024}' "$d/samples.tsv" | tr -s ' ' | cut -c1-400)"
+  fi
+  for f in "$d"/vmmap-*.txt; do
+    [[ -e "$f" ]] && grep -E 'Physical footprint' "$f" | sed 's/^/  /'
+  done
+  for f in "$d"/lsof-*.txt; do
+    [[ -e "$f" ]] || continue
+    open=$(awk '$4 ~ /^[0-9]+[ru]$/ && $9 ~ /^\// {print $9}' "$f" | grep -v -E '\.dylib$|/dev/|cbm-daemon' | head -5)
+    [[ -n "$open" ]] && {
+      echo "  open files:"
+      echo "$open" | sed 's/^/    /'
+    }
+  done
+  [[ -s "$d/largest-files.txt" ]] && {
+    echo "  largest tracked:"
+    head -5 "$d/largest-files.txt" | awk '{s=$1; $1=""; printf "    %7.1fMB %s\n", s/1048576, $0}'
+  }
+  [[ -s "$d/stderr.log" ]] && {
+    echo "  stderr tail:"
+    tail -3 "$d/stderr.log" | cut -c1-200 | sed 's/^/    /'
+  }
+done
+
+echo
+echo "== Slowest 10 (all statuses)"
+jq -rs 'sort_by(-.secs) | .[:10] | .[] | "  \(.secs)s\t\(.status)\t\(.repo)\t\(((.tracked_bytes // 0)/1048576)|floor)MB tracked, largest \(((.largest_bytes // 0)/1048576)|floor)MB"' "$R" | column -t -s $'\t'
+
+echo
+echo "== Repos with a tracked file over 10MB (hang suspects, even if they passed)"
+jq -rs 'map(select((.largest_bytes // 0) > 10485760)) | sort_by(-.largest_bytes) | .[] |
+  "  \(((.largest_bytes)/1048576)|floor)MB\t\(.status)\t\(.secs)s\t\(.repo)\t\(.largest_file)"' "$R" | column -t -s $'\t'
+
+echo
+failed="$("$0" "$dir" --failed-only-names)"
+if [[ -n "$failed" ]]; then
+  echo "Retry failures: cbm-sweep --only $failed"
+else
+  echo "No failures."
+fi

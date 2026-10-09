@@ -10,7 +10,7 @@
       // shared local Dolt datastore: without it every dolt call against that
       // store needs dangerouslyDisableSandbox, and it's on the SessionStart
       // hook path. Precedent for the ~/.local/state/<tool> shape:
-      // claude/stacks/bktide.jsonc. See pickleton's projects/pt-datastore/.
+      // claude/stacks/buildkite.jsonc. See pickleton's projects/pt-datastore/.
       "allowWrite": ["~/.dolt", "~/.local/state/pickletown"],
     },
   },

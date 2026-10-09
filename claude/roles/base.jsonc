@@ -56,6 +56,8 @@
     // host. Node 24+ only. Found via mcporter, but it is not mcporter-
     // specific -- it hits every fetch-based Node tool.
     "NODE_USE_ENV_PROXY": "1",
+    // Dolt pings eventsapi.dolthub.com after every command; disable instead of allowlisting telemetry.
+    "DOLT_DISABLE_EVENT_FLUSH": "1",
   },
 
   // Auto mode classifier rules (see ADR 0056).
