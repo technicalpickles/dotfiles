@@ -6,8 +6,8 @@ DIR="${DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 source "$DIR/functions.sh"
 
 if ! which fish > /dev/null 2> /dev/null; then
-  echo "missing fish :("
-  exit 1
+  echo "  ⚠ fish not found, skipping fish config"
+  exit 0
 fi
 
 dotfiles_fish="$DIR/config/fish"

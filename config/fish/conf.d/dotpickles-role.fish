@@ -7,13 +7,16 @@
 # so this wins. Setting it in config.fish would be too late and the prompt would
 # fall back to its default, showing the wrong role.
 #
-# Canonical role names are "home" / "work" / "container" / "claude-code-remote"
-# (see doc/adr/0035-canonical-dotpickles-role-names.md and 0040). Precedence:
-# claude-code-remote (cloud is also a container, so it must win) -> container ->
-# work (hostname) -> home. Kept in sync with install.sh and home/.zshenv.
+# Canonical role names are "home" / "work" / "work-coder" / "container" /
+# "claude-code-remote" (see doc/adr/0035-canonical-dotpickles-role-names.md,
+# 0040, 0058). Precedence: claude-code-remote (cloud is also a container, so it
+# must win) -> work-coder (Coder workspace) -> container -> work (hostname) ->
+# home. Kept in sync with functions.sh and home/.zshenv.
 if not set -q DOTPICKLES_ROLE
     if test "$CLAUDE_CODE_REMOTE" = true
         set -gx DOTPICKLES_ROLE claude-code-remote
+    else if test "$CODER" = true
+        set -gx DOTPICKLES_ROLE work-coder
     else if test -f /.dockerenv; or grep -q 'docker\|lxc\|containerd' /proc/1/cgroup 2>/dev/null; or set -q DOCKER_BUILD
         set -gx DOTPICKLES_ROLE container
     else if string match --quiet --regex '^josh-nichols-' (hostname)

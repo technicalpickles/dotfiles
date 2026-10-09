@@ -16,6 +16,11 @@ if [ -n "${DOCKER_BUILD:-}" ]; then
   export DOTPICKLES_YES=1
 fi
 
+# `coder dotfiles` runs install.sh with no tty and no way to pass flags.
+if [ "${CODER:-}" = "true" ] && [ ! -t 0 ]; then
+  export DOTPICKLES_YES=1
+fi
+
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DIR
 
@@ -65,6 +70,19 @@ link_directory_contents home
 mkdir -p "$HOME/.config"
 ./miseconfig.sh
 link_directory_contents config
+
+# No brew on Coder; fish/herdr go in global config.toml since conf.d/ also applies on macOS.
+if [ "$DOTPICKLES_ROLE" = "work-coder" ]; then
+  export PATH="$HOME/.local/bin:$PATH"
+  if command_available mise; then
+    echo "🧰 installing tools with mise"
+    mise use --global github:fish-shell/fish-shell herdr || echo "  ⚠ mise use failed" >&2
+    mise install || echo "  ⚠ some mise tools failed to install" >&2
+    eval "$(mise activate bash --shims)"
+  else
+    echo "  ⚠ mise not found, skipping tool install" >&2
+  fi
+fi
 
 echo
 

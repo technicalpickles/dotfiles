@@ -229,8 +229,10 @@ op_ensure_signed_in() {
 # standalone run (e.g. ./gitconfig.sh) can't fall through to "Unexpected role".
 # The interactive shells set it themselves (home/.zshenv,
 # config/fish/conf.d/dotpickles-role.fish) because they can't source bash.
-# Canonical names: home / work / container / claude-code-remote. See ADR 0035, 0040.
+# Canonical names: home / work / work-coder / container / claude-code-remote.
+# See ADR 0035, 0040, 0058.
 # Precedence: claude-code-remote (cloud is also a container, so it must win) ->
+# work-coder (a Coder workspace's devcontainer is also a container) ->
 # container -> work (hostname) -> home.
 dotpickles_detect_role() {
   if [ -n "${DOTPICKLES_ROLE:-}" ]; then
@@ -242,6 +244,8 @@ dotpickles_detect_role() {
 
   if [ "${CLAUDE_CODE_REMOTE:-}" = "true" ]; then
     DOTPICKLES_ROLE=claude-code-remote
+  elif [ "${CODER:-}" = "true" ]; then
+    DOTPICKLES_ROLE=work-coder
   elif [ -f /.dockerenv ] || grep -q 'docker\|lxc\|containerd' /proc/1/cgroup 2> /dev/null || [ -n "${DOCKER_BUILD:-}" ]; then
     DOTPICKLES_ROLE=container
   elif [[ "$detected_hostname" =~ ^josh-nichols- ]]; then
