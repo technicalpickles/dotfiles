@@ -667,6 +667,11 @@ configure_mcp_servers() {
 
   local name
   while IFS= read -r name; do
+    if echo "$servers_json" | jq -e --arg n "$name" --arg r "$ROLE" '.[$n].excludeRoles // [] | index($r)' > /dev/null; then
+      echo "  - $name (skipped for role '$ROLE')"
+      continue
+    fi
+
     if claude mcp get "$name" > /dev/null 2>&1; then
       echo "  ✓ $name (already registered)"
       continue

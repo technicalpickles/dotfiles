@@ -14,6 +14,11 @@
     "enabled": false,
   },
 
+  // base sets SHELL=/bin/zsh, which the Coder image doesn't ship.
+  "env": {
+    "SHELL": "/bin/bash",
+  },
+
   // claudeconfig.sh merges base + ONE role, so work's overlay auto mode rules
   // don't reach here. See ADR 0056.
   "autoMode": {
