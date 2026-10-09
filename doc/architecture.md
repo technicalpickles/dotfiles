@@ -5,7 +5,7 @@
 The central architectural pattern is **role-based adaptation**. The role is determined once during installation and affects:
 
 - **Git identity & signing**: Different email/name and SSH key selection
-- **Brewfile selection**: `Brewfile` + `Brewfile.$ROLE` are merged during brew bundle
+- **Brewfile selection**: `Brewfile` + `Brewfile.$ROLE` are read by `brew_install_brewfiles`
 - **Shell environment**: Various configs conditionally load based on role
 
 The canonical role values are `home`, `work`, `container`, and `claude-code-remote` (see [ADR 0035](adr/0035-canonical-dotpickles-role-names.md) and [ADR 0040](adr/0040-claude-code-remote-role.md)). Detection precedence: `claude-code-remote` when `CLAUDE_CODE_REMOTE=true` (Claude Code on the web; cloud is also a container, so this must win), then `container` inside containers, then `work` for hostnames matching `josh-nichols-*`, otherwise `home`. The same check is duplicated across bash, fish, and zsh because they can't share one snippet: bash scripts get it from `dotpickles_detect_role` in [functions.sh](../functions.sh) (sourced by [install.sh](../install.sh) and standalone setup scripts), while the interactive shells set it themselves in [config/fish/conf.d/dotpickles-role.fish](../config/fish/conf.d/dotpickles-role.fish) and [home/.zshenv](../home/.zshenv). The canonical-name list and a fail-loud guard ([ADR 0036](adr/0036-fail-loud-role-resolution.md)) keep the copies from drifting silently. The fish copy lives in `conf.d/` (not `config.fish`) on purpose: fish sources `conf.d/*.fish` before `config.fish`, and the starship prompt reads `DOTPICKLES_ROLE` at init time, so the role must be set first.
@@ -70,11 +70,32 @@ Homebrew packages are managed through **merged Brewfiles**:
 - [Brewfile](../Brewfile): Common packages (fish, git, nvim, fzf, jq, etc.)
 - `Brewfile.$ROLE`: Role-specific additions (home or work)
 
-The `brew_bundle()` function in [functions.sh:99-103](../functions.sh#L99-L103) concatenates these files and pipes to `brew bundle`.
+`brew_install_brewfiles()` in functions.sh installs what these files declare (see Homebrew (hardened-compatible) below).
 
 ## LaunchAgents for macOS Automation
 
 The [LaunchAgents/](../LaunchAgents/) directory contains `.plist` files for macOS launch agents. These are symlinked and can be managed with [launchagents.sh](../launchagents.sh).
+
+## Homebrew (hardened-compatible)
+
+The repo assumes automic-vault may harden Homebrew (ADR 0058), so it avoids
+the features that break:
+
+- `Brewfile` / `Brewfile.<role>` hold formulae, taps, and CLI-only casks.
+  `install.sh` installs them with `brew_install_brewfiles` (`functions.sh`),
+  not `brew bundle`.
+- `Caskfile` / `Caskfile.<role>` list Mac apps, installed by hand from the
+  vendor. `install.sh` and `bin/dotfiles-doctor` report missing ones.
+- Long-running services are LaunchAgents in `LaunchAgents/`, never
+  `brew services`. `scripts/test-launchagent-plists.sh` keeps them from
+  writing into `/opt/homebrew`.
+- Shell setup uses `/usr/local/bin/brew` when it's the setuid launcher:
+  `home/.zshenv`/`.zprofile`/`.zshrc`, `config/fish/conf.d/__homebrew.fish`,
+  and `home/.bash_profile` (bash login shells) keep it ahead of
+  `/opt/homebrew/bin` without running brew. `load_brew_shellenv` covers
+  install-time scripts only.
+- `scripts/detach-cask.sh` drops an app cask from Homebrew without deleting
+  the app (only while unhardened).
 
 ## Synthetic Workspace Symlink (Work Only)
 
@@ -89,7 +110,7 @@ The `setup_synthetic_workspace()` function in [functions.sh:172-211](../function
 - `running_macos()` / `running_codespaces()`: Platform detection
 - `command_available()`: Check if command exists
 - `brew_available()` / `fzf_available()` / `fish_available()`: Tool checks
-- `load_brew_shellenv()`: Load Homebrew environment in scripts
+- `load_brew_shellenv()`: Load Homebrew environment in install-time scripts (not shell startup)
 - `vscode_command()`: Detect code vs code-insiders
 - `link_directory_contents()` / `link()`: Safe symlink creation with overwrite prompts
 

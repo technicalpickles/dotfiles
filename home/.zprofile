@@ -21,6 +21,8 @@ if [[ -n "$HOMEBREW_PREFIX" ]]; then
   export PATH="${PATH//$HOMEBREW_PREFIX\/bin:/}"
   export PATH="${PATH//$HOMEBREW_PREFIX\/sbin:/}"
   export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
+  # ADR 0058: hardened launcher dir must precede $HOMEBREW_PREFIX/bin
+  _dotpickles_brew_stub_first
 fi
 
 # Re-add mise tool paths at the front (after homebrew)

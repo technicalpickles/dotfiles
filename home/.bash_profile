@@ -65,12 +65,28 @@ else
     . "$HOME/.cargo/env"
   fi
 
-  if which brew > /dev/null 2>&1; then
+  # Hardened Homebrew (automic-vault, ADR 0058): every run of the setuid
+  # launcher is approval-gated, so don't call brew on every login shell.
+  if [[ -u "${DOTPICKLES_BREW_STUB:-/usr/local/bin/brew}" ]]; then
+    export BREW_CELLAR=/opt/homebrew/Cellar BREW_PREFIX=/opt/homebrew
+  elif which brew > /dev/null 2>&1; then
     BREW_CELLAR=$(brew --cellar)
     BREW_PREFIX=$(brew --prefix)
     export BREW_CELLAR BREW_PREFIX
   fi
 fi
+
+# ADR 0058: the hardened launcher's dir must precede /opt/homebrew/bin
+_brew_stub="${DOTPICKLES_BREW_STUB:-/usr/local/bin/brew}"
+if [[ -u "$_brew_stub" ]]; then
+  _brew_stub_dir="${_brew_stub%/*}"
+  PATH=":$PATH:"
+  PATH="${PATH//:$_brew_stub_dir:/:}"
+  PATH="${PATH#:}"
+  export PATH="$_brew_stub_dir:${PATH%:}"
+  unset _brew_stub_dir
+fi
+unset _brew_stub
 
 if [[ $- == *i* ]] && which welcome2u > /dev/null 2>&1; then
   welcome2u

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.technicalpickles.ollama</string>
+    <!-- Replaces `brew services start ollama`, which hardened Homebrew
+         doesn't support (ADR 0058). opt/ollama is a stable symlink across
+         upgrades; after `brew upgrade ollama`, run
+         `launchctl kickstart -k gui/$UID/com.technicalpickles.ollama`. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/opt/ollama/bin/ollama</string>
+        <string>serve</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <!-- Only keep it alive while ollama is installed, so launchd doesn't
+         respawn a missing binary forever. -->
+    <key>KeepAlive</key>
+    <dict>
+        <key>PathState</key>
+        <dict>
+            <key>/opt/homebrew/opt/ollama/bin/ollama</key>
+            <true/>
+        </dict>
+    </dict>
+    <!-- Carried over from the Homebrew service definition. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>OLLAMA_FLASH_ATTENTION</key>
+        <string>1</string>
+        <key>OLLAMA_KV_CACHE_TYPE</key>
+        <string>q8_0</string>
+    </dict>
+    <!-- Logs stay out of Homebrew data directories, which are unwritable once hardened. -->
+    <key>StandardOutPath</key>
+    <string>/tmp/com.technicalpickles.ollama.out</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/com.technicalpickles.ollama.err</string>
+</dict>
+</plist>

@@ -4,11 +4,41 @@
 # Keep this minimal - only environment variables needed by ALL shells
 
 # Set up Homebrew environment FIRST (needed by everything else)
-if [[ -x /opt/homebrew/bin/brew ]]; then
+#
+# Hardened Homebrew (automic-vault, ADR 0058) installs a setuid launcher at
+# /usr/local/bin/brew; /opt/homebrew/bin/brew must not be run directly, and
+# every launcher run is approval-gated, so set the env statically instead of
+# eval'ing `brew shellenv` on every zsh start. When `av harden brew` offers to
+# rewrite this file, answer N.
+#
+# _dotpickles_brew_stub_first moves the launcher's directory to the front of
+# PATH, ahead of /opt/homebrew/bin. .zprofile and .zshrc re-prepend
+# $HOMEBREW_PREFIX/bin, so they call it again right after (ADR 0058).
+_dotpickles_brew_stub_first() {
+  local stub="${DOTPICKLES_BREW_STUB:-/usr/local/bin/brew}"
+  [[ -u $stub ]] || return 0
+  local dir="${stub%/*}"
+  PATH=":$PATH:"
+  PATH="${PATH//:$dir:/:}"
+  PATH="${PATH#:}"
+  export PATH="$dir:${PATH%:}"
+}
+
+_brew_stub="${DOTPICKLES_BREW_STUB:-/usr/local/bin/brew}"
+if [[ -u $_brew_stub ]]; then
+  export HOMEBREW_PREFIX=/opt/homebrew
+  export HOMEBREW_CELLAR=/opt/homebrew/Cellar
+  export HOMEBREW_REPOSITORY=/opt/homebrew
+  typeset -U path
+  path=("${_brew_stub:h}" /opt/homebrew/bin /opt/homebrew/sbin $path)
+  export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
+  export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
+elif [[ -x /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [[ -x /usr/local/bin/brew ]]; then
   eval "$(/usr/local/bin/brew shellenv)"
 fi
+unset _brew_stub
 
 # Determine role (consistent with install.sh and fish dotpickles-role.fish).
 # Precedence: claude-code-remote (cloud is also a container, so it must win) ->
@@ -79,6 +109,8 @@ if [[ -n "$HOMEBREW_PREFIX" ]]; then
   export PATH="${PATH//$HOMEBREW_PREFIX\/bin:/}"
   export PATH="${PATH//$HOMEBREW_PREFIX\/sbin:/}"
   export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
+  # ADR 0058: hardened launcher dir must precede $HOMEBREW_PREFIX/bin
+  _dotpickles_brew_stub_first
 fi
 # pinned wrappers (e.g. qmd -> mise exec node@24) must beat mise shims
 if [[ -d "$HOME/.pickles/bin" ]]; then

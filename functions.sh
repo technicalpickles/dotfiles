@@ -35,6 +35,17 @@ brew_available() {
 }
 
 load_brew_shellenv() {
+  local stub="${DOTPICKLES_BREW_STUB:-/usr/local/bin/brew}"
+  # Hardened Homebrew (automic-vault, ADR 0058): a setuid launcher replaces
+  # direct use of /opt/homebrew/bin/brew, and must come first on PATH.
+  if test -u "$stub"; then
+    export HOMEBREW_PREFIX=/opt/homebrew
+    export HOMEBREW_CELLAR=/opt/homebrew/Cellar
+    export HOMEBREW_REPOSITORY=/opt/homebrew
+    export PATH="$(dirname "$stub"):/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+    return 0
+  fi
+
   if test -x /opt/homebrew/bin/brew; then
     brew=/opt/homebrew/bin/brew
   elif test -x /usr/local/bin/brew; then
@@ -200,9 +211,131 @@ repoint_dangling_launchagents() {
   done
 }
 
-brew_bundle() {
-  echo "🍻 running brew bundle"
-  cat Brewfile "Brewfile.${DOTPICKLES_ROLE}" 2> /dev/null | brew bundle --file=- 2>&1 | sed 's/^/  → /'
+# Print "<kind> <name>" for each live tap/brew/cask line in the given
+# Brewfiles, in order. Comments, blank lines, other directives, and missing
+# files are skipped.
+brewfile_entries() {
+  local file
+  for file in "$@"; do
+    [ -f "$file" ] || continue
+    sed -nE "s/^[[:space:]]*(tap|brew|cask)[[:space:]]+['\"]([^'\"]+)['\"].*/\1 \2/p" "$file"
+  done
+}
+
+# Print the names (one per line) of the given formulae or casks that aren't
+# installed. `brew info` resolves aliases (gpg -> gnupg, nvim -> neovim) the
+# same way brew does, so installed aliases don't look missing forever. Without
+# jq (fresh machine), print every name and let `brew install` skip the rest.
+missing_brew_packages() {
+  local kind="$1"
+  shift
+  [ $# -gt 0 ] || return 0
+
+  if ! command_available jq; then
+    printf '%s\n' "$@"
+    return 0
+  fi
+
+  local json filter
+  if [ "$kind" = formula ]; then
+    filter='.formulae[] | select(.installed | length == 0) | .full_name'
+  else
+    filter='.casks[] | select(.installed == null) | .full_token'
+  fi
+  # Don't let one unresolvable name (or a brew failure) abort the caller, which
+  # may be running under `set -e`: fall back to treating everything as missing.
+  if ! json="$(brew info --json=v2 "--$kind" "$@")" || ! jq -r "$filter" <<< "$json"; then
+    echo "  → warning: brew info failed for $kind entries; installing all of them" >&2
+    printf '%s\n' "$@"
+  fi
+}
+
+# Install what Brewfile + Brewfile.$DOTPICKLES_ROLE declare. Replaces
+# `brew bundle`, which hardened Homebrew refuses to run (ADR 0058). Missing
+# formulae and casks each go in a single `brew install` so the approval prompt
+# fires at most once per kind.
+brew_install_brewfiles() {
+  echo "🍻 installing Brewfile packages"
+  local entries
+  entries="$(brewfile_entries Brewfile "Brewfile.${DOTPICKLES_ROLE}")"
+
+  # Taps to ensure: explicit `tap` lines plus the user/repo prefix of any
+  # tap-qualified name (user/repo/name). Brew lowercases tap names.
+  local installed_taps tap out rc=0
+  installed_taps="$(brew tap)"
+  for tap in $(awk '
+    $1 == "tap" { print $2 }
+    $1 != "tap" { n = split($2, p, "/"); if (n == 3) print p[1] "/" p[2] }
+  ' <<< "$entries" | awk '!seen[tolower($0)]++'); do
+    if ! grep -qxiF "$tap" <<< "$installed_taps"; then
+      out="$(brew tap "$tap" 2>&1)" || echo "  → warning: brew tap $tap failed"
+      [ -z "$out" ] || sed 's/^/  → /' <<< "$out"
+    fi
+  done
+
+  # Brewfile keyword for each kind: `brew 'x'` is a formula, `cask 'x'` a cask.
+  local kind word names missing
+  for kind in formula cask; do
+    word=brew
+    [ "$kind" = cask ] && word=cask
+    # shellcheck disable=SC2207
+    names=($(awk -v k="$word" '$1 == k { print $2 }' <<< "$entries"))
+    missing="$(missing_brew_packages "$kind" ${names[@]+"${names[@]}"})"
+    if [ -n "$missing" ]; then
+      # shellcheck disable=SC2086
+      out="$(brew install "--$kind" $missing 2>&1)" && ok=1 || ok=0
+      [ -z "$out" ] || sed 's/^/  → /' <<< "$out"
+      if [ "$ok" = 0 ]; then
+        echo "  → warning: brew install --$kind failed (see above)"
+        rc=1
+      fi
+    else
+      echo "  → all ${kind} entries installed"
+    fi
+  done
+  echo
+  return "$rc"
+}
+
+# Print "<Bundle>.app|<url>" for each Caskfile entry not installed in any
+# directory of DOTPICKLES_APP_DIRS (colon-separated, default /Applications
+# and ~/Applications). Caskfile lines are "<Bundle>.app | <url>"; blank lines
+# and # comments are skipped, as are missing files.
+missing_apps() {
+  local dirs="${DOTPICKLES_APP_DIRS:-/Applications:$HOME/Applications}"
+  local file line app url dir found
+  for file in "$@"; do
+    [ -f "$file" ] || continue
+    while IFS= read -r line || [ -n "$line" ]; do
+      case "$line" in '' | '#'*) continue ;; esac
+      app="$(sed -E 's/^[[:space:]]+//; s/[[:space:]]*\|.*$//' <<< "$line")"
+      url="$(sed -E 's/^[^|]*\|[[:space:]]*//; s/[[:space:]]+$//' <<< "$line")"
+      [ -n "$app" ] || continue
+      found=0
+      while IFS= read -r dir; do
+        if [ -d "$dir/$app" ]; then
+          found=1
+          break
+        fi
+      done <<< "$(tr ':' '\n' <<< "$dirs")"
+      [ "$found" -eq 1 ] || echo "$app|$url"
+    done < "$file"
+  done
+}
+
+# Report Caskfile apps that aren't installed. Apps aren't Homebrew-managed under
+# hardened Homebrew (ADR 0058), and this deliberately never downloads anything.
+report_missing_apps() {
+  echo "📦 checking Caskfile apps"
+  local missing app url
+  missing="$(missing_apps Caskfile "Caskfile.${DOTPICKLES_ROLE}")"
+  if [ -z "$missing" ]; then
+    echo "  → all apps installed"
+  else
+    while IFS='|' read -r app url; do
+      echo "  → missing $app: install from $url"
+    done <<< "$missing"
+  fi
   echo
 }
 
@@ -215,7 +348,8 @@ vim_plugins() {
 # make sure op is logged in
 op_ensure_signed_in() {
   if ! which op > /dev/null 2> /dev/null; then
-    brew install 1password-cli
+    # 1password-cli is a cask; hardened brew pins bare installs to --formula.
+    brew install --cask 1password-cli
   fi
 
   if ! op whoami > /dev/null 2>&1; then
