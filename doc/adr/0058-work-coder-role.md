@@ -53,6 +53,8 @@ Add `work-coder` as a canonical role.
     public file.
   - A short `autoMode.environment` note that this is a disposable dev VM, not
     production.
+- `install.sh` implies `--yes` when `CODER=true` and stdin isn't a tty, since
+  `coder dotfiles` runs it unattended with no way to pass flags.
 - `gitconfig.sh` gets a `work-coder)` branch: the work identity, plus signing
   with `~/.ssh/git-commit-signing/coder` when it exists (signing stays off with
   a warning when it doesn't).

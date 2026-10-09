@@ -16,6 +16,11 @@ if [ -n "${DOCKER_BUILD:-}" ]; then
   export DOTPICKLES_YES=1
 fi
 
+# `coder dotfiles` runs install.sh with no tty and no way to pass flags.
+if [ "${CODER:-}" = "true" ] && [ ! -t 0 ]; then
+  export DOTPICKLES_YES=1
+fi
+
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DIR
 
