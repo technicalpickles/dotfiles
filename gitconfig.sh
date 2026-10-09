@@ -26,6 +26,12 @@ fi
 
 if running_macos; then
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/macos
+else
+  # common sets core.fsmonitor = true for git's builtin daemon, which only
+  # exists on macOS and Windows. On Linux every git command warns
+  # "Empty last update token" instead. ~/.gitconfig.local is included after
+  # common, so this wins.
+  git config --file ~/.gitconfig.local core.fsmonitor false
 fi
 
 signing=false
