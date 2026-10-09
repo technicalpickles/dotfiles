@@ -85,7 +85,9 @@ resolves to AV's agent socket and that agent serves the key. It's the gate for:
   Code sandbox blocks). Without it AV-signed commits show `E` (no key) or `U`
   (untrusted) locally even though GitHub reports them verified.
   It also imports GitHub's own `web-flow` signing key (squash merges, web UI
-  commits), pinned by fingerprint so a changed key is skipped, not trusted.
+  commits), pinned by fingerprint and imported only when both the `.gpg` download
+  and the REST API's key list confirm it. A rotation or outage skips it and
+  says which check missed, rather than trusting whatever was served.
 - `user.signingkey` is ignored by `av-gpg` (it doesn't honour `-u`), so the
   leftover SSH `signingkey` values are harmless.
 - **Open risk:** unattended launchd jobs (e.g. scheduled commits) have no Verified

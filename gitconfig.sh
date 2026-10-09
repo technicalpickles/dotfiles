@@ -123,18 +123,29 @@ if [ "$av_signing" = true ]; then
 
     # GitHub's own commit-signing key (squash merges, web UI commits) so those
     # show G too. Unlike the account keys above this is someone else's key, so
-    # pin the fingerprint: import and trust only that exact key, never whatever
-    # the URL happens to serve later. Verify against
-    # https://github.com/web-flow.gpg if GitHub rotates it.
+    # pin the fingerprint and require two independent GitHub endpoints to agree
+    # (the .gpg download and the REST API's key list) before trusting it. If
+    # either misses the pin, nothing is imported or trusted and the message says
+    # which one, so a rotation (update github_fpr after checking
+    # https://github.com/web-flow.gpg) reads differently from an outage.
     github_fpr="968479A1AFF927E37D1A566BB5690EEEBB952194"
     github_keys=$(mktemp)
-    if curl -fsS --max-time 15 https://github.com/web-flow.gpg -o "$github_keys" 2> /dev/null \
-      && gpg --batch --show-keys --with-colons "$github_keys" 2> /dev/null | grep -q "^fpr:::::::::$github_fpr:"; then
+    github_file_ok=false
+    github_api_ok=false
+    if curl -fsS --max-time 15 https://github.com/web-flow.gpg -o "$github_keys" 2> /dev/null; then
+      gpg --batch --show-keys --with-colons "$github_keys" 2> /dev/null | grep -q "^fpr:::::::::$github_fpr:" \
+        && github_file_ok=true
+    fi
+    # the API reports the key's long ID (last 16 hex of the fingerprint)
+    if curl -fsS --max-time 15 https://api.github.com/users/web-flow/gpg_keys 2> /dev/null | grep -q "\"key_id\": *\"${github_fpr: -16}\""; then
+      github_api_ok=true
+    fi
+    if $github_file_ok && $github_api_ok; then
       gpg --batch --quiet --import "$github_keys" 2> /dev/null \
         && echo "$github_fpr:6:" | gpg --batch --import-ownertrust 2> /dev/null \
-        && echo "  → imported GitHub's commit-signing key"
+        && echo "  → imported GitHub's commit-signing key (pinned, confirmed by web and API)"
     else
-      echo "  → GitHub's signing key unavailable or fingerprint changed; skipping"
+      echo "  → skipping GitHub's commit-signing key: pinned fingerprint not confirmed (web: $github_file_ok, api: $github_api_ok)"
     fi
     rm -f "$github_keys"
   fi
