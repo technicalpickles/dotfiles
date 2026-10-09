@@ -59,8 +59,8 @@ if [[ ! -f "$key" ]]; then
   exit 0
 fi
 
-sock=$("$(dirname "${BASH_SOURCE[0]}")/av-ssh-agent-holds-key" -v "$pub") ||
-  die "Automic Vault isn't serving $pub here; leaving $key alone"
+sock=$("$(dirname "${BASH_SOURCE[0]}")/av-ssh-agent-holds-key" -v "$pub") \
+  || die "Automic Vault isn't serving $pub here; leaving $key alone"
 ok "Automic Vault's agent serves this key ($sock)"
 
 fp=$(ssh-keygen -lf "$pub" | awk '{print $2}')

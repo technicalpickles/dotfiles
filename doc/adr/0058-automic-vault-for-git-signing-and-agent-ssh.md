@@ -76,7 +76,7 @@ resolves to AV's agent socket and that agent serves the key. It's the gate for:
   `op` when AV is present.
 - AV picks the GPG credential per Verified Launcher. Agent commits use the
   alternate credential whose uid is the agent email, so they verify on GitHub. Your
-  own commits need AV's *default* credential to carry your own email and be
+  own commits need AV's _default_ credential to carry your own email and be
   uploaded to GitHub, or they show Unverified.
 - `user.signingkey` is ignored by `av-gpg` (it doesn't honour `-u`), so the
   leftover SSH `signingkey` values are harmless.
