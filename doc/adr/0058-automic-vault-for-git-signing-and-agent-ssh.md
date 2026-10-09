@@ -90,6 +90,17 @@ resolves to AV's agent socket and that agent serves the key. It's the gate for:
   says which check missed, rather than trusting whatever was served.
 - `user.signingkey` is ignored by `av-gpg` (it doesn't honour `-u`), so the
   leftover SSH `signingkey` values are harmless.
+- **Credential choice follows the launcher, not the shell.** AV picks the default
+  or alternate (agent) GPG credential from the Verified Launcher. The terminal
+  tab inside Claude.app and agent sessions are both launcher `Claude`, so
+  commits made there sign with the agent credential, whose key email is the
+  agent address. With your own author email they show Unverified on GitHub.
+  Make human commits from a non-Claude terminal (e.g. Ghostty), or commit with
+  the agent identity (`GIT_CONFIG_GLOBAL=~/.gitconfig.d/claude-agent-<role>`).
+  Test the default credential from a non-Claude terminal.
+- `bin/setup-av-signing-key` creates the default credential (AV can only import
+  one, not generate it): a key backed up to 1Password, imported into AV, and
+  uploaded to GitHub. It is a no-op once GitHub lists a key for the email.
 - **Open risk:** unattended launchd jobs (e.g. scheduled commits) have no Verified
   Launcher. AV requires one for SSH even with manual Approval, so those jobs may
   fail closed on push or signing on AV machines. Verify per job before retiring
