@@ -71,12 +71,12 @@ mkdir -p "$HOME/.config"
 ./miseconfig.sh
 link_directory_contents config
 
-# No brew on Coder; fish/herdr go in global config.toml since conf.d/ also applies on macOS.
+# No brew on Coder; fish/herdr/yq go in global config.toml since conf.d/ also applies on macOS.
 if [ "$DOTPICKLES_ROLE" = "work-coder" ]; then
   export PATH="$HOME/.local/bin:$PATH"
   if command_available mise; then
     echo "🧰 installing tools with mise"
-    mise use --global github:fish-shell/fish-shell herdr || echo "  ⚠ mise use failed" >&2
+    mise use --global github:fish-shell/fish-shell herdr yq || echo "  ⚠ mise use failed" >&2
     mise install || echo "  ⚠ some mise tools failed to install" >&2
     eval "$(mise activate bash --shims)"
   else

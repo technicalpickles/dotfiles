@@ -14,6 +14,11 @@ if ! command_available herdr; then
   exit 0
 fi
 
+if ! command_available yq; then
+  echo "  ⚠ yq not found, skipping plugin restoration"
+  exit 0
+fi
+
 MANIFEST="$DIR/config/herdr/plugins.toml"
 
 installed_ids="$(herdr plugin list --json | jq -r '.result.plugins[].plugin_id')"
