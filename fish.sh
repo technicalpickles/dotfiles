@@ -88,14 +88,15 @@ fi
 # it with a real directory before fisher runs, then merge dotfiles conf back in.
 if [ -L "$fish_config" ]; then
   rm "$fish_config"
-  mkdir -p "$fish_config" "$fish_config/conf.d" "$fish_config/functions" "$fish_config/completions"
 fi
+# Also covers a fresh machine where ~/.config/fish doesn't exist yet (e.g. a
+# Coder workspace). Without it the links below were skipped, and fisher's first
+# run created the directory with fish's default config.fish instead of ours.
+mkdir -p "$fish_config" "$fish_config/conf.d" "$fish_config/functions" "$fish_config/completions"
 
 # Symlink config.fish and fish_plugins first (fisher needs fish_plugins to know what to install)
-if [ -d "$fish_config" ]; then
-  [ -f "$dotfiles_fish/config.fish" ] && ln -sf "$dotfiles_fish/config.fish" "$fish_config/config.fish"
-  [ -f "$dotfiles_fish/fish_plugins" ] && ln -sf "$dotfiles_fish/fish_plugins" "$fish_config/fish_plugins"
-fi
+[ -f "$dotfiles_fish/config.fish" ] && ln -sf "$dotfiles_fish/config.fish" "$fish_config/config.fish"
+[ -f "$dotfiles_fish/fish_plugins" ] && ln -sf "$dotfiles_fish/fish_plugins" "$fish_config/fish_plugins"
 
 # Install fisher if missing, then sync plugins from fish_plugins file
 if ! fish -c "type fisher >/dev/null 2>/dev/null"; then
