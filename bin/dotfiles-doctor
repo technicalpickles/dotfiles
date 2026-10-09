@@ -82,7 +82,7 @@ echo
 # Canonical names per ADR 0043 (supersedes 0035): home, work, container,
 # claude-code-remote, coi-host. coi-host is explicit-only (never
 # auto-detected), but a caller may still set it before sourcing functions.sh.
-VALID_ROLES=(home work container claude-code-remote coi-host)
+VALID_ROLES=(home work work-coder container claude-code-remote coi-host)
 role_valid=false
 for r in "${VALID_ROLES[@]}"; do
   if [[ "$DOTPICKLES_ROLE" == "$r" ]]; then

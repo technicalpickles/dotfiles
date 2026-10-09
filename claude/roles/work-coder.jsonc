@@ -1,0 +1,25 @@
+{
+  // Coder (coder.com) workspace, detected via CODER=true. See ADR 0058.
+  //
+  //   - No sandbox: the VM is already isolated and egress-filtered, and the
+  //     stacks' sandbox entries are macOS paths.
+  //
+  //   - No agent SSH identity (no env.GIT_CONFIG_GLOBAL): the template owns git
+  //     identity and signing, so Claude commits as the workspace owner and
+  //     claudeconfig.sh's macOS-only SSH validation self-skips.
+  //
+  //   - No requiresPrivateOverlay: work's overlay doesn't exist in a fresh
+  //     workspace. Keep employer hostnames out of this public file.
+  "sandbox": {
+    "enabled": false,
+  },
+
+  // claudeconfig.sh merges base + ONE role, so work's overlay auto mode rules
+  // don't reach here. See ADR 0056.
+  "autoMode": {
+    "environment": [
+      "### User-specific",
+      "this machine is a Coder workspace: a disposable cloud development VM owned by the user, provisioned from an employer template, with no production access by design. Ordinary development here (installing packages, running services, editing its own home directory) is not an escalation. Pushing to shared remotes and touching shared Coder resources (templates, other users' workspaces) still deserve the usual care",
+    ],
+  },
+}

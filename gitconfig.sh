@@ -65,6 +65,20 @@ case "$DOTPICKLES_ROLE" in
       git config --file ~/.gitconfig.local user.signingkey "$HOME/.ssh/id_ed25519.pub"
     fi
     ;;
+  work-coder)
+    # Key is provisioned and registered on GitHub by the Coder template. See ADR 0058.
+    echo " → using work identity for git (Coder workspace)"
+    git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/work-identity
+
+    coder_signing_key="$HOME/.ssh/git-commit-signing/coder"
+    if [ -f "$coder_signing_key" ]; then
+      echo "  → enabling Coder ssh key signing"
+      signing=true
+      git config --file ~/.gitconfig.local user.signingkey "$coder_signing_key"
+    else
+      echo "  ⚠ $coder_signing_key not found, leaving commit signing off" >&2
+    fi
+    ;;
   *)
     echo "Unexpected role: $DOTPICKLES_ROLE"
     exit 1
