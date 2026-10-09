@@ -89,10 +89,18 @@ done
 # scope, and a failure there would look identical to "no key". Revoked and
 # expired keys don't count.
 login=$(gh api user --jq .login 2> /dev/null) || die "Couldn't ask GitHub who you are (gh auth status?)"
+# GitHub sends expiry as 2028-10-07T22:45:39.000-04:00 (millis + offset), which
+# jq's fromdateiso8601 rejects, so convert to epoch seconds by hand.
+jq_epoch='def epoch: . as $s
+  | ($s[0:19] + "Z" | fromdateiso8601) as $t
+  | if ($s | endswith("Z")) then $t
+    else (($s[-5:-3] | tonumber) * 3600 + ($s[-2:] | tonumber) * 60) as $off
+      | if $s[-6:-5] == "-" then $t + $off else $t - $off end
+    end;'
 github_keys_for_email() {
-  gh api "users/$login/gpg_keys" --paginate --jq ".[]
+  gh api "users/$login/gpg_keys" --paginate --jq "$jq_epoch .[]
     | select(.revoked | not)
-    | select(.expires_at == null or (.expires_at | fromdateiso8601) > now)
+    | select(.expires_at == null or (.expires_at | epoch) > now)
     | select(.emails[]?.email == \"$email\")
     | .key_id"
 }
