@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# setup-av-signing-key [--email <addr>] [--vault <1password vault>] [--check] [--yes]
+#
+# Create the personal GPG signing key that Automic Vault's GPG Signing Gate uses
+# as its *default* credential (ADR 0058). AV can only import a default
+# credential (it can generate one only for an alternate/agent credential), so
+# the key has to be made outside the app.
+#
+# Re-run safe: if GitHub already lists a GPG key carrying <addr>, say so and
+# stop. --check does only that test.
+#
+# What it does when the key is missing:
+#   1. Generates an ed25519 signing key in a throwaway GNUPGHOME, protected by a
+#      random passphrase (so there's nothing to type or remember).
+#   2. Backs up to 1Password BEFORE anything else: the armored secret key and the
+#      revocation certificate as Documents, the passphrase as a Password item.
+#      If any backup fails it stops and keeps the throwaway keyring.
+#   3. Walks the manual steps via the clipboard: import into Automic Vault,
+#      upload the public key to GitHub (tries `gh`, falls back to the browser).
+#   4. Clears the clipboard, stops the temporary gpg-agent and deletes the
+#      throwaway keyring, leaving the private key only in Automic Vault and
+#      1Password.
+#
+# Restoring from 1Password later: `op document get <title> | gpg --import` (needs
+# the passphrase item). The revocation cert ships with a safety colon before its
+# BEGIN line; strip it first: `sed 's/^:-----BEGIN/-----BEGIN/' f.rev | gpg --import`.
+#
+# Needs: gpg, op (signed in), gh, jq, pbcopy (macOS), a terminal.
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+info() { echo -e "${BLUE}$*${NC}"; }
+ok() { echo -e "${GREEN}✓${NC} $*"; }
+warn() { echo -e "${YELLOW}⚠${NC} $*"; }
+die() {
+  echo -e "${RED}✗${NC} $*" >&2
+  exit 1
+}
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+email=""
+vault_args=()
+check_only=false
+yes=false
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --email)
+      email="${2:?--email needs a value}"
+      shift 2
+      ;;
+    --vault)
+      vault_args=(--vault "${2:?--vault needs a value}")
+      shift 2
+      ;;
+    --check)
+      check_only=true
+      shift
+      ;;
+    --yes | -y)
+      yes=true
+      shift
+      ;;
+    -h | --help)
+      sed -n '4,25p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *) die "Unknown argument: $1" ;;
+  esac
+done
+
+if [[ -z "$email" ]]; then
+  email=$(git config --file "$script_dir/../home/.gitconfig.d/home-identity" user.email 2> /dev/null || true)
+fi
+[[ -n "$email" ]] || die "No email: pass --email <addr>"
+
+for tool in gh jq; do
+  command -v "$tool" > /dev/null || die "$tool not found"
+done
+
+# --- already exists? ---------------------------------------------------------
+# Matches on the email in the key's own user ID, so the agent credential
+# (joshua.nichols+personal-agent@...) never counts as this one. Uses the public
+# per-user endpoint: the authenticated /user/gpg_keys needs the admin:gpg_key
+# scope, and a failure there would look identical to "no key". Revoked and
+# expired keys don't count.
+login=$(gh api user --jq .login 2> /dev/null) || die "Couldn't ask GitHub who you are (gh auth status?)"
+# GitHub sends expiry as 2028-10-07T22:45:39.000-04:00 (millis + offset), which
+# jq's fromdateiso8601 rejects, so convert to epoch seconds by hand.
+jq_epoch='def epoch: . as $s
+  | ($s[0:19] + "Z" | fromdateiso8601) as $t
+  | if ($s | endswith("Z")) then $t
+    else (($s[-5:-3] | tonumber) * 3600 + ($s[-2:] | tonumber) * 60) as $off
+      | if $s[-6:-5] == "-" then $t + $off else $t - $off end
+    end;'
+github_keys_for_email() {
+  gh api "users/$login/gpg_keys" --paginate --jq "$jq_epoch .[]
+    | select(.revoked | not)
+    | select(.expires_at == null or (.expires_at | epoch) > now)
+    | select(.emails[]?.email == \"$email\")
+    | .key_id"
+}
+existing=$(github_keys_for_email) || die "Couldn't list GPG keys for $login from GitHub"
+existing=${existing%%$'\n'*}
+if [[ -n "$existing" ]]; then
+  ok "GitHub already has a GPG key for $email ($existing); nothing to create"
+  exit 0
+fi
+warn "No GPG key for $email on GitHub"
+$check_only && exit 1
+
+# --- preflight ---------------------------------------------------------------
+for tool in gpg op pbcopy openssl; do
+  command -v "$tool" > /dev/null || die "$tool not found"
+done
+$yes || [[ -t 0 ]] || die "Needs a terminal for its prompts (or pass --yes)"
+op whoami > /dev/null 2>&1 || die "1Password CLI isn't signed in (try: op signin)"
+gh api user/emails --jq ".[] | select(.verified and .email == \"$email\") | .email" 2> /dev/null | grep -q . \
+  || die "$email isn't a verified email on your GitHub account; commits would show Unverified. Add it first: https://github.com/settings/emails"
+
+pause() { $yes || read -r -p "$1 [Enter] "; }
+
+# --- generate in a throwaway keyring ------------------------------------------
+GNUPGHOME=$(mktemp -d "${TMPDIR:-/tmp}/av-signing-key.XXXXXX")
+export GNUPGHOME
+chmod 700 "$GNUPGHOME"
+keep_keyring=true # flipped only after every backup succeeded
+cleanup() {
+  gpgconf --kill gpg-agent > /dev/null 2>&1 || true
+  if $keep_keyring; then
+    warn "Keeping the throwaway keyring at $GNUPGHOME (it holds the only copy of the key until backups succeed)"
+  else
+    [[ -n "$GNUPGHOME" && -d "$GNUPGHOME" ]] && rm -rf -- "$GNUPGHOME"
+    ok "Deleted the throwaway keyring"
+  fi
+  pbcopy < /dev/null 2> /dev/null || true
+}
+trap cleanup EXIT
+
+passphrase=$(openssl rand -base64 24)
+gpg_batch() { gpg --batch --pinentry-mode loopback --passphrase-fd 3 "$@" 3<<< "$passphrase"; }
+
+info "Generating ed25519 signing key for $email (expires in 2y)..."
+gpg_batch --quick-generate-key "Josh Nichols <$email>" ed25519 sign 2y 2> /dev/null || die "Key generation failed"
+fpr=$(gpg --list-keys --with-colons 2> /dev/null | awk -F: '/^fpr/ {print $10; exit}')
+[[ -n "$fpr" ]] || die "Couldn't read the new key's fingerprint"
+ok "Generated $fpr"
+
+# --- back up to 1Password first -----------------------------------------------
+info "Backing up to 1Password..."
+rev="$GNUPGHOME/openpgp-revocs.d/$fpr.rev"
+[[ -f "$rev" ]] || die "Revocation certificate missing at $rev"
+
+gpg_batch --armor --export-secret-keys "$fpr" 2> /dev/null \
+  | op document create - "${vault_args[@]}" --title "GPG signing key $email" \
+    --file-name "gpg-signing-$fpr.asc" --tags gpg,git-signing > /dev/null \
+  || die "1Password backup of the secret key failed"
+ok "Secret key saved (passphrase-protected)"
+
+op document create "$rev" "${vault_args[@]}" --title "GPG signing key revocation cert $email" \
+  --file-name "gpg-signing-$fpr.rev" --tags gpg,git-signing > /dev/null \
+  || die "1Password backup of the revocation certificate failed"
+ok "Revocation certificate saved (strip the colon before its BEGIN line to use it)"
+
+pass_title="GPG signing key passphrase $email"
+jq -n --arg t "$pass_title" --arg p "$passphrase" --arg n "Passphrase for gpg-signing-$fpr.asc ($email)" \
+  '{title: $t, category: "PASSWORD", tags: ["gpg", "git-signing"],
+    fields: [{id: "password", type: "CONCEALED", purpose: "PASSWORD", value: $p},
+             {id: "notesPlain", type: "STRING", purpose: "NOTES", value: $n}]}' \
+  | op item create "${vault_args[@]}" - > /dev/null \
+  || die "1Password backup of the passphrase failed"
+ok "Passphrase saved as \"$pass_title\""
+
+keep_keyring=false # everything is backed up; the keyring is now disposable
+
+# --- manual steps via clipboard -------------------------------------------------
+echo
+info "1/3 Import into Automic Vault (Settings → GPG Signing → default credential)"
+gpg_batch --armor --export-secret-keys "$fpr" 2> /dev/null | pbcopy
+echo "  The armored secret key is on your clipboard. Paste it into the import editor."
+pause "  Pasted it?"
+echo "  If it asks for the passphrase, it is on your clipboard next:"
+printf %s "$passphrase" | pbcopy
+pause "  Done with the passphrase?"
+
+echo
+info "2/3 Upload the public key to GitHub"
+pubkey=$(gpg --armor --export "$fpr" 2> /dev/null)
+if printf %s "$pubkey" | gh gpg-key add - --title "Automic Vault default ($email)" > /dev/null 2>&1; then
+  ok "Uploaded with gh"
+else
+  warn "gh couldn't upload (token likely lacks admin:gpg_key); do it by hand"
+  printf %s "$pubkey" | pbcopy
+  echo "  The public key is on your clipboard. Paste it at https://github.com/settings/gpg/new"
+  pause "  Added it?"
+fi
+
+echo
+info "3/3 Verify"
+if [[ -n "$(github_keys_for_email)" ]]; then
+  ok "GitHub lists the key for $email"
+else
+  warn "GitHub doesn't list a key for $email yet; re-run with --check once it's added"
+fi
+echo "Next: make a test commit and confirm GitHub shows it as Verified, and check 'git log --format=%G?' says G"

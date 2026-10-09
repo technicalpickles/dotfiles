@@ -28,6 +28,20 @@ if running_macos; then
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/macos
 fi
 
+# Automic Vault's GPG Signing Gate is the preferred signing backend when the app
+# is installed: no 1Password, approval/push-notification gating per launcher.
+# ~/.gitconfig.signing.local is generated (not tracked) so the claude-agent-*
+# configs can include it too; when AV is absent it isn't written and git
+# silently skips the include, leaving the SSH signing below in effect.
+# See home/.gitconfig.d/av-signing.
+rm -f ~/.gitconfig.signing.local
+av_signing=false
+if running_macos && [ -x "/Applications/Automic Vault.app/Contents/MacOS/av-gpg" ]; then
+  echo "  → enabling Automic Vault gpg signing"
+  av_signing=true
+  git config --file ~/.gitconfig.signing.local --add include.path ~/.gitconfig.d/av-signing
+fi
+
 signing=false
 case "$DOTPICKLES_ROLE" in
   home | container | claude-code-remote | coi-host)
@@ -38,7 +52,9 @@ case "$DOTPICKLES_ROLE" in
     echo "  → using home identity for git"
     git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/home-identity
 
-    if running_macos && test -d '/Applications/1Password.app/'; then
+    if [ "$av_signing" = true ]; then
+      : # signing handled by Automic Vault (above)
+    elif running_macos && test -d '/Applications/1Password.app/'; then
       echo "  → enabling 1password ssh key signing"
       signing=true
 
@@ -58,11 +74,13 @@ case "$DOTPICKLES_ROLE" in
     echo " → using work identify for git"
     git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/work-identity
 
-    echo "  → enabling work ssh key signing"
-    signing=true
+    if [ "$av_signing" != true ]; then
+      echo "  → enabling work ssh key signing"
+      signing=true
 
-    if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
-      git config --file ~/.gitconfig.local user.signingkey "$HOME/.ssh/id_ed25519.pub"
+      if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
+        git config --file ~/.gitconfig.local user.signingkey "$HOME/.ssh/id_ed25519.pub"
+      fi
     fi
     ;;
   *)
@@ -71,8 +89,66 @@ case "$DOTPICKLES_ROLE" in
     ;;
 esac
 
-if [ "$signing" = true ]; then
+if [ "$av_signing" = true ]; then
+  git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.signing.local
+elif [ "$signing" = true ]; then
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/signing
+fi
+
+# av-gpg only signs; `git log --show-signature` / %G? verification goes to plain
+# gpg, which needs the signer's public key and some trust in it or every
+# AV-signed commit shows E (no key) or U (untrusted). GitHub already serves the
+# public keys on the account, so import those and mark them ultimately trusted
+# (it's my own account). Best effort: needs gpg, network, and a writable
+# ~/.gnupg (the Claude Code sandbox blocks it), and a miss only costs local
+# verification, not signing.
+if [ "$av_signing" = true ]; then
+  gpg_keys_url="https://github.com/technicalpickles.gpg"
+  if command_available gpg; then
+    gpg_keys=$(mktemp)
+    if curl -fsS --max-time 15 "$gpg_keys_url" -o "$gpg_keys" 2> /dev/null && [ -s "$gpg_keys" ]; then
+      if gpg --batch --quiet --import "$gpg_keys" 2> /dev/null; then
+        # primary key fingerprints are the first fpr: line after each pub: line
+        gpg --batch --show-keys --with-colons "$gpg_keys" 2> /dev/null \
+          | awk -F: '/^pub:/ {want=1; next} /^fpr:/ && want {print $10 ":6:"; want=0}' \
+          | gpg --batch --import-ownertrust 2> /dev/null \
+          && echo "  → imported GitHub gpg keys for local commit verification"
+      else
+        echo "  → could not write ~/.gnupg; skipping gpg key import (git log will show E/U for AV-signed commits)"
+      fi
+    else
+      echo "  → could not fetch $gpg_keys_url; skipping gpg key import"
+    fi
+    rm -f "$gpg_keys"
+
+    # GitHub's own commit-signing key (squash merges, web UI commits) so those
+    # show G too. Unlike the account keys above this is someone else's key, so
+    # pin the fingerprint and require two independent GitHub endpoints to agree
+    # (the .gpg download and the REST API's key list) before trusting it. If
+    # either misses the pin, nothing is imported or trusted and the message says
+    # which one, so a rotation (update github_fpr after checking
+    # https://github.com/web-flow.gpg) reads differently from an outage.
+    github_fpr="968479A1AFF927E37D1A566BB5690EEEBB952194"
+    github_keys=$(mktemp)
+    github_file_ok=false
+    github_api_ok=false
+    if curl -fsS --max-time 15 https://github.com/web-flow.gpg -o "$github_keys" 2> /dev/null; then
+      gpg --batch --show-keys --with-colons "$github_keys" 2> /dev/null | grep -q "^fpr:::::::::$github_fpr:" \
+        && github_file_ok=true
+    fi
+    # the API reports the key's long ID (last 16 hex of the fingerprint)
+    if curl -fsS --max-time 15 https://api.github.com/users/web-flow/gpg_keys 2> /dev/null | grep -q "\"key_id\": *\"${github_fpr: -16}\""; then
+      github_api_ok=true
+    fi
+    if $github_file_ok && $github_api_ok; then
+      gpg --batch --quiet --import "$github_keys" 2> /dev/null \
+        && echo "$github_fpr:6:" | gpg --batch --import-ownertrust 2> /dev/null \
+        && echo "  → imported GitHub's commit-signing key (pinned, confirmed by web and API)"
+    else
+      echo "  → skipping GitHub's commit-signing key: pinned fingerprint not confirmed (web: $github_file_ok, api: $github_api_ok)"
+    fi
+    rm -f "$github_keys"
+  fi
 fi
 
 if fzf_available; then
