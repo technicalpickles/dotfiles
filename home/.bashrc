@@ -1,3 +1,19 @@
+# Kept in sync with home/.zshenv and config/fish/conf.d/dotpickles-role.fish.
+# See doc/adr/0035, 0040, 0058.
+if [[ -z "$DOTPICKLES_ROLE" ]]; then
+  if [[ "$CLAUDE_CODE_REMOTE" == "true" ]]; then
+    export DOTPICKLES_ROLE=claude-code-remote
+  elif [[ "$CODER" == "true" ]]; then
+    export DOTPICKLES_ROLE=work-coder
+  elif [[ -f /.dockerenv ]] || grep -q 'docker\|lxc\|containerd' /proc/1/cgroup 2> /dev/null || [[ -n "$DOCKER_BUILD" ]]; then
+    export DOTPICKLES_ROLE=container
+  elif [[ "$(hostname)" =~ ^josh-nichols- ]]; then
+    export DOTPICKLES_ROLE=work
+  else
+    export DOTPICKLES_ROLE=home
+  fi
+fi
+
 # Enable the subsequent settings only in interactive sessions
 case $- in
   *i*) ;;
@@ -19,6 +35,13 @@ fi
 
 if command -v mise > /dev/null 2>&1; then
   eval "$(mise activate bash)"
+fi
+
+# Read by config/starship.toml's env_var.STARSHIP_CTX; mirrors config/fish/conf.d/starship-init.fish.
+if [[ -f /.dockerenv || -n "$REMOTE_CONTAINERS" || -n "$CODESPACES" ]]; then
+  export STARSHIP_CTX="$DOTPICKLES_ROLE | devcontainer"
+else
+  export STARSHIP_CTX="$DOTPICKLES_ROLE"
 fi
 
 # Path to your oh-my-bash installation.
