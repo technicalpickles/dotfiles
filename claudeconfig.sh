@@ -156,7 +156,7 @@ setup_sandbox_dirs() {
     pip_cache="${XDG_CACHE_HOME:-$HOME/.cache}/pip"
   fi
   mkdir -p "$pip_cache"
-  echo "  ✓ ${pip_cache/#$HOME/~}"
+  echo "  ✓ $pip_cache"
   # plannotator writes ~/.plannotator/sessions/<pid>.json; allowWrite covers
   # writes under ~/.plannotator but not creating the dir itself (needs ~/).
   mkdir -p "$HOME/.plannotator"
