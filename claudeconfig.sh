@@ -149,8 +149,14 @@ setup_claude_directory
 # Without this, pip emits "cache disabled" and falls back to no-cache mode.
 setup_sandbox_dirs() {
   echo "Pre-creating sandbox cache directories..."
-  mkdir -p "$HOME/Library/Caches/pip"
-  echo "  ✓ ~/Library/Caches/pip"
+  local pip_cache
+  if [ "$(uname)" = "Darwin" ]; then
+    pip_cache="$HOME/Library/Caches/pip"
+  else
+    pip_cache="${XDG_CACHE_HOME:-$HOME/.cache}/pip"
+  fi
+  mkdir -p "$pip_cache"
+  echo "  ✓ ${pip_cache/#$HOME/~}"
   # plannotator writes ~/.plannotator/sessions/<pid>.json; allowWrite covers
   # writes under ~/.plannotator but not creating the dir itself (needs ~/).
   mkdir -p "$HOME/.plannotator"
