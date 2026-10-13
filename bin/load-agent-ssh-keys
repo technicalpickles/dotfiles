@@ -34,6 +34,14 @@ set -uo pipefail
 #
 # This script is the missing half of a pattern the repo already had; it is to
 # agent #1 what config/fish/conf.d/ssh-keychain.fish is to agent #2.
+#
+# ## Automic Vault
+#
+# Where Automic Vault's SSH agent serves a key (bin/av-ssh-agent-holds-key),
+# ~/.ssh/config already points every host at AV's socket and signing goes
+# through AV's GPG gate, so loading the key into launchd's agent would only
+# create a second, ungated copy. Those keys are skipped, and their private
+# key file is expected to be gone (bin/retire-agent-ssh-key).
 
 if [[ "$(uname)" != "Darwin" ]]; then
   echo "load-agent-ssh-keys: not macOS, nothing to do" >&2
@@ -47,11 +55,11 @@ if [[ -z "${SSH_AUTH_SOCK:-}" ]]; then
 fi
 
 shopt -s nullglob
-keys=("$HOME"/.ssh/agents/*/id_ed25519)
+pubs=("$HOME"/.ssh/agents/*/id_ed25519.pub)
 shopt -u nullglob
 
-if [[ ${#keys[@]} -eq 0 ]]; then
-  echo "load-agent-ssh-keys: no agent keys under ~/.ssh/agents/*/id_ed25519" >&2
+if [[ ${#pubs[@]} -eq 0 ]]; then
+  echo "load-agent-ssh-keys: no agent keys under ~/.ssh/agents/*/id_ed25519.pub" >&2
   echo "  Create one with: bin/setup-agent-ssh-key <role>" >&2
   exit 0
 fi
@@ -63,12 +71,19 @@ fi
 loaded=$(ssh-add -l 2> /dev/null | awk '{print $2}')
 
 rc=0
-for key in "${keys[@]}"; do
-  role="$(basename "$(dirname "$key")")"
-  pub="$key.pub"
+bin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-  if [[ ! -f "$pub" ]]; then
-    echo "load-agent-ssh-keys: $role: missing $pub, skipping" >&2
+for pub in "${pubs[@]}"; do
+  key="${pub%.pub}"
+  role="$(basename "$(dirname "$key")")"
+
+  if "$bin_dir/av-ssh-agent-holds-key" "$pub" > /dev/null; then
+    echo "load-agent-ssh-keys: $role: served by Automic Vault, not loading"
+    continue
+  fi
+
+  if [[ ! -f "$key" ]]; then
+    echo "load-agent-ssh-keys: $role: missing $key and Automic Vault doesn't serve it, skipping" >&2
     rc=1
     continue
   fi

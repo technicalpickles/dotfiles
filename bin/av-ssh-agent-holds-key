@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# av-ssh-agent-holds-key <pubkey-path> [host]
+#
+# Exit 0 when Automic Vault's SSH agent is the one ssh actually uses for
+# <host> (default github.com) AND it is serving the key in <pubkey-path>.
+# On success prints the agent socket path on stdout; exit 1 otherwise.
+# Prints the reason on stderr with -v.
+#
+# This is the "is AV set up here?" gate for the agent SSH key, decided per
+# machine by observed state, not by DOTPICKLES_ROLE: the role picks which key,
+# but whether AV holds it depends on whether AV's SSH Agent setting was
+# enabled and the key imported on this particular machine. Callers:
+#   - bin/load-agent-ssh-keys: skip loading keys AV already serves
+#   - bin/check-agent-ssh-key: accept a missing private key file
+#   - bin/retire-agent-ssh-key: refuse to delete unless this passes
+#
+# Listing public keys from AV's agent needs no Approval (AV ADR 0044), so
+# this is safe to run unattended.
+
+verbose=false
+if [[ "${1:-}" == "-v" ]]; then
+  verbose=true
+  shift
+fi
+
+say() { $verbose && echo "av-ssh-agent-holds-key: $*" >&2; }
+
+pub="${1:-}"
+host="${2:-github.com}"
+if [[ -z "$pub" || ! -f "$pub" ]]; then
+  echo "usage: av-ssh-agent-holds-key [-v] <pubkey-path> [host]" >&2
+  exit 2
+fi
+
+if [[ "$(uname)" != "Darwin" ]]; then
+  say "not macOS"
+  exit 1
+fi
+
+# The agent ssh will really use, as resolved by ~/.ssh/config (AV manages a
+# block at its top). Expand a leading ~ since ssh -G may print it unexpanded.
+sock=$(ssh -G "git@$host" 2> /dev/null | awk '/^identityagent /{print $2; exit}')
+sock="${sock/#\~/$HOME}"
+sock="${sock//\"/}"
+if [[ "$sock" != *automic-vault* ]]; then
+  say "ssh uses '${sock:-<none>}' for $host, not Automic Vault's agent"
+  exit 1
+fi
+if [[ ! -S "$sock" ]]; then
+  say "Automic Vault agent socket $sock is not running"
+  exit 1
+fi
+
+want=$(awk '{print $1, $2}' "$pub")
+if SSH_AUTH_SOCK="$sock" ssh-add -L 2> /dev/null | awk '{print $1, $2}' | grep -Fxq "$want"; then
+  say "Automic Vault serves $pub via $sock"
+  echo "$sock"
+  exit 0
+fi
+say "Automic Vault agent at $sock does not serve $pub"
+exit 1

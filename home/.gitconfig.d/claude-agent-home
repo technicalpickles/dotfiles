@@ -43,3 +43,10 @@
 	format = ssh
 [gpg "ssh"]
 	program = ssh-keygen
+# Must stay LAST: when Automic Vault is installed, gitconfig.sh generates this
+# file to include ~/.gitconfig.d/av-signing, which overrides the SSH signing
+# above (gpg.format=openpgp, gpg.program=av-gpg). AV signs with its alternate
+# credential for the Claude Code launcher, gated by approval. Without AV the
+# file doesn't exist and git skips it, leaving the SSH agent key signing.
+[include]
+	path = ~/.gitconfig.signing.local
