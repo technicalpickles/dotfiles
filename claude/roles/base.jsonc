@@ -3,7 +3,7 @@
   "model": "opus[1m]",
   "statusLine": {
     "type": "command",
-    "command": "npx -y ccstatusline@latest",
+    "command": "npx -y ccstatusline@2.2.32",
     "padding": 0,
   },
   "includeCoAuthoredBy": true,
