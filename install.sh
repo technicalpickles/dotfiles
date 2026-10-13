@@ -72,7 +72,7 @@ mkdir -p "$HOME/.config"
 link_directory_contents config
 
 # No brew on Coder; fish/herdr/yq/worktrunk go in global config.toml since conf.d/ also applies on macOS.
-# gh is deliberately absent: the Coder template ships an authenticated /usr/local/bin/gh, and a mise gh shim would shadow it with one that has no token.
+# No gh here: a mise shim would shadow the template's authenticated /usr/local/bin/gh.
 if [ "$DOTPICKLES_ROLE" = "work-coder" ]; then
   export PATH="$HOME/.local/bin:$PATH"
   if command_available mise; then
