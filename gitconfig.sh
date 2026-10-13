@@ -26,6 +26,12 @@ fi
 
 if running_macos; then
   git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/macos
+else
+  # common sets core.fsmonitor = true for git's builtin daemon, which only
+  # exists on macOS and Windows. On Linux every git command warns
+  # "Empty last update token" instead. ~/.gitconfig.local is included after
+  # common, so this wins.
+  git config --file ~/.gitconfig.local core.fsmonitor false
 fi
 
 # Automic Vault's GPG Signing Gate is the preferred signing backend when the app
@@ -81,6 +87,20 @@ case "$DOTPICKLES_ROLE" in
       if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
         git config --file ~/.gitconfig.local user.signingkey "$HOME/.ssh/id_ed25519.pub"
       fi
+    fi
+    ;;
+  work-coder)
+    # Key is provisioned and registered on GitHub by the Coder template. See ADR 0058.
+    echo " → using work identity for git (Coder workspace)"
+    git config --file ~/.gitconfig.local --add include.path ~/.gitconfig.d/work-identity
+
+    coder_signing_key="$HOME/.ssh/git-commit-signing/coder"
+    if [ -f "$coder_signing_key" ]; then
+      echo "  → enabling Coder ssh key signing"
+      signing=true
+      git config --file ~/.gitconfig.local user.signingkey "$coder_signing_key"
+    else
+      echo "  ⚠ $coder_signing_key not found, leaving commit signing off" >&2
     fi
     ;;
   *)

@@ -1,4 +1,4 @@
-# 58. Automic Vault for git signing and agent SSH, gated per machine
+# 59. Automic Vault for git signing and agent SSH, gated per machine
 
 Date: 2026-10-06
 

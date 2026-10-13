@@ -8,6 +8,13 @@ else
         fish_add_path --global --prepend "$HOME/.cargo/bin"
     end
 
+    # Coder templates install mise (and claude) to ~/.local/bin, so it has to
+    # be on PATH before the check below. The block at the bottom still moves
+    # it ahead of the mise shims.
+    if test -d "$HOME/.local/bin"
+        fish_add_path --global --prepend "$HOME/.local/bin"
+    end
+
     if command -q mise
         # don't try to auto-install, so we things like the tide prompt don't trigger installations
         set -gx MISE_NOT_FOUND_AUTO_INSTALL false

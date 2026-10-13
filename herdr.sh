@@ -14,6 +14,11 @@ if ! command_available herdr; then
   exit 0
 fi
 
+if ! command_available yq; then
+  echo "  ⚠ yq not found, skipping plugin restoration"
+  exit 0
+fi
+
 MANIFEST="$DIR/config/herdr/plugins.toml"
 
 installed_ids="$(herdr plugin list --json | jq -r '.result.plugins[].plugin_id')"
@@ -33,15 +38,15 @@ yq -p toml -o json '.plugin' "$MANIFEST" | jq -c '.[]' | while read -r entry; do
   if [ -n "$github" ]; then
     if [ -n "$ref" ]; then
       echo "  🔌 $id -> installing from github:$github@$ref"
-      herdr plugin install "$github" --ref "$ref" --yes
+      herdr plugin install "$github" --ref "$ref" --yes || echo "  ⚠ $id -> install failed, skipping" >&2
     else
       echo "  🔌 $id -> installing from github:$github"
-      herdr plugin install "$github" --yes
+      herdr plugin install "$github" --yes || echo "  ⚠ $id -> install failed, skipping" >&2
     fi
   elif [ -n "$local_path" ]; then
     expanded="${local_path/#\~/$HOME}"
     echo "  🔌 $id -> linking local $expanded"
-    herdr plugin link "$expanded"
+    herdr plugin link "$expanded" || echo "  ⚠ $id -> link failed, skipping" >&2
   else
     echo "  ⚠ $id -> no source declared in plugins.toml, skipping" >&2
   fi

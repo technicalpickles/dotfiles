@@ -4,7 +4,7 @@ set -uo pipefail
 # setup-av-signing-key [--email <addr>] [--vault <1password vault>] [--check] [--yes]
 #
 # Create the personal GPG signing key that Automic Vault's GPG Signing Gate uses
-# as its *default* credential (ADR 0058). AV can only import a default
+# as its *default* credential (ADR 0059). AV can only import a default
 # credential (it can generate one only for an alternate/agent credential), so
 # the key has to be made outside the app.
 #
