@@ -83,6 +83,10 @@ if [ "$DOTPICKLES_ROLE" = "work-coder" ]; then
   else
     echo "  ⚠ mise not found, skipping tool install" >&2
   fi
+
+  # symlinks.sh does this on macOS but never runs on Coder; link_directory_contents skips config/herdr.
+  mkdir -p "$HOME/.config/herdr"
+  link config/herdr/config.toml "$HOME/.config/herdr/config.toml"
 fi
 
 echo
