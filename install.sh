@@ -76,7 +76,7 @@ if [ "$DOTPICKLES_ROLE" = "work-coder" ]; then
   export PATH="$HOME/.local/bin:$PATH"
   if command_available mise; then
     echo "🧰 installing tools with mise"
-    mise use --global github:fish-shell/fish-shell herdr yq worktrunk git-lfs || echo "  ⚠ mise use failed" >&2
+    mise use --global github:fish-shell/fish-shell herdr yq worktrunk git-lfs github:hmans/beans || echo "  ⚠ mise use failed" >&2
     # From $HOME, so this repo's own mise.toml (node 22) doesn't shadow the global node lts.
     mise --cd "$HOME" install || echo "  ⚠ some mise tools failed to install" >&2
     eval "$(mise activate bash --shims)"
