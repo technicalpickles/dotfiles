@@ -12,9 +12,12 @@ fi
 
 # Determine role (consistent with install.sh and fish dotpickles-role.fish).
 # Precedence: claude-code-remote (cloud is also a container, so it must win) ->
-# container -> work (hostname) -> home. See doc/adr/0035 + 0040.
+# work-coder (Coder workspace) -> container -> work (hostname) -> home.
+# See doc/adr/0035, 0040, 0058.
 if [[ "$CLAUDE_CODE_REMOTE" == "true" ]]; then
   export DOTPICKLES_ROLE=claude-code-remote
+elif [[ "$CODER" == "true" ]]; then
+  export DOTPICKLES_ROLE=work-coder
 elif [[ -f /.dockerenv ]] || grep -q 'docker\|lxc\|containerd' /proc/1/cgroup 2> /dev/null || [[ -n "$DOCKER_BUILD" ]]; then
   export DOTPICKLES_ROLE=container
 elif [[ "$(hostname)" =~ ^josh-nichols- ]]; then

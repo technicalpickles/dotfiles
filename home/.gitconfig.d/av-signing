@@ -1,0 +1,24 @@
+# Commit/tag signing through Automic Vault's GPG Signing Gate.
+#
+# av-gpg forwards sign requests to the bundled `av gpg-sign`, which asks the
+# menu bar app for approval and signs with the credential AV selects for the
+# calling launcher (default credential for your terminal, the alternate
+# credential for Verified Launchers like Claude Code). Git never sees the
+# private key, and user.signingkey (passed as -u) is ignored.
+#
+# Not included directly: gitconfig.sh writes an include of this file into the
+# generated ~/.gitconfig.signing.local only when the AV app is installed, and
+# both ~/.gitconfig.local and the claude-agent-* configs include that file.
+# Missing includes are ignored by git, so machines without AV fall back to the
+# SSH signing they already had.
+#
+# AV's Settings -> GPG Signing -> "Configure Git" button writes these same
+# values with `git config --global`, which lands in the tracked
+# home/.gitconfig (symlinked). Don't click it; this file is the source of truth.
+[gpg]
+	format = openpgp
+	program = /Applications/Automic Vault.app/Contents/MacOS/av-gpg
+[commit]
+	gpgSign = true
+[tag]
+	gpgSign = true

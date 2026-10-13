@@ -13,6 +13,7 @@
   //
   // Each entry key is the server name. Supported transports: "http" and "sse"
   // (take "url"), and "stdio" (takes "command" plus optional "args" array).
+  // Optional "excludeRoles" lists DOTPICKLES_ROLE values that skip the server.
   "servers": {
     // DeusData/codebase-memory-mcp, installed via mise. Upstream's `install`
     // also adds agents/skill/hooks to ~/.claude; deliberately not used.
@@ -25,6 +26,8 @@
     "qmd": {
       "transport": "http",
       "url": "http://localhost:18181/mcp",
+      // No LaunchAgent (or vault) in a Coder workspace.
+      "excludeRoles": ["work-coder"],
     },
   },
 }

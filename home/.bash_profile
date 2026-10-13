@@ -14,9 +14,9 @@ if [ "$TERM_PROGRAM" = vscode ] && which code > /dev/null; then
 # we like vim
 elif which mvim > /dev/null; then
   export EDITOR="mvim -f"
-elif which -s vim > /dev/null; then
+elif command -v vim > /dev/null; then
   export EDITOR=vim
-elif which -s vi > /dev/null; then
+elif command -v vi > /dev/null; then
   export EDITOR=vi
 fi
 

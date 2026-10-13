@@ -36,6 +36,7 @@
       "ci-cd-tools@pickled-claude-plugins",
       "dev-tools@pickled-claude-plugins",
       "working-in-monorepos@pickled-claude-plugins",
+      "come-on@pickled-claude-plugins",
     ],
   },
 

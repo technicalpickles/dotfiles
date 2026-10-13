@@ -149,8 +149,14 @@ setup_claude_directory
 # Without this, pip emits "cache disabled" and falls back to no-cache mode.
 setup_sandbox_dirs() {
   echo "Pre-creating sandbox cache directories..."
-  mkdir -p "$HOME/Library/Caches/pip"
-  echo "  ✓ ~/Library/Caches/pip"
+  local pip_cache
+  if [ "$(uname)" = "Darwin" ]; then
+    pip_cache="$HOME/Library/Caches/pip"
+  else
+    pip_cache="${XDG_CACHE_HOME:-$HOME/.cache}/pip"
+  fi
+  mkdir -p "$pip_cache"
+  echo "  ✓ $pip_cache"
   # plannotator writes ~/.plannotator/sessions/<pid>.json; allowWrite covers
   # writes under ~/.plannotator but not creating the dir itself (needs ~/).
   mkdir -p "$HOME/.plannotator"
@@ -667,6 +673,11 @@ configure_mcp_servers() {
 
   local name
   while IFS= read -r name; do
+    if echo "$servers_json" | jq -e --arg n "$name" --arg r "$ROLE" '.[$n].excludeRoles // [] | index($r)' > /dev/null; then
+      echo "  - $name (skipped for role '$ROLE')"
+      continue
+    fi
+
     if claude mcp get "$name" > /dev/null 2>&1; then
       echo "  ✓ $name (already registered)"
       continue

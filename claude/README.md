@@ -12,6 +12,7 @@ claude/
 │   ├── base.jsonc                # Core settings, base permissions, sandbox scalars
 │   ├── home.jsonc                # Home role: agent git identity env, sandbox rules
 │   ├── work.jsonc                # Work role: AWS/Bedrock env, work permissions
+│   ├── work-coder.jsonc          # Coder workspace: sandbox off, no agent id
 │   ├── container.jsonc           # Local container placeholder
 │   ├── coi-host.jsonc            # Host side of the pickled-coi VM
 │   └── claude-code-remote.jsonc  # Claude Code on the web: sandbox off, no agent id

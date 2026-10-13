@@ -37,7 +37,7 @@ $character"""
 # https://starship.rs/config/#hostname
 [hostname]
 ssh_only = true
-format = "[](fg:blue bg:none)[█](fg:#E4E4E4 bg:blue)[$ssh_symbol$hostname](bold bg:blue)[](fg:#blue bg:none) "
+format = "[](fg:blue bg:none)[$ssh_symbol$hostname](fg:#E4E4E4 bg:blue bold)[](fg:blue bg:none) "
 disabled = false
 style = "fg:fg_light bg:red"
 
@@ -179,7 +179,6 @@ style = "bold fg:#E4E4E4 bg:dark_blue"
 [env_var.STARSHIP_CTX]
 format = "[](fg:purple bg:none)[$env_value]($style)[](fg:purple bg:none)"
 style = "fg:#E4E4E4 bg:purple bold"
-default = "home"
 
 ## RAINBOW PALETTE (Inspired by Tide's Rainbow Theme)
 
