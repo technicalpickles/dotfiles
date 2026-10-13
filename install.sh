@@ -72,11 +72,12 @@ mkdir -p "$HOME/.config"
 link_directory_contents config
 
 # No brew on Coder; fish/herdr/yq/worktrunk go in global config.toml since conf.d/ also applies on macOS.
+# gh is deliberately absent: the Coder template ships an authenticated /usr/local/bin/gh, and a mise gh shim would shadow it with one that has no token.
 if [ "$DOTPICKLES_ROLE" = "work-coder" ]; then
   export PATH="$HOME/.local/bin:$PATH"
   if command_available mise; then
     echo "🧰 installing tools with mise"
-    mise use --global github:fish-shell/fish-shell herdr yq worktrunk git-lfs github:hmans/beans gh github:dolthub/dolt || echo "  ⚠ mise use failed" >&2
+    mise use --global github:fish-shell/fish-shell herdr yq worktrunk git-lfs github:hmans/beans github:dolthub/dolt || echo "  ⚠ mise use failed" >&2
     # From $HOME, so this repo's own mise.toml (node 22) doesn't shadow the global node lts.
     mise --cd "$HOME" install || echo "  ⚠ some mise tools failed to install" >&2
     eval "$(mise activate bash --shims)"
