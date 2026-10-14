@@ -1,0 +1,28 @@
+;; Safehouse overrides for every role. Appended by bin/safe, along with
+;; role-$DOTPICKLES_ROLE.sb when it exists. Safehouse has no global config file,
+;; and env grants (SAFEHOUSE_ADD_DIRS*) resolve symlinks, so they can't express
+;; the link literals below. See doc/adr/0060-agent-safehouse-wrapper.md.
+
+;; Dotfiles symlinks. Seatbelt checks the link itself as well as its target, so
+;; each link needs its own grant; the targets are granted per role (role-work.sb
+;; covers ~/pickleton, where this repo lives on work machines).
+(allow file-read*
+    (home-literal "/.pickles")          ;; ~/.pickles/bin is on PATH; Node's PATH walk aborts on the first EPERM dir
+    (home-literal "/.gitconfig")
+    (home-literal "/.gitconfig.d")
+)
+
+;; Agent git identity (ADR 0031): bin/safe points GIT_CONFIG_GLOBAL at
+;; claude-agent-<role> and runs a dedicated ssh-agent holding only agent keys.
+;; Public halves only; the private key never enters the sandbox.
+(allow file-read*
+    (regex (string-append "^" HOME_DIR "/\\.ssh/agents/[^/]+/id_ed25519\\.pub$"))
+)
+(allow network-outbound
+    (remote unix-socket (path-literal (string-append HOME_DIR "/.ssh/agent/safehouse.sock")))
+)
+
+;; plannotator pi extension: reads config.json, writes drafts/history/plans/sessions.
+(allow file-read* file-write*
+    (home-subpath "/.plannotator")
+)
