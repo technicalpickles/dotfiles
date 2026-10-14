@@ -1,0 +1,10 @@
+{
+  // Terraform provider cache (TF_PLUGIN_CACHE_DIR, set in
+  // config/fish/conf.d/terraform.fish). `terraform init` writes providers here
+  // and symlinks them into each .terraform/ instead of copying ~780M per dir.
+  "sandbox": {
+    "filesystem": {
+      "allowWrite": ["~/.cache/terraform"],
+    },
+  },
+}
