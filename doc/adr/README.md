@@ -58,3 +58,4 @@
 - [57. local-cross-repo-filesystem-access](0057-local-cross-repo-filesystem-access.md)
 - [58. work-coder-role](0058-work-coder-role.md)
 - [59. automic-vault-for-git-signing-and-agent-ssh](0059-automic-vault-for-git-signing-and-agent-ssh.md)
+- [60. agent-safehouse-wrapper](0060-agent-safehouse-wrapper.md)

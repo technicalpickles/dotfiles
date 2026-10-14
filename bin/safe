@@ -1,0 +1,45 @@
+#!/bin/sh
+# safe: run a command under agent-safehouse with dotfiles' overrides.
+#
+#   safe pi
+#   safe --env-pass=OPENROUTER_API_KEY -- pi
+#
+# Safehouse has no global config file and no env var for --append-profile or
+# --enable, so this wrapper is how the overrides get applied. See
+# doc/adr/0060-agent-safehouse-wrapper.md.
+
+role="${DOTPICKLES_ROLE:-home}"
+profiles="$HOME/.config/agent-safehouse"
+
+# Agent git identity (ADR 0031): commits inside the sandbox sign as the agent,
+# never as you. A dedicated ssh-agent holds only the agent keys, so the sandbox
+# never sees the interactive agent and its personal key. load-agent-ssh-keys
+# does the Keychain passphrase (ADR 0030) and skips keys Automic Vault serves
+# (ADR 0059).
+agent_sock="$HOME/.ssh/agent/safehouse.sock"
+SSH_AUTH_SOCK="$agent_sock" ssh-add -l > /dev/null 2>&1
+if [ $? -eq 2 ]; then # no agent listening
+  mkdir -p "$(dirname "$agent_sock")"
+  rm -f "$agent_sock"
+  ssh-agent -a "$agent_sock" > /dev/null
+fi
+SSH_AUTH_SOCK="$agent_sock" load-agent-ssh-keys > /dev/null
+export SSH_AUTH_SOCK="$agent_sock"
+
+agent_gitconfig="$HOME/.gitconfig.d/claude-agent-$role"
+if [ -f "$agent_gitconfig" ]; then
+  export GIT_CONFIG_GLOBAL="$agent_gitconfig"
+fi
+
+# Order matters: role rules come last so their denies win over earlier allows.
+role_profile=""
+if [ -f "$profiles/role-$role.sb" ]; then
+  role_profile="--append-profile=$profiles/role-$role.sb"
+fi
+
+exec safehouse \
+  --enable=clipboard \
+  --env-pass=SSH_AUTH_SOCK,GIT_CONFIG_GLOBAL \
+  --append-profile="$profiles/common.sb" \
+  ${role_profile:+"$role_profile"} \
+  "$@"

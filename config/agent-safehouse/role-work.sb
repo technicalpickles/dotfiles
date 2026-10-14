@@ -1,0 +1,45 @@
+;; Safehouse overrides for DOTPICKLES_ROLE=work (Gusto machine). Appended by
+;; bin/safe after common.sb.
+
+;; Pickleton: full read/write, matching Claude Code launched from the pt root.
+;; Needed from repo worktrees too: parent CLAUDE.md, and `pt beans` writes
+;; ~/pickleton/beans. Also the real target of ~/.pickles, ~/.gitconfig,
+;; ~/.gitconfig.d (this repo lives at ~/pickleton/repos/dotfiles here).
+(allow file-read* file-write*
+    (home-subpath "/pickleton")
+)
+
+;; pickletown CLI: reads its root from config.yml; session association reads the
+;; live dolt sql-server's pid:port:uuid, then talks localhost TCP. Info file
+;; only, not the dolt store.
+(allow file-read*
+    (home-subpath "/.config/pickletown")
+    (home-literal "/.local/state/pickletown/dolt/.dolt/sql-server.info")
+)
+
+;; Gusto-managed PATH entry /pkg/env/global/bin doesn't exist, but stat must not
+;; EPERM or Node's PATH walk stops before /opt/homebrew/bin.
+(allow file-read*
+    (subpath "/pkg")
+)
+
+;; Gusto's managed pi (/opt/gusto/bin/pi) is a dotslash wrapper that downloads
+;; and caches the real binary on first run.
+(allow file-read* file-write*
+    (home-subpath "/Library/Caches/dotslash")
+)
+
+;; Escape guard. The ~/pickleton grant above reaches files that run OUTSIDE
+;; the sandbox later. Later rules win, so deny writes to them back:
+;;  - the dotfiles worktree that ~/.pickles, ~/.gitconfig*, shell rc files,
+;;    ~/.config/* (including this policy) and bin/safe link into. Edit dotfiles
+;;    from another worktree and merge, never in place.
+;;  - git hooks and config in every repo: hooks and options like core.fsmonitor
+;;    or core.sshCommand run with full access on Josh's next unsandboxed git
+;;    call. Mirrors Claude Code's hardcoded .git/hooks + .git/config denies.
+;; Interim deny list, not a full model: see ADR 0060 consequences.
+(deny file-write*
+    (home-subpath "/pickleton/repos/dotfiles/worktrees/main")
+    (regex (string-append "^" HOME_DIR "/pickleton/(.+/)?\\.git/(hooks(/.*)?|config)$"))
+    (regex (string-append "^" HOME_DIR "/pickleton/repos/[^/]+/bare\\.git/(hooks(/.*)?|config|worktrees/[^/]+/config\\.worktree)$"))
+)
