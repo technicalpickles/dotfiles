@@ -1,0 +1,8 @@
+{
+  // Provider cache for TF_PLUGIN_CACHE_DIR (config/fish/conf.d/terraform.fish).
+  "sandbox": {
+    "filesystem": {
+      "allowWrite": ["~/.cache/terraform"],
+    },
+  },
+}
