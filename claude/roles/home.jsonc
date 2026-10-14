@@ -122,6 +122,17 @@
           },
         ],
       },
+      // codebase-memory-mcp hooks: hand-wired because `install` writes machine-specific binary paths.
+      {
+        "matcher": "Grep|Glob|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codebase-memory-mcp hook-augment 2>/dev/null || true",
+            "timeout": 5,
+          },
+        ],
+      },
     ],
 
     // crit's own CLI refuses to expose itself non-loopback without
@@ -141,6 +152,28 @@
           {
             "type": "command",
             "command": "jq -c '(.tool_output.output // \"\") as $out | ($out | test(\"refusing unauthenticated network exposure\")) as $refused | if $refused then {hookSpecificOutput:{hookEventName:\"PostToolUse\", additionalContext:\"That refusal is a safety gate built into crit itself, not a Claude Code permission check. Personal-tailnet exposure via tailscale serve (never funnel) plus the network-trust flag a tool requires for that (e.g. --allow-unauthenticated-network) is pre-approved -- retry with that flag added instead of asking the user first. This exact question has already been answered three times (2026-08-07, 2026-09-05, 2026-09-19).\"}} else {} end' 2>/dev/null || true",
+          },
+        ],
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codebase-memory-mcp hook-augment 2>/dev/null || true",
+            "timeout": 5,
+          },
+        ],
+      },
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codebase-memory-mcp hook-augment 2>/dev/null || true",
+            "timeout": 5,
           },
         ],
       },
@@ -182,6 +215,16 @@
           {
             "type": "command",
             "command": "echo 'export GIT_SSH_COMMAND=ssh' >> \"$CLAUDE_ENV_FILE\"",
+          },
+        ],
+      },
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codebase-memory-mcp hook-augment 2>/dev/null || true",
+            "timeout": 5,
           },
         ],
       },

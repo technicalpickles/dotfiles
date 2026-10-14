@@ -87,6 +87,16 @@
           },
         ],
       },
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codebase-memory-mcp hook-augment 2>/dev/null || true",
+            "timeout": 5,
+          },
+        ],
+      },
     ],
     "PreToolUse": [
       {
@@ -95,6 +105,41 @@
           {
             "type": "command",
             "command": "~/.pickles/bin/pickletown claude-hook skill-session-tracking",
+          },
+        ],
+      },
+      // codebase-memory-mcp hooks: hand-wired because `install` writes machine-specific binary paths.
+      {
+        "matcher": "Grep|Glob|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codebase-memory-mcp hook-augment 2>/dev/null || true",
+            "timeout": 5,
+          },
+        ],
+      },
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codebase-memory-mcp hook-augment 2>/dev/null || true",
+            "timeout": 5,
+          },
+        ],
+      },
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codebase-memory-mcp hook-augment 2>/dev/null || true",
+            "timeout": 5,
           },
         ],
       },

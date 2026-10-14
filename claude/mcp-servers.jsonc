@@ -16,7 +16,8 @@
   // Optional "excludeRoles" lists DOTPICKLES_ROLE values that skip the server.
   "servers": {
     // DeusData/codebase-memory-mcp, installed via mise. Upstream's `install`
-    // also adds agents/skill/hooks to ~/.claude; deliberately not used.
+    // also adds agents/skill/hooks to ~/.claude; only the hooks are used,
+    // hand-wired in roles/home.jsonc and roles/work.jsonc.
     "codebase-memory-mcp": {
       "transport": "stdio",
       "command": "codebase-memory-mcp",
