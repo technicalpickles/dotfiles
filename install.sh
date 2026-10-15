@@ -73,11 +73,14 @@ link_directory_contents config
 
 # No brew on Coder; fish/herdr/yq/worktrunk go in global config.toml since conf.d/ also applies on macOS.
 # No gh here: a mise shim would shadow the template's authenticated /usr/local/bin/gh.
+# No git-lfs either: the template installs it system-wide, and a mise shim ahead of it breaks the
+# template's clone. git runs the LFS filter inside the half-checked-out repo, the shim makes mise
+# parse that repo's still-untrusted mise.toml, and `git clone` fails before the post-clone trust step.
 if [ "$DOTPICKLES_ROLE" = "work-coder" ]; then
   export PATH="$HOME/.local/bin:$PATH"
   if command_available mise; then
     echo "🧰 installing tools with mise"
-    mise use --global github:fish-shell/fish-shell herdr yq worktrunk git-lfs github:hmans/beans github:dolthub/dolt || echo "  ⚠ mise use failed" >&2
+    mise use --global github:fish-shell/fish-shell herdr yq worktrunk github:hmans/beans github:dolthub/dolt || echo "  ⚠ mise use failed" >&2
     # From $HOME, so this repo's own mise.toml (node 22) doesn't shadow the global node lts.
     mise --cd "$HOME" install || echo "  ⚠ some mise tools failed to install" >&2
     eval "$(mise activate bash --shims)"
