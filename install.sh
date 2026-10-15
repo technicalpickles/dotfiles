@@ -80,7 +80,7 @@ if [ "$DOTPICKLES_ROLE" = "work-coder" ]; then
     echo "🧰 installing tools with mise"
     mise_tools="github:fish-shell/fish-shell herdr yq worktrunk github:hmans/beans github:dolthub/dolt"
     command_available git-lfs || mise_tools="$mise_tools git-lfs"
-    # shellcheck disable=SC2086 # word splitting is the point: one argument per tool
+    # shellcheck disable=SC2086
     mise use --global $mise_tools || echo "  ⚠ mise use failed" >&2
     # From $HOME, so this repo's own mise.toml (node 22) doesn't shadow the global node lts.
     mise --cd "$HOME" install || echo "  ⚠ some mise tools failed to install" >&2
