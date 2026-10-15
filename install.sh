@@ -73,9 +73,7 @@ link_directory_contents config
 
 # No brew on Coder; fish/herdr/yq/worktrunk go in global config.toml since conf.d/ also applies on macOS.
 # No gh here: a mise shim would shadow the template's authenticated /usr/local/bin/gh.
-# No git-lfs either: the template installs it system-wide, and a mise shim ahead of it breaks the
-# template's clone. git runs the LFS filter inside the half-checked-out repo, the shim makes mise
-# parse that repo's still-untrusted mise.toml, and `git clone` fails before the post-clone trust step.
+# No git-lfs either: the template ships it, and a mise shim makes `git clone` fail on the repo's untrusted mise.toml.
 if [ "$DOTPICKLES_ROLE" = "work-coder" ]; then
   export PATH="$HOME/.local/bin:$PATH"
   if command_available mise; then
