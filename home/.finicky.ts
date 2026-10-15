@@ -22,6 +22,17 @@ const chromeApps = {
   calendar: 'kjbdgfilnfhdoflbpgamdcdgpehopbep',
 };
 
+// Trims startup work in the throwaway "-n" forwarding process Chrome spawns
+// per profile-routed open; see .claude/rules/finicky.md.
+const fastLaunchArgs = ['--no-first-run', '--no-default-browser-check'];
+
+// Finicky drops the positional URL once `args` is set, so append it explicitly or Chrome opens blank.
+const inProfile = (profile: string) => (url: URL) => ({
+  name: 'Google Chrome',
+  profile,
+  args: [...fastLaunchArgs, url.href],
+});
+
 // Open a URL in an installed Chrome PWA, as the app (its own dock icon and
 // cmd-tab entry) rather than as a Chrome window. See the "Chrome PWAs" section
 // of .claude/rules/finicky.md for why this specific pair of switches.
@@ -29,6 +40,7 @@ const inChromeApp = (appId: string) => (url: URL) => ({
   name: 'Google Chrome',
   profile: workChromeProfile,
   args: [
+    ...fastLaunchArgs,
     `--app-id=${appId}`,
     `--app-launch-url-for-shortcuts-menu-item=${url.href}`,
   ],
@@ -182,37 +194,25 @@ const config: FinickyConfig = {
         'slides.google.com/*',
         'drive.google.com/*',
       ],
-      browser: {
-        name: 'Google Chrome',
-        profile: workChromeProfile,
-      },
+      browser: inProfile(workChromeProfile),
     },
 
     // Datadog - open in Chrome
     {
       match: ['*.datadoghq.com/*', 'datadoghq.com/*'],
-      browser: {
-        name: 'Google Chrome',
-        profile: workChromeProfile,
-      },
+      browser: inProfile(workChromeProfile),
     },
 
     // AWS - open in Chrome work profile
     {
       match: ['*.awsapps.com/*', 'awsapps.com/*'],
-      browser: {
-        name: 'Google Chrome',
-        profile: workChromeProfile,
-      },
+      browser: inProfile(workChromeProfile),
     },
 
     // YouTube - open in Chrome
     {
       match: ['youtube.com/*', '*.youtube.com/*', 'youtu.be/*'],
-      browser: {
-        name: 'Google Chrome',
-        profile: personalChromeProfile,
-      },
+      browser: inProfile(personalChromeProfile),
     },
 
     // Sites that commonly have Chrome-specific optimizations
@@ -226,10 +226,7 @@ const config: FinickyConfig = {
       match: (url: URL) =>
         url.host.toLowerCase() === 'github.com' &&
         /^\/(gusto|rubyatscale)\b/i.test(url.pathname),
-      browser: {
-        name: 'Google Chrome',
-        profile: workChromeProfile,
-      },
+      browser: inProfile(workChromeProfile),
     },
 
     // Development/localhost - might want these in Chrome for DevTools
@@ -242,10 +239,7 @@ const config: FinickyConfig = {
         '*.test*',
         '*.dev*',
       ],
-      browser: {
-        name: 'Google Chrome',
-        profile: workChromeProfile,
-      },
+      browser: inProfile(workChromeProfile),
     },
   ],
 
