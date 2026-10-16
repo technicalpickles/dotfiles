@@ -38,7 +38,7 @@ if [ -f "$profiles/role-$role.sb" ]; then
 fi
 
 exec safehouse \
-  --enable=clipboard \
+  --enable=clipboard,launch-services \
   --env-pass=SSH_AUTH_SOCK,GIT_CONFIG_GLOBAL \
   --append-profile="$profiles/common.sb" \
   ${role_profile:+"$role_profile"} \
