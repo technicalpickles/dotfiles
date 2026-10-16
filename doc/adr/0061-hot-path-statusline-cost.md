@@ -34,6 +34,7 @@ The general rule this follows: anything on a hot path (the statusline, hooks, an
 ### Alternatives Considered
 
 1. **Keep `npx`, just pinned**
+
    - Pros: no install step; nothing to keep in sync across machines.
    - Cons: npm's startup is the cost, and pinning doesn't remove it.
    - Rejected: measured no improvement over `@latest`.
@@ -46,11 +47,13 @@ The general rule this follows: anything on a hot path (the statusline, hooks, an
    | ccstatusline, cold git cache                                                                          | ~690ms | ~170ms   | ~260ms  | 4 git + 1 ps    |
    | [statusline-rs-cc](https://github.com/Darkwing4/statusline-rs-cc)                                     | ~280ms | ~20ms    | ~300ms  | 1 `git status`  |
    | [claude-code-statusline-pro](https://github.com/Wangnov/claude-code-statusline-pro) (`show_dirty` on) | ~290ms | ~30ms    | ~200ms  | none (libgit2)  |
+
    - Pros: almost no user CPU, few or no child processes. claude-code-statusline-pro does git in-process through libgit2.
    - Cons: the worktree walk is the kernel-time cost no matter which tool does it, and neither keeps a git cache across runs (claude-code-statusline-pro's cache is in-process, so it dies after every refresh). claude-code-statusline-pro's much faster default numbers come from `show_dirty` defaulting to off, which skips the dirty check entirely.
    - Rejected for now: ccstatusline with a warm cache does less kernel work per refresh. Worth revisiting if Node's ~120ms user CPU per refresh becomes the bottleneck, or if one of them adds a persistent cache.
 
 3. **`gitCacheTtlSeconds` of 30-60** (60 is the maximum)
+
    - Pros: the `+/-` counts are never more than a minute stale.
    - Cons: still reruns git once a minute per session for repos that haven't changed.
    - Rejected: I rarely look at the counts. Slightly stale is better than paying for them constantly.
