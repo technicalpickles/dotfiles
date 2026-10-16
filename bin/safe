@@ -37,6 +37,20 @@ if [ -f "$profiles/role-$role.sb" ]; then
   role_profile="--append-profile=$profiles/role-$role.sb"
 fi
 
+# Optional safehouse features, each a deliberate hole in the sandbox:
+#   clipboard        pbcopy/pbpaste work. Sandboxed code can also read the
+#                    clipboard.
+#   keychain         Keychain reads. Needed because gh keeps its token there;
+#                    without it `gh auth status` says the token is invalid.
+#                    Sandboxed code can read EVERY Keychain item you own. A
+#                    narrower option is a dedicated token via --env-pass.
+#   launch-services  `open` works (MCP OAuth sign-in, plannotator opening a
+#                    browser). Without it: kLSUnknownErr -10810 from
+#                    RunningBoard. Anything it launches runs OUTSIDE the
+#                    sandbox with your full privileges, so it is an escape
+#                    hatch (`open -a Terminal ...`) the role escape guards don't
+#                    cover.
+# Rationale and tradeoffs: doc/adr/0060-agent-safehouse-wrapper.md.
 exec safehouse \
   --enable=clipboard,keychain,launch-services \
   --env-pass=SSH_AUTH_SOCK,GIT_CONFIG_GLOBAL \
