@@ -75,5 +75,6 @@
     ],
     "theme": "onedark",
     "autoAlign": false
-  }
+  },
+  "gitCacheTtlSeconds": 0
 }
