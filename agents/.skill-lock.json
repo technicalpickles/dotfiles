@@ -129,6 +129,33 @@
       "pluginName": "mattpocock-skills",
       "installedAt": "2026-04-30T17:14:53.343Z",
       "updatedAt": "2026-04-30T17:14:53.343Z"
+    },
+    "rewardkit": {
+      "source": "harbor-framework/harbor",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/harbor-framework/harbor.git",
+      "skillPath": "skills/rewardkit/SKILL.md",
+      "skillFolderHash": "a453aede5f9c2208a3225abfdf1fdbf1964860eb",
+      "installedAt": "2026-10-07T19:07:20.150Z",
+      "updatedAt": "2026-10-07T19:10:34.142Z"
+    },
+    "create-task": {
+      "source": "harbor-framework/harbor",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/harbor-framework/harbor.git",
+      "skillPath": "skills/create-task/SKILL.md",
+      "skillFolderHash": "37e1a81035726f6626b9471e2275a5332cbb8eae",
+      "installedAt": "2026-10-07T19:10:34.137Z",
+      "updatedAt": "2026-10-07T19:10:34.137Z"
+    },
+    "harbor-exec": {
+      "source": "harbor-framework/harbor",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/harbor-framework/harbor.git",
+      "skillPath": "skills/harbor-exec/SKILL.md",
+      "skillFolderHash": "5003f68a132f94ff23140e726a7add113a744c7b",
+      "installedAt": "2026-10-07T19:10:34.141Z",
+      "updatedAt": "2026-10-07T19:10:34.141Z"
     }
   },
   "dismissed": {
@@ -136,19 +163,18 @@
   },
   "lastSelectedAgents": [
     "amp",
-    "antigravity",
-    "antigravity-cli",
     "cline",
     "codex",
     "cursor",
-    "deepagents",
+    "droid",
     "gemini-cli",
     "github-copilot",
+    "kilo",
     "kimi-code-cli",
     "opencode",
+    "pi",
     "warp",
     "zed",
-    "claude-code",
-    "pi"
+    "claude-code"
   ]
 }
