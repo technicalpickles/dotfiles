@@ -38,7 +38,7 @@ it (`safe pi`). It:
 
 - appends `config/agent-safehouse/common.sb`, then `role-$DOTPICKLES_ROLE.sb`
   when one exists. Role rules come last so their denies win.
-- enables `clipboard`.
+- enables `clipboard`, `keychain`, and `launch-services`.
 - starts a **dedicated ssh-agent** at `~/.ssh/agent/safehouse.sock`, fills it
   with `bin/load-agent-ssh-keys` (Keychain passphrase per
   [ADR 0030](0030-ssh-keychain-loading-at-login.md), skipping keys Automic Vault
@@ -77,4 +77,6 @@ The split between files follows role, not convenience:
   dedicated agent has nothing to sign with. Signing inside the sandbox on an AV
   machine would need `av-gpg` reachable from the sandbox. Not done.
 - `--enable=clipboard` lets sandboxed code read the clipboard.
+- `--enable=keychain` lets `gh` read its token from the Keychain (`gh auth status` reports it invalid without this), but sandboxed code can read every Keychain item the user owns. Accepted tradeoff; a narrower option is a dedicated token passed via `--env-pass`.
+- `--enable=launch-services` lets `open` work (MCP OAuth sign-in, plannotator), but anything it launches runs outside the sandbox with full privileges. Accepted tradeoff: this is a sandbox escape hatch (e.g. `open -a Terminal`), and the escape guard in `role-work.sb` does not cover it.
 - No Linux story; safehouse is Seatbelt-only.
