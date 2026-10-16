@@ -1,0 +1,12 @@
+;; Safehouse overrides for DOTPICKLES_ROLE=home. Appended by bin/safe after
+;; common.sb.
+
+;; Dotfiles checkout, read-only. It's the real target of ~/.pickles (bin/ is on
+;; PATH), ~/.gitconfig and ~/.gitconfig.d (claude-agent-home lives there), and
+;; common.sb only grants the links themselves. Read-only on purpose: the checkout
+;; is also where shell rc files, ~/.config/* and bin/safe link into, so write
+;; access here would reach files that run outside the sandbox later (the escape
+;; guard in role-work.sb, ADR 0060). Edit dotfiles outside the sandbox.
+(allow file-read*
+    (home-subpath "/github.com/technicalpickles/dotfiles")
+)

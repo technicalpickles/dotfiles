@@ -54,6 +54,8 @@ The split between files follows role, not convenience:
 - `role-work.sb`: everything Gusto- or pickleton-specific: `~/pickleton`
   read/write, pickletown config and dolt info file, `/pkg`, and the dotslash
   cache for Gusto's managed pi.
+- `role-home.sb`: read access to the dotfiles checkout, which is where the
+  symlinks point on home machines.
 
 `safehouse` itself installs through mise's github backend (macOS only).
 
@@ -70,9 +72,14 @@ The split between files follows role, not convenience:
   merge. This is an interim deny list, not a full model. Other execute-later
   paths (mise tasks, lefthook config, LaunchAgent sources, ...) aren't covered
   yet, and Claude Code launched from the pt root has the same exposure.
-- Home role gets only `common.sb` for now, and is untested there. Where
-  Automic Vault serves the agent key, `load-agent-ssh-keys` skips it, so the
-  dedicated agent has nothing to sign with. Signing inside the sandbox on an AV
+- Home role adds `role-home.sb`: a read-only grant on
+  `~/github.com/technicalpickles/dotfiles`, the target of `~/.pickles` and
+  `~/.gitconfig*` there. Without it `git config` couldn't read
+  `claude-agent-home` and `~/.pickles/bin` was EPERM. Read-only, since write
+  access would reach the same execute-later files the work escape guard covers.
+- Signing on home is still open. Where Automic Vault serves the agent key,
+  `load-agent-ssh-keys` skips it, so the dedicated agent has nothing to sign
+  with (`ssh-add -l` reports no identities). Signing inside the sandbox on an AV
   machine would need `av-gpg` reachable from the sandbox. Not done.
 - `--enable=clipboard` lets sandboxed code read the clipboard.
 - No Linux story; safehouse is Seatbelt-only.
