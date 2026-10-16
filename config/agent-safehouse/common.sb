@@ -26,3 +26,15 @@
 (allow file-read* file-write*
     (home-subpath "/.plannotator")
 )
+
+;; mcporter: scripts that call MCP servers through it read and refresh OAuth
+;; tokens in its vault here, and write
+;; schema caches, locks and daemon logs. The config is denied back: it names
+;; stdio server commands that run unsandboxed on the next mcporter call outside.
+(allow file-read* file-write*
+    (home-subpath "/.mcporter")
+)
+(deny file-write*
+    (home-literal "/.mcporter/mcporter.json")
+    (home-literal "/.mcporter/mcporter.jsonc")
+)

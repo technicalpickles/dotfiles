@@ -50,7 +50,9 @@ it (`safe pi`). It:
 The split between files follows role, not convenience:
 
 - `common.sb`: dotfiles' own symlink literals, agent `.pub` files and the
-  dedicated socket, and the plannotator pi extension.
+  dedicated socket, the plannotator pi extension, and mcporter's `~/.mcporter`
+  (vault and caches; its `mcporter.json[c]` config stays write-denied, since it
+  names commands that run unsandboxed later).
 - `role-work.sb`: everything Gusto- or pickleton-specific: `~/pickleton`
   read/write, pickletown config and dolt info file, `/pkg`, and the dotslash
   cache for Gusto's managed pi.
