@@ -97,6 +97,9 @@
         // cache file ... Operation not permitted") on every commit
         "~/.cache/hk",
         "~/Library/Caches/hk",
+        // pkl's package cache. hk.pkl does `amends "package://github.com/jdx/hk/..."`,
+        // so `hk validate` and any `pkl eval` of it EPERM on ~/.pkl without this
+        "~/.pkl",
       ],
     },
   },
