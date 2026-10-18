@@ -54,7 +54,10 @@
 
   "sandbox": {
     "network": {
-      "allowedDomains": ["brineworks.tail2023b7.ts.net", "woodpecker.tail2023b7.ts.net"],
+      "allowedDomains": [
+        "brineworks.tail2023b7.ts.net",
+        "woodpecker.tail2023b7.ts.net",
+      ],
     },
     "filesystem": {
       "allowWrite": ["~/Library/Caches/f3d"],
