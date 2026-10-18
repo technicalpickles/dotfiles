@@ -12,6 +12,9 @@ bun = "1.3.14"
 # instead of a local `cargo install` from the worktree. Own repo, so no 24h
 # minimum_release_age hold on new releases.
 "github:technicalpickles/cq" = { version = "0.10.2", minimum_release_age = "0s" }
+# xurl (X API CLI), required by bin/xtweet. Prebuilt Go release binary; the npm
+# package is just a launcher around the same thing. Auth lives in ~/.xurl/auth.yml.
+"github:xdevplatform/xurl" = "1.3.4"
 fnox = "latest"
 go = "1.26"
 node = "lts"
