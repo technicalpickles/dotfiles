@@ -16,8 +16,8 @@ if ! info=$(launchctl print "gui/$(id -u)/$label" 2>&1); then
 fi
 
 echo "agent:        $label"
-echo "runs:         $(sed -n 's/^[[:space:]]*runs = //p' <<<"$info")"
-echo "last exit:    $(sed -n 's/^[[:space:]]*last exit code = //p' <<<"$info")"
+echo "runs:         $(sed -n 's/^[[:space:]]*runs = //p' <<< "$info")"
+echo "last exit:    $(sed -n 's/^[[:space:]]*last exit code = //p' <<< "$info")"
 echo "last success: $(mtime "$out")"
 echo "last failure: $(mtime "$err")"
 if [[ -f $err ]]; then
