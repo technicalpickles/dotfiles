@@ -19,8 +19,10 @@ default.command=dense
 #   `blank` - suppresses extra blank lines around output
 #   `affected` - suppresses "Created task N." / "1 task added." footers
 #   `footnote`, `label`, `news` - other low-signal categories
+# `sync` is also dropped: com.technicalpickles.task-sync pushes every 30 min, so the
+# "N local changes" nag was just noise. Check health with `bin/task-sync-status`.
 # Keeps `header` for column labels and `new-id` so post-add still shows the new task ID.
-verbose=header,new-id,edit,context,project,special,sync,recur
+verbose=header,new-id,edit,context,project,special,recur
 
 # Wider default width so descriptions don't multi-line wrap at terminal width.
 defaultwidth=200
