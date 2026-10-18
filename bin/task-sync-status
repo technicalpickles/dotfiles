@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Health check for the com.technicalpickles.task-sync LaunchAgent (task sync every 30 min).
+# stdout log is only written on success, stderr only on failure, so their mtimes
+# tell you when it last worked and when it last broke.
+set -euo pipefail
+
+label=com.technicalpickles.task-sync
+out=/tmp/$label.out
+err=/tmp/$label.err
+
+mtime() { if [[ -f $1 ]]; then /usr/bin/stat -f '%Sm' -t '%Y-%m-%d %H:%M' "$1"; else echo "never"; fi; }
+
+if ! info=$(launchctl print "gui/$(id -u)/$label" 2>&1); then
+  echo "✗ $label is not loaded"
+  exit 1
+fi
+
+echo "agent:        $label"
+echo "runs:         $(sed -n 's/^[[:space:]]*runs = //p' <<<"$info")"
+echo "last exit:    $(sed -n 's/^[[:space:]]*last exit code = //p' <<<"$info")"
+echo "last success: $(mtime "$out")"
+echo "last failure: $(mtime "$err")"
+if [[ -f $err ]]; then
+  echo "last error:   $(tail -n 1 "$err" | cut -c1-160)"
+fi
+echo "now:          $(date '+%Y-%m-%d %H:%M')"

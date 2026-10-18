@@ -60,3 +60,4 @@
 - [59. automic-vault-for-git-signing-and-agent-ssh](0059-automic-vault-for-git-signing-and-agent-ssh.md)
 - [60. agent-safehouse-wrapper](0060-agent-safehouse-wrapper.md)
 - [61. hot-path-statusline-cost](0061-hot-path-statusline-cost.md)
+- [62. sync-taskwarrior-with-a-periodic-launchagent](0062-sync-taskwarrior-with-a-periodic-launchagent.md)
