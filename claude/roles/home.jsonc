@@ -54,7 +54,7 @@
 
   "sandbox": {
     "network": {
-      "allowedDomains": ["brineworks.tail2023b7.ts.net"],
+      "allowedDomains": ["brineworks.tail2023b7.ts.net", "woodpecker.tail2023b7.ts.net"],
     },
     "filesystem": {
       "allowWrite": ["~/Library/Caches/f3d"],
@@ -74,7 +74,7 @@
   "autoMode": {
     "environment": [
       "### Org-wide",
-      "**Trusted internal domains**: `brineworks.tail2023b7.ts.net` (Tailscale tailnet, this machine's own node) — allowlisted in the sandbox above; nothing else is internal",
+      "**Trusted internal domains**: `brineworks.tail2023b7.ts.net` (Tailscale tailnet, this machine's own node) and `woodpecker.tail2023b7.ts.net` (Woodpecker CI, same tailnet) — both allowlisted in the sandbox above; nothing else is internal",
       "**Sensitive remote targets**: any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment; also `picklelab` (personal homelab host, reached over Tailscale) and anything deployed there via the `picklehome` repo, even though the name itself doesn't say \"prod\"",
       "**Protected deployment namespaces / environments**: the personal homelab — the `picklelab` host and whatever `picklehome` (`~/github.com/technicalpickles/picklehome`, public) deploys onto it: home automation with physical-world effects (HVAC via `climate/`, the garage door via `garage/`) plus always-on app services like `brineworks-server` (see that repo's `docs/dev-vs-prod-pipeline.md`). Real production — treat `ssh picklelab`, and any `docker compose`/`just deploy-*`/`just climate-*`/`just garage-*` command that mutates state there, with the same caution as any other prod system",
       "### User-specific",
