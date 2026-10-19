@@ -19,9 +19,21 @@
     // obra/superpowers-marketplace is the umbrella that bundles superpowers,
     // elements-of-style, superpowers-chrome, developing-for-claude-code, etc.
     // (NOT bare obra/superpowers, which is a single-plugin marketplace.)
+    //
+    // autoUpdate is off on purpose: superpowers is held at 6.4.2 (commit
+    // 8ca22dba) because 7.0.0's brainstorming skill opens every session with
+    // "if you'd rather skip the questions..." plus an open question, even when a
+    // spec or handoff already answers it (obra/superpowers#2530). The hold is a
+    // manual edit, not something claudeconfig.sh applies: add
+    // "sha": "8ca22dba9a94f28898bbce59f2537ff4d87c747d" to the superpowers
+    // source in ~/.claude/plugins/marketplaces/superpowers-marketplace/
+    // .claude-plugin/marketplace.json, then
+    // `claude plugin update superpowers@superpowers-marketplace` (once per
+    // scope). To release it: `claude plugin marketplace update
+    // superpowers-marketplace`, update the plugin again, and set this back to true.
     "superpowers-marketplace": {
       "repo": "obra/superpowers-marketplace",
-      "autoUpdate": true,
+      "autoUpdate": false,
     },
     "pickled-claude-plugins": {
       "repo": "technicalpickles/pickled-claude-plugins",
