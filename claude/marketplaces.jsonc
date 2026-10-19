@@ -27,15 +27,25 @@
       "repo": "technicalpickles/pickled-claude-plugins",
       "autoUpdate": true,
     },
-    // Third-party marketplaces for plugins enabled by hand in /plugin. Not in
-    // any profile, so cloud-project-setup.sh ignores them; they are here so a
-    // fresh machine clones them and gets autoUpdate.
-    "crit": { "repo": "tomasz-tomczyk/crit", "autoUpdate": true },
+    // Personal marketplaces for plugins enabled by hand in /plugin. Not in any
+    // profile, so cloud-project-setup.sh ignores them; they are here so a fresh
+    // personal machine clones them and gets autoUpdate. "excludeRoles" skips a
+    // marketplace for those roles in claudeconfig.sh (not on work machines).
+    "crit": {
+      "repo": "tomasz-tomczyk/crit",
+      "autoUpdate": true,
+      "excludeRoles": ["work", "work-coder"],
+    },
     "claude-community": {
       "repo": "anthropics/claude-plugins-community",
       "autoUpdate": true,
+      "excludeRoles": ["work", "work-coder"],
     },
-    "devfast": { "repo": "devdotfast/whiteboard", "autoUpdate": true },
+    "devfast": {
+      "repo": "devdotfast/whiteboard",
+      "autoUpdate": true,
+      "excludeRoles": ["work", "work-coder"],
+    },
   },
 
   // Named plugin bundles. Each entry is "<plugin-name>@<marketplace-key>".

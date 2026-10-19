@@ -593,7 +593,7 @@ configure_marketplaces() {
   local marketplaces=()
   while IFS= read -r entry; do
     marketplaces+=("$entry")
-  done < <(read_json "$manifest" | jq -r '.marketplaces | to_entries[] | "\(.key):\(.value.repo):\(.value.autoUpdate // false)"')
+  done < <(read_json "$manifest" | jq -r --arg role "$ROLE" '.marketplaces | to_entries[] | select((.value.excludeRoles // []) | index($role) | not) | "\(.key):\(.value.repo):\(.value.autoUpdate // false)"')
 
   # Read existing marketplaces or start with empty object
   local current_marketplaces="{}"

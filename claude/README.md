@@ -277,7 +277,7 @@ writes what only _this machine_ needs (so it must not be).
 GitHub repo) and named plugin `profiles` (`core`, `dev`; default `dev`). Two
 consumers read it:
 
-- `claudeconfig.sh` clones the marketplaces globally (`configure_marketplaces()`). A marketplace with `"autoUpdate": true` gets that flag in `~/.claude/plugins/known_marketplaces.json` (set on new entries, and on existing ones only when the key is absent, so a value chosen in `/plugin` is never overwritten).
+- `claudeconfig.sh` clones the marketplaces globally (`configure_marketplaces()`). A marketplace with `"autoUpdate": true` gets that flag in `~/.claude/plugins/known_marketplaces.json` (set on new entries, and on existing ones only when the key is absent, so a value chosen in `/plugin` is never overwritten). A marketplace can set `"excludeRoles": [...]` to be skipped for those roles.
 - `cloud-project-setup.sh [DIR] [--profile NAME] [--dry-run]` writes a repo's
   **committed** `.claude/settings.json` (`extraKnownMarketplaces` + `enabledPlugins`)
   so Claude Code on the web picks the plugins up. It merges into existing settings
