@@ -584,7 +584,7 @@ configure_marketplaces() {
   mkdir -p "$marketplaces_dir"
 
   # Marketplaces come from the shared manifest (single source of truth, also
-  # read by cloud-project-setup.sh). Format per line: "marketplace-id:owner/repo".
+  # read by cloud-project-setup.sh). Format per line: "marketplace-id:owner/repo:autoUpdate".
   local manifest="$DIR/claude/marketplaces.jsonc"
   if [ ! -f "$manifest" ]; then
     echo "Error: $manifest not found"
@@ -593,7 +593,7 @@ configure_marketplaces() {
   local marketplaces=()
   while IFS= read -r entry; do
     marketplaces+=("$entry")
-  done < <(read_json "$manifest" | jq -r '.marketplaces | to_entries[] | "\(.key):\(.value.repo)"')
+  done < <(read_json "$manifest" | jq -r --arg role "$ROLE" '.marketplaces | to_entries[] | select((.value.excludeRoles // []) | index($role) | not) | "\(.key):\(.value.repo):\(.value.autoUpdate // false)"')
 
   # Read existing marketplaces or start with empty object
   local current_marketplaces="{}"
@@ -604,12 +604,19 @@ configure_marketplaces() {
   local updated=false
 
   for entry in "${marketplaces[@]}"; do
-    IFS=':' read -r marketplace_id github_repo <<< "$entry"
+    IFS=':' read -r marketplace_id github_repo auto_update <<< "$entry"
     local install_location="$marketplaces_dir/$marketplace_id"
 
     # Check if marketplace already exists in JSON
     if echo "$current_marketplaces" | jq -e ".[\"$marketplace_id\"]" > /dev/null 2>&1; then
       echo "  ✓ $marketplace_id (already configured)"
+      # Opt in to autoUpdate only when the key is absent, so a value set in
+      # /plugin (including an explicit false) is never overwritten.
+      if [ "$auto_update" = true ] && echo "$current_marketplaces" | jq -e --arg id "$marketplace_id" '.[$id] | has("autoUpdate") | not' > /dev/null; then
+        current_marketplaces=$(echo "$current_marketplaces" | jq --arg id "$marketplace_id" '.[$id].autoUpdate = true')
+        updated=true
+        echo "    ✓ Enabled autoUpdate"
+      fi
     else
       echo "  + Adding $marketplace_id..."
 
@@ -619,7 +626,8 @@ configure_marketplaces() {
         --arg repo "$github_repo" \
         --arg location "$install_location" \
         --arg timestamp "$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")" \
-        '. + {($id): {source: {source: "github", repo: $repo}, installLocation: $location, lastUpdated: $timestamp}}')
+        --argjson auto "$auto_update" \
+        '. + {($id): ({source: {source: "github", repo: $repo}, installLocation: $location, lastUpdated: $timestamp} + (if $auto then {autoUpdate: true} else {} end))}')
 
       updated=true
       echo "    ✓ Added to known_marketplaces.json"
