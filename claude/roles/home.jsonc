@@ -168,22 +168,6 @@
           },
         ],
       },
-      // Autofix lint on edited Python files. Fail-soft by construction: the
-      // command always exits 0 and discards output, so it can never block or
-      // annoy an edit. Runs only when the file's git repo has ruff config
-      // (ruff.toml, .ruff.toml, or [tool.ruff] in pyproject.toml), using ruff
-      // from PATH (mise shim) or falling back to uvx. `check --fix` only; no
-      // `ruff format`, so it never reflows code the edit didn't touch.
-      {
-        "matcher": "Edit|Write|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in *.py) ;; *) exit 0;; esac; [ -f \"$f\" ] || exit 0; root=$(git -C \"$(dirname \"$f\")\" rev-parse --show-toplevel 2>/dev/null) || exit 0; if [ -f \"$root/ruff.toml\" ] || [ -f \"$root/.ruff.toml\" ] || grep -q '^\\[tool\\.ruff' \"$root/pyproject.toml\" 2>/dev/null; then cd \"$root\" && { if command -v ruff >/dev/null 2>&1; then ruff check --fix --quiet \"$f\"; elif command -v uvx >/dev/null 2>&1; then uvx --quiet ruff check --fix --quiet \"$f\"; fi; } >/dev/null 2>&1; fi; exit 0",
-            "timeout": 30,
-          },
-        ],
-      },
     ],
     "SubagentStart": [
       {
