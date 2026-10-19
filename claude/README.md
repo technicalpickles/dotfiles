@@ -49,6 +49,7 @@ claude/
 │   └── xurl.jsonc         # X API (xurl / xtweet)
 ├── rules/                 # Topic-specific global instructions (symlinked per-file to ~/.claude/rules/;
 │                          #   role-scope one with a `dotpickles_role:` marker, see .claude/rules/claude-config.md)
+│   ├── commit-signing.md
 │   ├── sandbox-paths.md
 │   ├── taskwarrior.md
 │   └── worktrees.md
@@ -276,7 +277,7 @@ writes what only _this machine_ needs (so it must not be).
 GitHub repo) and named plugin `profiles` (`core`, `dev`; default `dev`). Two
 consumers read it:
 
-- `claudeconfig.sh` clones the marketplaces globally (`configure_marketplaces()`).
+- `claudeconfig.sh` clones the marketplaces globally (`configure_marketplaces()`). A marketplace with `"autoUpdate": true` gets that flag in `~/.claude/plugins/known_marketplaces.json` (set on new entries, and on existing ones only when the key is absent, so a value chosen in `/plugin` is never overwritten).
 - `cloud-project-setup.sh [DIR] [--profile NAME] [--dry-run]` writes a repo's
   **committed** `.claude/settings.json` (`extraKnownMarketplaces` + `enabledPlugins`)
   so Claude Code on the web picks the plugins up. It merges into existing settings

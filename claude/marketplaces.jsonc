@@ -7,6 +7,10 @@
   //                                (extraKnownMarketplaces + enabledPlugins) so
   //                                Claude Code on the web picks the plugins up.
   //
+  // "autoUpdate": true makes claudeconfig.sh write autoUpdate into
+  // ~/.claude/plugins/known_marketplaces.json (new entries, and existing ones
+  // that lack the key; an explicit false set in /plugin is left alone).
+  //
   // Marketplace KEYS here are the local aliases we choose. They are free-choice,
   // but enabledPlugins references them as "<plugin>@<key>", so the key in
   // "marketplaces" and the suffix in a profile entry must match. The plugin names
@@ -15,10 +19,23 @@
     // obra/superpowers-marketplace is the umbrella that bundles superpowers,
     // elements-of-style, superpowers-chrome, developing-for-claude-code, etc.
     // (NOT bare obra/superpowers, which is a single-plugin marketplace.)
-    "superpowers-marketplace": { "repo": "obra/superpowers-marketplace" },
+    "superpowers-marketplace": {
+      "repo": "obra/superpowers-marketplace",
+      "autoUpdate": true,
+    },
     "pickled-claude-plugins": {
       "repo": "technicalpickles/pickled-claude-plugins",
+      "autoUpdate": true,
     },
+    // Third-party marketplaces for plugins enabled by hand in /plugin. Not in
+    // any profile, so cloud-project-setup.sh ignores them; they are here so a
+    // fresh machine clones them and gets autoUpdate.
+    "crit": { "repo": "tomasz-tomczyk/crit", "autoUpdate": true },
+    "claude-community": {
+      "repo": "anthropics/claude-plugins-community",
+      "autoUpdate": true,
+    },
+    "devfast": { "repo": "devdotfast/whiteboard", "autoUpdate": true },
   },
 
   // Named plugin bundles. Each entry is "<plugin-name>@<marketplace-key>".
