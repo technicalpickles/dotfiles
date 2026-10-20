@@ -99,8 +99,8 @@ configure_marketplaces() {
       if jq -e --arg p "$pin_plugin" --arg sha "$pin_sha" '.plugins[] | select(.name == $p) | .source.sha == $sha' "$clone_manifest" > /dev/null; then
         echo "  ✓ $pin_plugin already pinned to ${pin_sha:0:8}"
       else
-        jq --arg p "$pin_plugin" --arg sha "$pin_sha" '(.plugins[] | select(.name == $p) | .source.sha) = $sha' "$clone_manifest" > "$clone_manifest.tmp" &&
-          mv "$clone_manifest.tmp" "$clone_manifest"
+        jq --arg p "$pin_plugin" --arg sha "$pin_sha" '(.plugins[] | select(.name == $p) | .source.sha) = $sha' "$clone_manifest" > "$clone_manifest.tmp" \
+          && mv "$clone_manifest.tmp" "$clone_manifest"
         echo "  ✓ Pinned $pin_plugin to ${pin_sha:0:8}"
         # Already-installed copies only move on update; harmless if not installed.
         if command_available claude; then
