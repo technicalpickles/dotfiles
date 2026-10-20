@@ -573,87 +573,9 @@ generate_settings() {
 
 generate_settings
 
-# Configure marketplaces (non-interactive)
-configure_marketplaces() {
-  echo "Configuring marketplaces..."
-
-  local known_marketplaces_file="$HOME/.claude/plugins/known_marketplaces.json"
-  local marketplaces_dir="$HOME/.claude/plugins/marketplaces"
-
-  # Ensure directories exist
-  mkdir -p "$marketplaces_dir"
-
-  # Marketplaces come from the shared manifest (single source of truth, also
-  # read by cloud-project-setup.sh). Format per line: "marketplace-id:owner/repo:autoUpdate".
-  local manifest="$DIR/claude/marketplaces.jsonc"
-  if [ ! -f "$manifest" ]; then
-    echo "Error: $manifest not found"
-    exit 1
-  fi
-  local marketplaces=()
-  while IFS= read -r entry; do
-    marketplaces+=("$entry")
-  done < <(read_json "$manifest" | jq -r --arg role "$ROLE" '.marketplaces | to_entries[] | select((.value.excludeRoles // []) | index($role) | not) | "\(.key):\(.value.repo):\(.value.autoUpdate // false)"')
-
-  # Read existing marketplaces or start with empty object
-  local current_marketplaces="{}"
-  if [ -f "$known_marketplaces_file" ]; then
-    current_marketplaces=$(cat "$known_marketplaces_file")
-  fi
-
-  local updated=false
-
-  for entry in "${marketplaces[@]}"; do
-    IFS=':' read -r marketplace_id github_repo auto_update <<< "$entry"
-    local install_location="$marketplaces_dir/$marketplace_id"
-
-    # Check if marketplace already exists in JSON
-    if echo "$current_marketplaces" | jq -e ".[\"$marketplace_id\"]" > /dev/null 2>&1; then
-      echo "  ✓ $marketplace_id (already configured)"
-      # Opt in to autoUpdate only when the key is absent, so a value set in
-      # /plugin (including an explicit false) is never overwritten.
-      if [ "$auto_update" = true ] && echo "$current_marketplaces" | jq -e --arg id "$marketplace_id" '.[$id] | has("autoUpdate") | not' > /dev/null; then
-        current_marketplaces=$(echo "$current_marketplaces" | jq --arg id "$marketplace_id" '.[$id].autoUpdate = true')
-        updated=true
-        echo "    ✓ Enabled autoUpdate"
-      fi
-    else
-      echo "  + Adding $marketplace_id..."
-
-      # Add marketplace entry to JSON
-      current_marketplaces=$(echo "$current_marketplaces" | jq \
-        --arg id "$marketplace_id" \
-        --arg repo "$github_repo" \
-        --arg location "$install_location" \
-        --arg timestamp "$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")" \
-        --argjson auto "$auto_update" \
-        '. + {($id): ({source: {source: "github", repo: $repo}, installLocation: $location, lastUpdated: $timestamp} + (if $auto then {autoUpdate: true} else {} end))}')
-
-      updated=true
-      echo "    ✓ Added to known_marketplaces.json"
-    fi
-
-    # Clone marketplace repo if not present
-    if [ ! -d "$install_location" ]; then
-      echo "  + Cloning $marketplace_id from $github_repo..."
-      if git clone "https://github.com/$github_repo.git" "$install_location" 2> /dev/null; then
-        echo "    ✓ Cloned successfully"
-      else
-        echo "    ✗ Failed to clone (continuing anyway)"
-      fi
-    else
-      echo "  ✓ $marketplace_id repository exists"
-    fi
-  done
-
-  # Write updated marketplaces JSON if changes were made
-  if [ "$updated" = true ]; then
-    echo "$current_marketplaces" | jq '.' > "$known_marketplaces_file"
-    echo "  ✓ Updated known_marketplaces.json"
-  fi
-}
-
-configure_marketplaces
+# Configure marketplaces (non-interactive). Lives in its own script so it can
+# run without the rest of this file (see claude/configure-marketplaces.sh).
+DOTPICKLES_ROLE="$ROLE" "$DIR/claude/configure-marketplaces.sh"
 
 # Register MCP servers into ~/.claude.json (user scope) from the shared
 # manifest. Claude owns ~/.claude.json's format, so we drive the `claude mcp`
