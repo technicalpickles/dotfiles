@@ -36,12 +36,7 @@
 	format = ssh
 [gpg "ssh"]
 	program = ssh-keygen
-# Tracked repos (pt's repos/) are often cloned over https://. With no
-# github.com credential helper here, those fetches fall through to the system
-# osxkeychain helper and pop a keychain password prompt on every pull. Send
-# them over SSH (through the relay) instead, so no helper is consulted.
-# gist.github.com is a different host, so this doesn't touch the gist
-# fallback below.
+# https:// remotes would otherwise hit the system osxkeychain helper and prompt for a password.
 [url "git@github.com:"]
 	insteadOf = https://github.com/
 # gist.github.com isn't in the agent-ssh-relay allowlist (config/gost/
