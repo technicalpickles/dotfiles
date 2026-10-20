@@ -262,7 +262,7 @@ A role that needs the private overlay sets `"requiresPrivateOverlay": true` (str
 These keys in `~/.claude/settings.json` are preserved across regenerations:
 
 - `enabledPlugins`: plugin activation state
-- `extraKnownMarketplaces`: managed by `configure_marketplaces()` in claudeconfig.sh
+- `extraKnownMarketplaces`: managed by `claude/configure-marketplaces.sh` (called by claudeconfig.sh)
 
 ## Per-repo project setup
 
@@ -277,7 +277,7 @@ writes what only _this machine_ needs (so it must not be).
 GitHub repo) and named plugin `profiles` (`core`, `dev`; default `dev`). Two
 consumers read it:
 
-- `claudeconfig.sh` clones the marketplaces globally (`configure_marketplaces()`). A marketplace with `"autoUpdate": true` gets that flag in `~/.claude/plugins/known_marketplaces.json` (set on new entries, and on existing ones only when the key is absent, so a value chosen in `/plugin` is never overwritten). A marketplace can set `"excludeRoles": [...]` to be skipped for those roles.
+- `claudeconfig.sh` clones the marketplaces globally (`claude/configure-marketplaces.sh`, which also runs standalone, e.g. from pickleton's `coder-setup.sh`). A marketplace with `"autoUpdate": true` gets that flag in `~/.claude/plugins/known_marketplaces.json` (set on new entries, and on existing ones only when the key is absent, so a value chosen in `/plugin` is never overwritten). A marketplace can set `"excludeRoles": [...]` to be skipped for those roles. A marketplace can set `"pin": {"plugin": ..., "sha": ...}` to hold one plugin at a commit (written into the cloned `marketplace.json`; only holds while `autoUpdate` stays false).
 - `cloud-project-setup.sh [DIR] [--profile NAME] [--dry-run]` writes a repo's
   **committed** `.claude/settings.json` (`extraKnownMarketplaces` + `enabledPlugins`)
   so Claude Code on the web picks the plugins up. It merges into existing settings
