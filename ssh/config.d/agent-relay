@@ -6,5 +6,5 @@
 # applies to every destination in an agent session -- the allowlist, not
 # this file, decides what's actually reachable. Add a git host by editing
 # the YAML, not by adding another Match block here.
-Match exec "test -n \"$CLAUDECODE\""
+Match exec "test -n \"$CLAUDECODE$AGENT_SESSION\""
   ProxyCommand /opt/homebrew/bin/ncat --proxy 127.0.0.1:1080 --proxy-type socks5 %h %p
