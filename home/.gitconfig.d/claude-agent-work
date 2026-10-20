@@ -36,6 +36,9 @@
 	format = ssh
 [gpg "ssh"]
 	program = ssh-keygen
+# https:// remotes would otherwise hit the system osxkeychain helper and prompt for a password.
+[url "git@github.com:"]
+	insteadOf = https://github.com/
 # gist.github.com isn't in the agent-ssh-relay allowlist (config/gost/
 # agent-ssh-relay.yml only lists github.com:22), so it still goes over
 # HTTPS via gh's credential helper.
