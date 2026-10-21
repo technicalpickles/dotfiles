@@ -28,12 +28,12 @@ case ${1:-} in
     "${t[@]}" send-keys -t "$session" "$* ; echo \"$marker:\$?\"" Enter
     for _ in $(seq 1 600); do
       out=$("${t[@]}" capture-pane -p -J -S -2000 -t "$session")
-      if grep -q "^$marker:" <<<"$out"; then
+      if grep -q "^$marker:" <<< "$out"; then
         awk -v m="$marker" '
           index($0, m ":") == 1 { split($0, a, ":"); print "EXIT:" a[2]; exit }
           seen { print }
           index($0, "echo \"" m) { seen = 1 }
-        ' <<<"$out"
+        ' <<< "$out"
         exit 0
       fi
       sleep 1
