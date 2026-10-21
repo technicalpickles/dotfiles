@@ -37,6 +37,16 @@ Treatments, strongest first. Pick the strongest one the tool can still work unde
 
 Tool-specific grants and env belong in per-tool profiles, not `common.sb`. Anything specific to an employer or a repo is layered on by the caller, outside this repo.
 
+### Tool profiles
+
+`bin/safe` picks the tool from `SAFE_TOOL`, else the basename of the command, and looks in `config/agent-safehouse/tools/`:
+
+- `<tool>.sb` is appended after `common.sb`.
+- `<tool>.sh` is sourced. It sets variables, lists the ones the tool needs in `SAFE_TOOL_ENV` (passed through safehouse's env strip), and may set `SAFE_SOCKET_DIRS` and `SAFE_XDG_ISOLATE=1`. `safe` creates the tool's private root (`~/.local/share/safe/<tool>`, mode 700) and grants it read-write.
+- `SAFE_XDG_ISOLATE=1` redirects `XDG_CACHE_HOME` and `XDG_STATE_HOME` into that root. Config and data stay real, because redirecting them hides mise config and installs. `MISE_CACHE_DIR` and `MISE_STATE_DIR` are pinned to their real locations first, so mise trust survives the redirect.
+
+First profiles: `prime-agent` (state dir, daemon and worker sockets, isolated cache and state) and `pi` (the plannotator grant, moved out of `common.sb`). `pi` doesn't isolate XDG yet: it hasn't been run under that to see what it needs. mcporter's grants also stay in `common.sb` until its users are known.
+
 ### Accepted exception: shared mise and bundler
 
 Agents must be able to run `mise install`, `bundle install` and dependency updates, and they do so routinely (after every new worktree, on every dependency bump). Making the shared install dirs read-only would block that, and warming them outside the sandbox would stop an agent from adding a missing tool mid-task.

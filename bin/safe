@@ -11,6 +11,10 @@
 #   SAFE_SOCKET_DIRS colon-separated dirs where the command may bind, accept on
 #                    and connect to unix sockets (daemons, worker IPC). Created
 #                    if missing. Safehouse has no flag for sockets.
+#   SAFE_TOOL        tool profile to use, when it isn't the command's basename
+#   SAFE_ROOT        where per-tool private roots live (default ~/.local/share/safe)
+#
+# Tool profiles live in config/agent-safehouse/tools/<name>.{sb,sh}.
 #
 # Safehouse has no global config file and no env var for --append-profile or
 # --enable, so this wrapper is how the overrides get applied. See
@@ -60,6 +64,67 @@ fi
 #                    cover.
 # Rationale and tradeoffs: doc/adr/0060-agent-safehouse-wrapper.md.
 
+# Tool profiles (ADR 0064): tools/<name>.sb is appended after common.sb, and
+# tools/<name>.sh is sourced to set env and grants. The tool is SAFE_TOOL, else
+# the basename of the command (the arg after `--`, or the first non-option arg).
+tool="${SAFE_TOOL:-}"
+if [ -z "$tool" ]; then
+  seen_dd=""
+  first=""
+  after_dd=""
+  for arg in "$@"; do
+    if [ -n "$seen_dd" ]; then
+      after_dd=$arg
+      break
+    fi
+    case $arg in
+      --) seen_dd=1 ;;
+      -*) ;;
+      *) [ -n "$first" ] || first=$arg ;;
+    esac
+  done
+  tool=$(basename "${after_dd:-$first}")
+fi
+case $tool in *[!A-Za-z0-9._-]*) tool="" ;; esac
+
+tool_profile=""
+if [ -n "$tool" ] && [ -f "$profiles/tools/$tool.sh" ]; then
+  # The tool's private root: granted read-write, mode 700. A profile puts its
+  # state under it, and SAFE_XDG_ISOLATE puts cache and XDG state there too.
+  SAFE_TOOL_ROOT="${SAFE_ROOT:-$HOME/.local/share/safe}/$tool"
+  mkdir -p "$SAFE_TOOL_ROOT"
+  chmod 700 "$SAFE_TOOL_ROOT"
+  SAFEHOUSE_ADD_DIRS="${SAFEHOUSE_ADD_DIRS:+$SAFEHOUSE_ADD_DIRS:}$SAFE_TOOL_ROOT"
+  export SAFEHOUSE_ADD_DIRS
+
+  # A profile sets plain variables, lists the ones the tool needs in
+  # SAFE_TOOL_ENV (comma-separated, passed through the env strip), and may set
+  # SAFE_XDG_ISOLATE=1 and SAFE_SOCKET_DIRS.
+  SAFE_TOOL_ENV=""
+  SAFE_XDG_ISOLATE=""
+  # shellcheck disable=SC1090
+  . "$profiles/tools/$tool.sh"
+
+  if [ -n "$SAFE_XDG_ISOLATE" ]; then
+    # mise keeps trust and its download cache under XDG; pin them to the real
+    # dirs so redirecting XDG doesn't make every config untrusted.
+    : "${MISE_CACHE_DIR:=${XDG_CACHE_HOME:-$HOME/.cache}/mise}"
+    : "${MISE_STATE_DIR:=${XDG_STATE_HOME:-$HOME/.local/state}/mise}"
+    mkdir -p "$SAFE_TOOL_ROOT/cache" "$SAFE_TOOL_ROOT/state"
+    XDG_CACHE_HOME="$SAFE_TOOL_ROOT/cache"
+    XDG_STATE_HOME="$SAFE_TOOL_ROOT/state"
+    SAFE_TOOL_ENV="$SAFE_TOOL_ENV,XDG_CACHE_HOME,XDG_STATE_HOME,MISE_CACHE_DIR,MISE_STATE_DIR"
+  fi
+
+  old_ifs=$IFS
+  IFS=,
+  for name in $SAFE_TOOL_ENV; do
+    [ -n "$name" ] && export "$name"
+  done
+  IFS=$old_ifs
+fi
+[ -n "$tool" ] && [ -f "$profiles/tools/$tool.sb" ] && tool_profile="$profiles/tools/$tool.sb"
+
 # SAFE_SOCKET_DIRS becomes a generated profile between common and role, so role
 # denies still win. It needs cleanup afterwards, so that path can't exec.
 socket_profile=""
@@ -81,8 +146,9 @@ fi
 
 set -- \
   --enable=clipboard,keychain,launch-services \
-  --env-pass=SSH_AUTH_SOCK,GIT_CONFIG_GLOBAL \
+  --env-pass="SSH_AUTH_SOCK,GIT_CONFIG_GLOBAL${SAFE_TOOL_ENV:+,$SAFE_TOOL_ENV}" \
   --append-profile="$profiles/common.sb" \
+  ${tool_profile:+--append-profile="$tool_profile"} \
   ${socket_profile:+--append-profile="$socket_profile"} \
   ${role_profile:+"$role_profile"} \
   "$@"

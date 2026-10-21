@@ -1,0 +1,7 @@
+;; Safehouse overrides for `safe pi`. Appended by bin/safe after common.sb. See
+;; doc/adr/0064-isolation-policy-for-sandboxed-agents.md.
+
+;; plannotator pi extension: reads config.json, writes drafts/history/plans/sessions.
+(allow file-read* file-write*
+    (home-subpath "/.plannotator")
+)
