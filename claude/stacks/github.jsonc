@@ -81,7 +81,7 @@
     },
     "filesystem": {
       "allowWrite": [
-        "~/.config/gh",
+        // ~/.config/gh is deliberately not writable: config.yml aliases can be `!shell` commands.
         "~/.cache/gh",
         "~/.local/share/gh",
         "~/.local/state/gh",

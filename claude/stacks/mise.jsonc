@@ -37,7 +37,8 @@
     "filesystem": {
       "allowWrite": [
         "~/.local/share/mise",
-        "~/.config/mise",
+        // ~/.config/mise is deliberately not writable: config.toml and conf.d set PATH
+        // and can name tasks and hooks that run outside the sandbox later.
         "~/.local/state/mise",
         "~/.cache/mise",
         "~/Library/Caches/mise",

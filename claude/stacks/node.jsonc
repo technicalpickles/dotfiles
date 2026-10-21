@@ -49,7 +49,6 @@
       "allowWrite": [
         // npm
         "~/.npm",
-        "~/.config/npm",
         "~/.cache/npm",
         "~/.cache/node",
         "~/.node-gyp",
@@ -57,19 +56,17 @@
         "~/.config/configstore",
         "~/Library/Caches/npm",
         // pnpm
-        "~/.config/pnpm",
         "~/.pnpm-state",
         "~/.pnpm-store",
         "~/.local/share/pnpm",
         "~/.local/state/pnpm",
         "~/Library/pnpm",
         "~/Library/Caches/pnpm",
-        "~/Library/Preferences/pnpm",
         // yarn
-        "~/.yarn",
-        "~/.yarnrc",
-        "~/.yarnrc.yml",
-        "~/.config/yarn",
+        // The rc and config files (.yarnrc, .yarnrc.yml, ~/.config/{yarn,npm,pnpm}, pnpm's rc
+        // in Library/Preferences) are deliberately not writable: yarnPath and a global pnpmfile
+        // name code that runs on any later yarn or pnpm call outside the sandbox.
+        "~/.yarn/berry",
         "~/.cache/yarn",
         "~/Library/Caches/Yarn",
         // corepack
