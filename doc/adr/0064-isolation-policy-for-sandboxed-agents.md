@@ -43,7 +43,7 @@ Tool-specific grants and env belong in per-tool profiles, not `common.sb`. Anyth
 
 - `<tool>.sb` is appended after `common.sb`.
 - `<tool>.sh` is sourced. It sets variables, lists the ones the tool needs in `SAFE_TOOL_ENV` (passed through safehouse's env strip), and may set `SAFE_SOCKET_DIRS` and `SAFE_XDG_ISOLATE=1`. `safe` creates the tool's private root (`~/.local/share/safe/<tool>`, mode 700) and grants it read-write.
-- `SAFE_XDG_ISOLATE=1` redirects `XDG_CACHE_HOME` and `XDG_STATE_HOME` into that root. Config and data stay real, because redirecting them hides mise config and installs. `MISE_CACHE_DIR` and `MISE_STATE_DIR` are pinned to their real locations first, so mise trust survives the redirect.
+- `SAFE_XDG_ISOLATE=1` redirects `XDG_CACHE_HOME` and `XDG_STATE_HOME` into that root. Config and data stay real, because redirecting them hides mise config and installs. mise's trust state lives in its state dir, so the isolated copy is seeded one way from the real `trusted-configs` and `tracked-configs` (no-clobber, each run). Existing repos stay trusted, but a `mise trust` run by the tool lands in its own root and never in yours. On macOS mise's cache is `~/Library/Caches/mise`, not under XDG, so it stays shared.
 
 First profiles: `prime-agent` (state dir, daemon and worker sockets, isolated cache and state) and `pi` (the plannotator grant, moved out of `common.sb`). `pi` doesn't isolate XDG yet: it hasn't been run under that to see what it needs. mcporter's grants also stay in `common.sb` until its users are known.
 

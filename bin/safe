@@ -106,14 +106,17 @@ if [ -n "$tool" ] && [ -f "$profiles/tools/$tool.sh" ]; then
   . "$profiles/tools/$tool.sh"
 
   if [ -n "$SAFE_XDG_ISOLATE" ]; then
-    # mise keeps trust and its download cache under XDG; pin them to the real
-    # dirs so redirecting XDG doesn't make every config untrusted.
-    : "${MISE_CACHE_DIR:=${XDG_CACHE_HOME:-$HOME/.cache}/mise}"
-    : "${MISE_STATE_DIR:=${XDG_STATE_HOME:-$HOME/.local/state}/mise}"
-    mkdir -p "$SAFE_TOOL_ROOT/cache" "$SAFE_TOOL_ROOT/state"
+    real_mise_state="${XDG_STATE_HOME:-$HOME/.local/state}/mise"
+    mkdir -p "$SAFE_TOOL_ROOT/cache" "$SAFE_TOOL_ROOT/state/mise"
+    # mise trust lives in its state dir. Seed the isolated copy one way so
+    # existing repos stay trusted, without the tool being able to trust
+    # anything in the real one. -n keeps trust the tool added itself.
+    for trust_dir in trusted-configs tracked-configs; do
+      [ -d "$real_mise_state/$trust_dir" ] && cp -RPn "$real_mise_state/$trust_dir" "$SAFE_TOOL_ROOT/state/mise/" 2> /dev/null
+    done
     XDG_CACHE_HOME="$SAFE_TOOL_ROOT/cache"
     XDG_STATE_HOME="$SAFE_TOOL_ROOT/state"
-    SAFE_TOOL_ENV="$SAFE_TOOL_ENV,XDG_CACHE_HOME,XDG_STATE_HOME,MISE_CACHE_DIR,MISE_STATE_DIR"
+    SAFE_TOOL_ENV="$SAFE_TOOL_ENV,XDG_CACHE_HOME,XDG_STATE_HOME"
   fi
 
   old_ifs=$IFS
