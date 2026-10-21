@@ -22,11 +22,6 @@
     (remote unix-socket (path-literal (string-append HOME_DIR "/.ssh/agent/safehouse.sock")))
 )
 
-;; plannotator pi extension: reads config.json, writes drafts/history/plans/sessions.
-(allow file-read* file-write*
-    (home-subpath "/.plannotator")
-)
-
 ;; mcporter: scripts that call MCP servers through it read and refresh OAuth
 ;; tokens in its vault here, and write
 ;; schema caches, locks and daemon logs. The config is denied back: it names
