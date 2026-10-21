@@ -37,10 +37,11 @@
     },
     "filesystem": {
       "allowWrite": [
-        "~/go",
+        // ~/go/bin is on PATH, so only the module cache is writable. `go install` has to
+        // run outside the sandbox. ~/.config/go (go env, GOFLAGS) is also not writable.
+        "~/go/pkg",
         "~/.cache/go-build",
         "~/Library/Caches/go-build",
-        "~/.config/go",
         "~/.cache/golangci-lint",
         "~/Library/Caches/golangci-lint",
         "~/.local/share/go",

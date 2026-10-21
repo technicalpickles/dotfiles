@@ -49,7 +49,6 @@
       "allowWrite": [
         "~/.cache/uv",
         "~/.cache/pip",
-        "~/.config/uv",
         "~/.local/share/uv",
         "~/.local/state/uv",
         "~/Library/Caches/uv",

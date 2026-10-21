@@ -44,7 +44,14 @@
     // source: agent-safehouse
     "filesystem": {
       "allowWrite": [
-        "~/.cargo",
+        // ~/.cargo/bin is on PATH, and a new ~/.cargo/config.toml can set rustc-wrapper
+        // or runner, so only the dirs and lock files cargo builds need are writable.
+        // `cargo install` needs bin, so it has to run outside the sandbox.
+        "~/.cargo/registry",
+        "~/.cargo/git",
+        "~/.cargo/.global-cache",
+        "~/.cargo/.package-cache",
+        "~/.cargo/.package-cache-mutate",
         "~/.rustup",
         "~/.cache/cargo",
         "~/Library/Caches/cargo",
