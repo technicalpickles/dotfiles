@@ -61,3 +61,5 @@
 - [60. agent-safehouse-wrapper](0060-agent-safehouse-wrapper.md)
 - [61. hot-path-statusline-cost](0061-hot-path-statusline-cost.md)
 - [62. sync-taskwarrior-with-a-periodic-launchagent](0062-sync-taskwarrior-with-a-periodic-launchagent.md)
+- [63. per-invocation-grants-for-safe](0063-per-invocation-grants-for-safe.md)
+- [64. isolation-policy-for-sandboxed-agents](0064-isolation-policy-for-sandboxed-agents.md)

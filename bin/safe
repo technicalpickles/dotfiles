@@ -4,6 +4,14 @@
 #   safe pi
 #   safe --env-pass=OPENROUTER_API_KEY -- pi
 #
+# Per-invocation grants, for tools that need a little more than the roles give:
+#   SAFEHOUSE_ADD_DIRS / SAFEHOUSE_ADD_DIRS_RO / SAFEHOUSE_ENV_PASS
+#                    safehouse's own env knobs: read-write dirs, read-only dirs,
+#                    env var names to pass through
+#   SAFE_SOCKET_DIRS colon-separated dirs where the command may bind, accept on
+#                    and connect to unix sockets (daemons, worker IPC). Created
+#                    if missing. Safehouse has no flag for sockets.
+#
 # Safehouse has no global config file and no env var for --append-profile or
 # --enable, so this wrapper is how the overrides get applied. See
 # doc/adr/0060-agent-safehouse-wrapper.md.
@@ -51,9 +59,36 @@ fi
 #                    hatch (`open -a Terminal ...`) the role escape guards don't
 #                    cover.
 # Rationale and tradeoffs: doc/adr/0060-agent-safehouse-wrapper.md.
-exec safehouse \
+
+# SAFE_SOCKET_DIRS becomes a generated profile between common and role, so role
+# denies still win. It needs cleanup afterwards, so that path can't exec.
+socket_profile=""
+if [ -n "${SAFE_SOCKET_DIRS:-}" ]; then
+  socket_profile=$(mktemp "${TMPDIR:-/tmp}/safe-sockets.XXXXXX")
+  trap 'rm -f "$socket_profile"' EXIT
+  old_ifs=$IFS
+  IFS=:
+  for dir in $SAFE_SOCKET_DIRS; do
+    [ -n "$dir" ] || continue
+    mkdir -p "$dir"
+    dir=$(cd "$dir" && pwd -P)
+    printf '(allow network-bind (local unix-socket (subpath "%s")))\n' "$dir" >> "$socket_profile"
+    printf '(allow network-inbound (local unix-socket (subpath "%s")))\n' "$dir" >> "$socket_profile"
+    printf '(allow network-outbound (remote unix-socket (subpath "%s")))\n' "$dir" >> "$socket_profile"
+  done
+  IFS=$old_ifs
+fi
+
+set -- \
   --enable=clipboard,keychain,launch-services \
   --env-pass=SSH_AUTH_SOCK,GIT_CONFIG_GLOBAL \
   --append-profile="$profiles/common.sb" \
+  ${socket_profile:+--append-profile="$socket_profile"} \
   ${role_profile:+"$role_profile"} \
   "$@"
+
+if [ -z "$socket_profile" ]; then
+  exec safehouse "$@"
+fi
+safehouse "$@"
+exit $?

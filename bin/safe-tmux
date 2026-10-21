@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Drive a shell under `safe` from a detached tmux session, so commands can be
+# sent and output read back without an interactive terminal.
+#
+#   safe-tmux start [dir]      start the session (default dir: cwd)
+#   safe-tmux run <command>    send a command, wait for it, print its output and exit code
+#   safe-tmux capture          print the visible pane
+#   safe-tmux stop             kill the session
+#
+# SAFE_TMUX_CMD overrides what the session runs (default: `safe $SHELL`), e.g.
+# a wrapper that sets per-tool grants first. Uses its own tmux server (-L) so
+# it never touches an attached terminal's focus. Start it outside any agent
+# sandbox: safe can't nest.
+set -euo pipefail
+
+t=(tmux -L safe-tmux)
+session=safe-shell
+
+case ${1:-} in
+  start)
+    dir=$(cd "${2:-.}" && pwd)
+    "${t[@]}" new-session -d -s "$session" -x 200 -y 50 -c "$dir" "${SAFE_TMUX_CMD:-safe ${SHELL:-/bin/zsh}}"
+    ;;
+  run)
+    shift
+    marker="__DONE_$$_$RANDOM"
+    # The sentinel carries $? so the caller gets the exit code without parsing prompts.
+    "${t[@]}" send-keys -t "$session" "$* ; echo \"$marker:\$?\"" Enter
+    for _ in $(seq 1 600); do
+      out=$("${t[@]}" capture-pane -p -J -S -2000 -t "$session")
+      if grep -q "^$marker:" <<<"$out"; then
+        awk -v m="$marker" '
+          index($0, m ":") == 1 { split($0, a, ":"); print "EXIT:" a[2]; exit }
+          seen { print }
+          index($0, "echo \"" m) { seen = 1 }
+        ' <<<"$out"
+        exit 0
+      fi
+      sleep 1
+    done
+    echo "timed out waiting for: $*" >&2
+    exit 1
+    ;;
+  capture)
+    "${t[@]}" capture-pane -p -J -S -2000 -t "$session"
+    ;;
+  stop)
+    "${t[@]}" kill-session -t "$session"
+    ;;
+  *)
+    sed -n '2,12p' "${BASH_SOURCE[0]}" >&2
+    exit 2
+    ;;
+esac
