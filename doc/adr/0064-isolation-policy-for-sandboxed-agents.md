@@ -45,6 +45,12 @@ Tool-specific grants and env belong in per-tool profiles, not `common.sb`. Anyth
 - `<tool>.sh` is sourced. It sets variables, lists the ones the tool needs in `SAFE_TOOL_ENV` (passed through safehouse's env strip), and may set `SAFE_SOCKET_DIRS` and `SAFE_XDG_ISOLATE=1`. `safe` creates the tool's private root (`~/.local/share/safe/<tool>`, mode 700) and grants it read-write.
 - `SAFE_XDG_ISOLATE=1` redirects `XDG_CACHE_HOME` and `XDG_STATE_HOME` into that root. Config and data stay real, because redirecting them hides mise config and installs. mise's trust state lives in its state dir, so the isolated copy is seeded one way from the real `trusted-configs` and `tracked-configs` (no-clobber, each run). Existing repos stay trusted, but a `mise trust` run by the tool lands in its own root and never in yours. On macOS mise's cache is `~/Library/Caches/mise`, not under XDG, so it stays shared.
 
+### Role hooks
+
+`role-<role>.sb` is static, so the role also gets a hook: `role-<role>.sh` is sourced after the tool's `.sh` and can do what the tool hooks do (env, `SAFE_TOOL_ENV`, `SAFE_SOCKET_DIRS`) plus call `safe_profile_add '<rule>'` to append a generated rule to the profile `safe` builds for this run. `role-work.sh` uses both: it exports short-lived AWS credentials for `AWS_PROFILE` (skipped when unset, so `~/.aws` and its SSO token cache stay unreadable inside), and grants one docker socket when `SAFE_DOCKER=1`. `SAFE_FNOX_KEYS` (set by a hook or the caller) names secrets `safe` resolves with `fnox export` and passes through, so a caller doesn't need to wrap `safe` in `fnox exec`.
+
+Hooks run unsandboxed, so they are execute-later code. The work role's `role-work.sb` already denies sandbox writes to the dotfiles worktree they live in. Keep it that way for any new location.
+
 First profiles: `prime-agent` (the real `~/.prime/agent` shared, plus a private daemon socket, kernel venv and worker sockets) and `pi` (the plannotator grant, moved out of `common.sb`). Neither isolates XDG yet: pi hasn't been run under that to see what it needs, and dedicated caches are parked for later. mcporter's grants also stay in `common.sb` until its users are known.
 
 ### Accepted exception: agent state shared with the unsandboxed tool
