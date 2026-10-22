@@ -7,6 +7,9 @@
 : "${PRIME_AGENT_DAEMON_SOCKET:=$SAFE_TOOL_ROOT/daemon.sock}"
 : "${PRIME_AGENT_KERNEL_VENV:=$SAFE_TOOL_ROOT/kernel-venv}"
 
+# prime-agent needs a provider key. Set SAFE_FNOX_KEYS to something else (or empty) to change it.
+: "${SAFE_FNOX_KEYS=OPENROUTER_API_KEY}"
+
 DO_NOT_TRACK=1
 # Marks agent sessions for tools that behave differently under an agent; prime-agent sets no marker itself.
 AGENT_SESSION=1

@@ -29,6 +29,14 @@
     (home-subpath "/Library/Caches/dotslash")
 )
 
+;; Pre-commit hooks in Gusto's Ruby repos write tool caches (sorbet's gem-rbis
+;; died with EPERM). Rubocop's lives outside the bundler and rubygems dirs that
+;; safehouse's ruby profile already covers.
+(allow file-read* file-write*
+    (home-subpath "/.cache/sorbet")
+    (home-subpath "/.cache/rubocop_cache")
+)
+
 ;; Escape guard. The ~/pickleton grant above reaches files that run OUTSIDE
 ;; the sandbox later. Later rules win, so deny writes to them back:
 ;;  - the dotfiles worktree that ~/.pickles, ~/.gitconfig*, shell rc files,

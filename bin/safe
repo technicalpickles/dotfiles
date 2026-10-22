@@ -13,8 +13,12 @@
 #                    if missing. Safehouse has no flag for sockets.
 #   SAFE_TOOL        tool profile to use, when it isn't the command's basename
 #   SAFE_ROOT        where per-tool private roots live (default ~/.local/share/safe)
+#   SAFE_FNOX_KEYS   comma-separated secret names to resolve with `fnox export`
+#                    and pass through. Keys already in the environment win.
 #
-# Tool profiles live in config/agent-safehouse/tools/<name>.{sb,sh}.
+# Tool profiles live in config/agent-safehouse/tools/<name>.{sb,sh}. The role
+# can add a hook of its own, config/agent-safehouse/role-<role>.sh, sourced
+# after the tool's. Hooks run unsandboxed, so they're execute-later code (ADR 0064).
 #
 # Safehouse has no global config file and no env var for --append-profile or
 # --enable, so this wrapper is how the overrides get applied. See
@@ -87,8 +91,20 @@ if [ -z "$tool" ]; then
 fi
 case $tool in *[!A-Za-z0-9._-]*) tool="" ;; esac
 
+# Hooks call this to add generated rules (a socket grant, say). The file is
+# made on first use so the common case can still exec.
+generated_profile=""
+safe_profile_add() {
+  if [ -z "$generated_profile" ]; then
+    generated_profile=$(mktemp "${TMPDIR:-/tmp}/safe-generated.XXXXXX")
+    trap 'rm -f "$generated_profile"' EXIT
+  fi
+  printf '%s\n' "$1" >> "$generated_profile"
+}
+
 tool_profile=""
-if [ -n "$tool" ] && [ -f "$profiles/tools/$tool.sh" ]; then
+SAFE_TOOL_ROOT=""
+if [ -n "$tool" ]; then
   # The tool's private root: granted read-write, mode 700. A profile puts its
   # state under it, and SAFE_XDG_ISOLATE puts cache and XDG state there too.
   SAFE_TOOL_ROOT="${SAFE_ROOT:-$HOME/.local/share/safe}/$tool"
@@ -96,53 +112,77 @@ if [ -n "$tool" ] && [ -f "$profiles/tools/$tool.sh" ]; then
   chmod 700 "$SAFE_TOOL_ROOT"
   SAFEHOUSE_ADD_DIRS="${SAFEHOUSE_ADD_DIRS:+$SAFEHOUSE_ADD_DIRS:}$SAFE_TOOL_ROOT"
   export SAFEHOUSE_ADD_DIRS
+fi
 
-  # A profile sets plain variables, lists the ones the tool needs in
-  # SAFE_TOOL_ENV (comma-separated, passed through the env strip), and may set
-  # SAFE_XDG_ISOLATE=1 and SAFE_SOCKET_DIRS.
-  SAFE_TOOL_ENV=""
-  SAFE_XDG_ISOLATE=""
+# A hook sets plain variables, lists the ones the tool needs in SAFE_TOOL_ENV
+# (comma-separated, passed through the env strip, so append to it), and may set
+# SAFE_XDG_ISOLATE=1, SAFE_SOCKET_DIRS and SAFE_FNOX_KEYS, or call
+# safe_profile_add. The tool's hook runs first, then the role's.
+SAFE_TOOL_ENV=""
+SAFE_XDG_ISOLATE=""
+if [ -n "$tool" ] && [ -f "$profiles/tools/$tool.sh" ]; then
   # shellcheck disable=SC1090
   . "$profiles/tools/$tool.sh"
-
-  if [ -n "$SAFE_XDG_ISOLATE" ]; then
-    real_mise_state="${XDG_STATE_HOME:-$HOME/.local/state}/mise"
-    mkdir -p "$SAFE_TOOL_ROOT/cache" "$SAFE_TOOL_ROOT/state/mise"
-    # mise trust lives in its state dir. Seed the isolated copy one way so
-    # existing repos stay trusted, without the tool being able to trust
-    # anything in the real one. -n keeps trust the tool added itself.
-    for trust_dir in trusted-configs tracked-configs; do
-      [ -d "$real_mise_state/$trust_dir" ] && cp -RPn "$real_mise_state/$trust_dir" "$SAFE_TOOL_ROOT/state/mise/" 2> /dev/null
-    done
-    XDG_CACHE_HOME="$SAFE_TOOL_ROOT/cache"
-    XDG_STATE_HOME="$SAFE_TOOL_ROOT/state"
-    SAFE_TOOL_ENV="$SAFE_TOOL_ENV,XDG_CACHE_HOME,XDG_STATE_HOME"
-  fi
-
-  old_ifs=$IFS
-  IFS=,
-  for name in $SAFE_TOOL_ENV; do
-    [ -n "$name" ] && export "$name"
-  done
-  IFS=$old_ifs
 fi
+if [ -f "$profiles/role-$role.sh" ]; then
+  # shellcheck disable=SC1090
+  . "$profiles/role-$role.sh"
+fi
+
+if [ -n "$SAFE_FNOX_KEYS" ]; then
+  fnox_json=""
+  if command -v fnox > /dev/null 2>&1 && command -v jq > /dev/null 2>&1; then
+    fnox_json=$(fnox export -f json 2> /dev/null)
+  fi
+  for name in $(printf '%s' "$SAFE_FNOX_KEYS" | tr ',' ' '); do
+    case $name in *[!A-Za-z0-9_]*) continue ;; esac
+    if [ -z "$(printenv "$name")" ]; then
+      value=$(printf '%s' "$fnox_json" | jq -r --arg k "$name" '.secrets[$k] // empty' 2> /dev/null)
+      if [ -z "$value" ]; then
+        echo "safe: couldn't resolve $name with fnox" >&2
+        continue
+      fi
+      export "$name=$value"
+    fi
+    SAFE_TOOL_ENV="${SAFE_TOOL_ENV:+$SAFE_TOOL_ENV,}$name"
+  done
+  unset fnox_json value
+fi
+
+if [ -n "$tool" ] && [ -n "$SAFE_XDG_ISOLATE" ]; then
+  real_mise_state="${XDG_STATE_HOME:-$HOME/.local/state}/mise"
+  mkdir -p "$SAFE_TOOL_ROOT/cache" "$SAFE_TOOL_ROOT/state/mise"
+  # mise trust lives in its state dir. Seed the isolated copy one way so
+  # existing repos stay trusted, without the tool being able to trust
+  # anything in the real one. -n keeps trust the tool added itself.
+  for trust_dir in trusted-configs tracked-configs; do
+    [ -d "$real_mise_state/$trust_dir" ] && cp -RPn "$real_mise_state/$trust_dir" "$SAFE_TOOL_ROOT/state/mise/" 2> /dev/null
+  done
+  XDG_CACHE_HOME="$SAFE_TOOL_ROOT/cache"
+  XDG_STATE_HOME="$SAFE_TOOL_ROOT/state"
+  SAFE_TOOL_ENV="${SAFE_TOOL_ENV:+$SAFE_TOOL_ENV,}XDG_CACHE_HOME,XDG_STATE_HOME"
+fi
+
+old_ifs=$IFS
+IFS=,
+for name in $SAFE_TOOL_ENV; do
+  [ -n "$name" ] && export "$name"
+done
+IFS=$old_ifs
 [ -n "$tool" ] && [ -f "$profiles/tools/$tool.sb" ] && tool_profile="$profiles/tools/$tool.sb"
 
-# SAFE_SOCKET_DIRS becomes a generated profile between common and role, so role
-# denies still win. It needs cleanup afterwards, so that path can't exec.
-socket_profile=""
+# SAFE_SOCKET_DIRS goes into the generated profile, which sits between common
+# and role, so role denies still win.
 if [ -n "${SAFE_SOCKET_DIRS:-}" ]; then
-  socket_profile=$(mktemp "${TMPDIR:-/tmp}/safe-sockets.XXXXXX")
-  trap 'rm -f "$socket_profile"' EXIT
   old_ifs=$IFS
   IFS=:
   for dir in $SAFE_SOCKET_DIRS; do
     [ -n "$dir" ] || continue
     mkdir -p "$dir"
     dir=$(cd "$dir" && pwd -P)
-    printf '(allow network-bind (local unix-socket (subpath "%s")))\n' "$dir" >> "$socket_profile"
-    printf '(allow network-inbound (local unix-socket (subpath "%s")))\n' "$dir" >> "$socket_profile"
-    printf '(allow network-outbound (remote unix-socket (subpath "%s")))\n' "$dir" >> "$socket_profile"
+    safe_profile_add "(allow network-bind (local unix-socket (subpath \"$dir\")))"
+    safe_profile_add "(allow network-inbound (local unix-socket (subpath \"$dir\")))"
+    safe_profile_add "(allow network-outbound (remote unix-socket (subpath \"$dir\")))"
   done
   IFS=$old_ifs
 fi
@@ -152,11 +192,12 @@ set -- \
   --env-pass="SSH_AUTH_SOCK,GIT_CONFIG_GLOBAL${SAFE_TOOL_ENV:+,$SAFE_TOOL_ENV}" \
   --append-profile="$profiles/common.sb" \
   ${tool_profile:+--append-profile="$tool_profile"} \
-  ${socket_profile:+--append-profile="$socket_profile"} \
+  ${generated_profile:+--append-profile="$generated_profile"} \
   ${role_profile:+"$role_profile"} \
   "$@"
 
-if [ -z "$socket_profile" ]; then
+# A generated profile needs cleanup afterwards, so that path can't exec.
+if [ -z "$generated_profile" ]; then
   exec safehouse "$@"
 fi
 safehouse "$@"
