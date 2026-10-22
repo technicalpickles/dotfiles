@@ -37,6 +37,15 @@
     (home-subpath "/.cache/rubocop_cache")
 )
 
+;; Skills that live in the Obsidian vault and are symlinked into
+;; ~/.prime/agent/skills. Seatbelt checks the resolved path, so the link alone
+;; isn't enough: without this read, prime-agent gets EPERM on the skill's
+;; SKILL.md. Read-only, scoped to the one skill rather than the vault. The
+;; vault path is per machine, hence per role.
+(allow file-read*
+    (home-subpath "/Vaults/pickled-knowledge/2.🏡 Areas/writing/writing-voice")
+)
+
 ;; Escape guard. The ~/pickleton grant above reaches files that run OUTSIDE
 ;; the sandbox later. Later rules win, so deny writes to them back:
 ;;  - the dotfiles worktree that ~/.pickles, ~/.gitconfig*, shell rc files,
