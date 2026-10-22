@@ -45,7 +45,11 @@ Tool-specific grants and env belong in per-tool profiles, not `common.sb`. Anyth
 - `<tool>.sh` is sourced. It sets variables, lists the ones the tool needs in `SAFE_TOOL_ENV` (passed through safehouse's env strip), and may set `SAFE_SOCKET_DIRS` and `SAFE_XDG_ISOLATE=1`. `safe` creates the tool's private root (`~/.local/share/safe/<tool>`, mode 700) and grants it read-write.
 - `SAFE_XDG_ISOLATE=1` redirects `XDG_CACHE_HOME` and `XDG_STATE_HOME` into that root. Config and data stay real, because redirecting them hides mise config and installs. mise's trust state lives in its state dir, so the isolated copy is seeded one way from the real `trusted-configs` and `tracked-configs` (no-clobber, each run). Existing repos stay trusted, but a `mise trust` run by the tool lands in its own root and never in yours. On macOS mise's cache is `~/Library/Caches/mise`, not under XDG, so it stays shared.
 
-First profiles: `prime-agent` (state dir, daemon and worker sockets, isolated cache and state) and `pi` (the plannotator grant, moved out of `common.sb`). `pi` doesn't isolate XDG yet: it hasn't been run under that to see what it needs. mcporter's grants also stay in `common.sb` until its users are known.
+First profiles: `prime-agent` (the real `~/.prime/agent` shared, plus a private daemon socket, kernel venv and worker sockets) and `pi` (the plannotator grant, moved out of `common.sb`). Neither isolates XDG yet: pi hasn't been run under that to see what it needs, and dedicated caches are parked for later. mcporter's grants also stay in `common.sb` until its users are known.
+
+### Accepted exception: agent state shared with the unsandboxed tool
+
+An agent's own state dir (`~/.pi`, `~/.prime/agent`) is shared read-write, so sessions and settings are one history whether or not the run was sandboxed. Safehouse's built-in `pi.sb` already does this for pi; `prime-agent` follows it. Two things stay private anyway: the daemon socket (a sandboxed and an unsandboxed run must not attach to each other's daemon) and the kernel venv (code the tool imports, which an unsandboxed run would otherwise execute). Known gaps: runtime files in the shared dir (session leases, worker dirs) are common to both, and a credential written by `/login` is readable inside the sandbox.
 
 ### Accepted exception: shared mise and bundler
 
