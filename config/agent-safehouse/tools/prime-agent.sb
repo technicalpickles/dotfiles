@@ -1,0 +1,9 @@
+;; Safehouse overrides for `safe prime-agent`. Appended by bin/safe after
+;; common.sb. See doc/adr/0064-isolation-policy-for-sandboxed-agents.md.
+
+;; Agent state: sessions, settings, skills, models. Shared with an unsandboxed
+;; prime-agent on purpose, like ~/.pi for pi. The kernel venv and daemon socket
+;; are redirected into the private root by tools/prime-agent.sh instead.
+(allow file-read* file-write*
+    (home-subpath "/.prime/agent")
+)
