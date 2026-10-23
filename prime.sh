@@ -2,6 +2,8 @@
 
 set -e
 
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # shellcheck source=./functions.sh
 source ./functions.sh
 
@@ -18,6 +20,9 @@ fi
 agent_dir="$HOME/.prime/agent"
 mkdir -p "$agent_dir/skills"
 echo "  📁 ~/.prime/agent -> ready"
+
+# Model providers: local Ollama (cloud models ride through it).
+link prime/models.json "$agent_dir/models.json"
 
 # Skills from skills.sh (the lockfile ones) already reach prime-agent through
 # ~/.agents/skills. These are vault-local, so they get linked here.

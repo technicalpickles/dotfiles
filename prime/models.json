@@ -1,0 +1,19 @@
+{
+  // Local Ollama, which also serves cloud models (:cloud, -cloud) after
+  // `ollama signin`. The server holds the sign-in, so no real key lives here:
+  // apiKey is required by prime-agent but Ollama ignores it. Linked to
+  // ~/.prime/agent/models.json by prime.sh.
+  "providers": {
+    "ollama": {
+      "baseUrl": "http://localhost:11434/v1",
+      "api": "openai-completions",
+      "apiKey": "ollama",
+      "models": [
+        { "id": "glm-5.2:cloud" },
+        { "id": "mistral-large-3:675b-cloud" },
+        { "id": "devstral-small-2:24b-cloud" },
+        { "id": "gemma4-composer-64k:latest", "contextWindow": 65536 }
+      ]
+    }
+  }
+}
