@@ -141,6 +141,7 @@ if ! running_codespaces; then
   ./bash.sh
   ./skills.sh
   ./herdr.sh
+  ./prime.sh
 fi
 
 echo "✅ Done"

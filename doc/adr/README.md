@@ -63,3 +63,4 @@
 - [62. sync-taskwarrior-with-a-periodic-launchagent](0062-sync-taskwarrior-with-a-periodic-launchagent.md)
 - [63. per-invocation-grants-for-safe](0063-per-invocation-grants-for-safe.md)
 - [64. isolation-policy-for-sandboxed-agents](0064-isolation-policy-for-sandboxed-agents.md)
+- [65. prime-agent-setup-in-dotfiles](0065-prime-agent-setup-in-dotfiles.md)
