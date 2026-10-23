@@ -1,6 +1,7 @@
 {
   // Local Ollama, which also serves cloud models (:cloud, -cloud) after
-  // `ollama signin`. The server holds the sign-in, so no real key lives here:
+  // `ollama signin`. Newest of each family; a :cloud name works without a pull,
+  // and retired models error with a suggested replacement. The server holds the sign-in, so no real key lives here:
   // apiKey is required by prime-agent but Ollama ignores it. Linked to
   // ~/.prime/agent/models.json by prime.sh.
   "providers": {
@@ -9,10 +10,14 @@
       "api": "openai-completions",
       "apiKey": "ollama",
       "models": [
-        { "id": "glm-5.2:cloud" },
-        { "id": "mistral-large-3:675b-cloud" },
-        { "id": "devstral-small-2:24b-cloud" },
-        { "id": "gemma4-composer-64k:latest", "contextWindow": 65536 }
+        { "id": "glm-5.3:cloud" },
+        { "id": "kimi-k3:cloud" },
+        { "id": "minimax-m3.1-flash:cloud" },
+        { "id": "mistral-large-4:cloud" },
+        { "id": "deepseek-v4.1-flash:cloud" },
+        { "id": "gpt-oss:120b-cloud" },
+        { "id": "nemotron-3-ultra:cloud" },
+        { "id": "gemma4:31b-cloud" }
       ]
     }
   }
