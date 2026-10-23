@@ -10,3 +10,11 @@
 (allow file-read*
     (home-subpath "/github.com/technicalpickles/dotfiles")
 )
+
+;; Skills that live in the Obsidian vault and are symlinked into
+;; ~/.prime/agent/skills by prime.sh. Seatbelt checks the resolved path, so the
+;; link alone isn't enough: prime-agent gets EPERM on the skill's SKILL.md.
+;; Read-only, scoped to the one skill rather than the vault.
+(allow file-read*
+    (home-subpath "/Vaults/pickled-knowledge/2.🏡 Areas/writing/writing-voice")
+)
