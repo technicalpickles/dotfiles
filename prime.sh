@@ -21,8 +21,14 @@ agent_dir="$HOME/.prime/agent"
 mkdir -p "$agent_dir/skills"
 echo "  📁 ~/.prime/agent -> ready"
 
-# Model providers: local Ollama (cloud models ride through it).
-link prime/models.json "$agent_dir/models.json"
+# Model providers are per role: prime/models.<role>.json (home is local Ollama,
+# whose cloud models ride through it). A role with no file gets no models.json,
+# so it keeps whatever /login or its safe hook provides.
+if [ -f "$DIR/prime/models.$DOTPICKLES_ROLE.json" ]; then
+  link "prime/models.$DOTPICKLES_ROLE.json" "$agent_dir/models.json"
+else
+  echo "  ⏭  models.json -> none for role $DOTPICKLES_ROLE, skipping"
+fi
 
 # Skills from skills.sh (the lockfile ones) already reach prime-agent through
 # ~/.agents/skills. These are vault-local, so they get linked here.
