@@ -39,6 +39,7 @@ claude/
 │   ├── nvim.jsonc         # Neovim cache
 │   ├── obsidian.jsonc     # Obsidian vault / second-brain
 │   ├── openrouter.jsonc   # OpenRouter model gateway
+│   ├── portool.jsonc      # portool worktree port ledger
 │   ├── python.jsonc       # Python ecosystem (pip, uv, pytest)
 │   ├── ruby.jsonc         # Ruby ecosystem (bundle, rake, rspec)
 │   ├── rust.jsonc         # Rust ecosystem (cargo, rustup)
