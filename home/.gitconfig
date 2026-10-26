@@ -4,5 +4,10 @@
 	path = ~/.gitconfig.d/alias
 	path = ~/.gitconfig.d/color
 
+# Interactive only. claude-agent-* include common but not this file, and git
+# can't turn push.autoSetupRemote back off once any config sets it true.
+[push]
+	autoSetupRemote = true
+
 [includeIf "gitdir:/usr/local/Homebrew/"]
 	path = ~/.gitconfig.d/home-identity
