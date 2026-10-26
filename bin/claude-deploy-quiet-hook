@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Claude Code PreToolUse hook (Bash). Before `just deploy-openclaw` or
+# `just deploy-brineworks-server`, ask picklelab whether a Brent (Telegram bot)
+# session was active recently. Both deploys restart the service that a live
+# turn is running on, so a busy answer turns the tool call into a permission
+# prompt instead of letting auto mode wave it through. The deploy script runs
+# the same check on the host (picklehome ADR 0003); this hook only moves the
+# question earlier, to where a human can answer it.
+#
+# Wired from claude/roles/home.jsonc with `"if": "Bash(just deploy-*)"`, so it
+# runs only for deploy recipes; everything but the two Brent services exits 0
+# here without talking to picklelab.
+#
+# Exit 0 with no output means "no opinion": the classifier and the host-side
+# check still apply. Any failure to reach picklelab is reported as context,
+# never as a block, because the deploy script re-checks on the host anyway.
+#
+# Env: PICKLEHOME_DIR (default ~/github.com/technicalpickles/picklehome),
+# PICKLEHOME_DEPLOY_HOST (default picklelab), HOMELAB_DEPLOY_QUIET_MINUTES (default 5).
+set -uo pipefail
+
+input=$(cat)
+cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null) || exit 0
+
+case "$cmd" in
+    *"just deploy-openclaw"*|*"just deploy-brineworks-server"*) ;;
+    *) exit 0 ;;
+esac
+
+# The override in the command means the user already chose. Asking again would
+# turn an explicit "deploy even if busy" into a second prompt.
+case "$cmd" in
+    *HOMELAB_DEPLOY_EVEN_IF_BUSY=1*) exit 0 ;;
+esac
+
+repo=${PICKLEHOME_DIR:-$HOME/github.com/technicalpickles/picklehome}
+script=$repo/homelab/scripts/openclaw-quiet.sh
+[ -r "$script" ] || exit 0
+host=${PICKLEHOME_DEPLOY_HOST:-picklelab}
+minutes=${HOMELAB_DEPLOY_QUIET_MINUTES:-5}
+case "$minutes" in *[!0-9]*|'') minutes=5 ;; esac
+
+# The script runs on the host (docker exec is local there). Feeding it over
+# stdin keeps the check in one file, the same way `just openclaw-quiet` does.
+out=$(ssh -o BatchMode=yes -o ConnectTimeout=10 "$host" "bash -s -- $minutes" <"$script" 2>&1)
+rc=$?
+
+case $rc in
+    0)
+        exit 0
+        ;;
+    75)
+        jq -cn --arg out "$out" '{
+            hookSpecificOutput: {
+                hookEventName: "PreToolUse",
+                permissionDecision: "ask",
+                permissionDecisionReason: ("Brent is active on picklelab; this deploy restarts the service under a live turn.\n" + $out + "\nApprove to deploy anyway, or wait and retry.")
+            }
+        }'
+        ;;
+    *)
+        jq -cn --arg out "$out" --arg rc "$rc" '{
+            hookSpecificOutput: {
+                hookEventName: "PreToolUse",
+                additionalContext: ("The Brent quiet check could not run from this Mac (exit " + $rc + "); the deploy script repeats it on picklelab, so a busy host still refuses there.\n" + $out)
+            }
+        }'
+        ;;
+esac
