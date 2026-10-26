@@ -10,7 +10,7 @@ claude/
 ├── mcp-servers.jsonc      # MCP servers registered into ~/.claude.json (see below)
 ├── roles/
 │   ├── base.jsonc                # Core settings, base permissions, sandbox scalars
-│   ├── home.jsonc                # Home role: agent git identity env, sandbox rules
+│   ├── home.jsonc                # Home role: agent git identity env, sandbox off (ADR 0066)
 │   ├── work.jsonc                # Work role: AWS/Bedrock env, work permissions
 │   ├── work-coder.jsonc          # Coder workspace: sandbox off, no agent id
 │   ├── container.jsonc           # Local container placeholder
