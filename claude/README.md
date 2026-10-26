@@ -10,7 +10,7 @@ claude/
 ├── mcp-servers.jsonc      # MCP servers registered into ~/.claude.json (see below)
 ├── roles/
 │   ├── base.jsonc                # Core settings, base permissions, sandbox scalars
-│   ├── home.jsonc                # Home role: agent git identity env, sandbox rules
+│   ├── home.jsonc                # Home role: agent git identity env, sandbox off (ADR 0066)
 │   ├── work.jsonc                # Work role: AWS/Bedrock env, work permissions
 │   ├── work-coder.jsonc          # Coder workspace: sandbox off, no agent id
 │   ├── container.jsonc           # Local container placeholder
@@ -39,6 +39,7 @@ claude/
 │   ├── nvim.jsonc         # Neovim cache
 │   ├── obsidian.jsonc     # Obsidian vault / second-brain
 │   ├── openrouter.jsonc   # OpenRouter model gateway
+│   ├── portool.jsonc      # portool worktree port ledger
 │   ├── python.jsonc       # Python ecosystem (pip, uv, pytest)
 │   ├── ruby.jsonc         # Ruby ecosystem (bundle, rake, rspec)
 │   ├── rust.jsonc         # Rust ecosystem (cargo, rustup)
@@ -126,6 +127,7 @@ When you run `./claudeconfig.sh`:
 5. **Deduplication**: permissions and sandbox arrays sorted and deduplicated. `autoMode` arrays are deduplicated but **never sorted** -- order carries meaning there
 6. **Local keys**: `enabledPlugins`, `extraKnownMarketplaces` preserved from existing `~/.claude/settings.json`
 7. **Validation and write**
+8. **herdr Claude integration**: if `herdr` is on PATH, `herdr integration install claude` runs against the freshly written file, adding its `SessionStart` hook so herdr can `claude --resume` each pane after a server restart. herdr owns that entry and `~/.claude/hooks/herdr-agent-state.sh`; don't copy them into a role
 
 ## Common Tasks
 

@@ -52,7 +52,10 @@
     "GIT_SSH_COMMAND": "ssh",
   },
 
+  // Sandbox off for the home role (ADR 0066). The allowlists below are
+  // inert while it's off; they stay so flipping "enabled" back is one line.
   "sandbox": {
+    "enabled": false,
     "network": {
       "allowedDomains": [
         "brineworks.tail2023b7.ts.net",
