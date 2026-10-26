@@ -21,6 +21,17 @@
 	path = ~/.gitconfig.d/alias
 	path = ~/.gitconfig.d/color
 	path = ~/.gitconfig.d/signing
+# No upstream tracking for agent branches. Tracking lives in .git/config,
+# which the Claude Code sandbox and safehouse's role-work.sb deny, so a
+# command that writes it fails after the push or ref change already landed
+# (206 denials across 143 sessions, 2026-08-06 to 2026-10-26). autoSetupMerge
+# = false stops `git switch -c x origin/x` from writing it.
+# push.autoSetupRemote = true lives in home/.gitconfig, not common, because a
+# later `false` here can't undo it (git ORs it into a flag). push.default =
+# current from common already pushes to the same-named branch, so agents don't
+# need tracking.
+[branch]
+	autoSetupMerge = false
 [user]
 	email = josh.nichols+agent@gusto.com
 	signingkey = ~/.ssh/agents/work/id_ed25519.pub
