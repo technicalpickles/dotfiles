@@ -23,6 +23,8 @@ The work role also links a vault-held skill into `~/.prime/agent/skills`, and no
 - `role-home.sb` grants the read-only access to each linked vault skill, as `role-work.sb` does. Seatbelt checks the resolved path, so the link alone isn't enough. Adding a skill to `prime.sh` means adding its grant to both role files that apply.
 - Home authenticates with `/login` inside prime-agent, not fnox. The credential lands in `~/.prime/agent`, which ADR 0064 already lists as a known gap for shared agent state. The fnox default for `OPENROUTER_API_KEY` now applies to the other roles only.
 
+- Model providers are per role: `prime.sh` links `prime/models.<role>.json` to `~/.prime/agent/models.json` and skips roles without one. Home has local Ollama (`bin/prime-models` generates the list). Work has no file, since it has no local Ollama.
+
 ## Consequences
 
 - A fresh home machine runs `./install.sh` (or just `./prime.sh`), then `prime-agent` once to `/login`.

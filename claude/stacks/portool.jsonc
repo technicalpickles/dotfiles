@@ -1,0 +1,16 @@
+{
+  // portool, the per-worktree port ledger (cargo install portool). Its git
+  // post-checkout/post-merge hooks run `portool sync`, which rewrites the global
+  // ledger under ~/.local/state/portool. Without this entry every sync in an
+  // agent session fails with Operation not permitted, the hook swallows it, and
+  // the worktree's .env.portool silently keeps stale ports: brineworks worktrees
+  // then fell back to main's shared Postgres (taskwarrior fc672ed3).
+  "permissions": {
+    "allow": ["Bash(portool:*)"],
+  },
+  "sandbox": {
+    "filesystem": {
+      "allowWrite": ["~/.local/state/portool"],
+    },
+  },
+}

@@ -78,7 +78,7 @@ if [ "$DOTPICKLES_ROLE" = "work-coder" ]; then
   export PATH="$HOME/.local/bin:$PATH"
   if command_available mise; then
     echo "🧰 installing tools with mise"
-    mise_tools="github:fish-shell/fish-shell herdr yq worktrunk github:hmans/beans github:dolthub/dolt"
+    mise_tools="github:fish-shell/fish-shell herdr yq worktrunk github:hmans/beans github:dolthub/dolt neovim"
     command_available git-lfs || mise_tools="$mise_tools git-lfs"
     # shellcheck disable=SC2086
     mise use --global $mise_tools || echo "  ⚠ mise use failed" >&2
@@ -92,6 +92,12 @@ if [ "$DOTPICKLES_ROLE" = "work-coder" ]; then
   # Only symlinks.sh links this, and install.sh doesn't run it; link_directory_contents skips config/herdr.
   mkdir -p "$HOME/.config/herdr"
   link config/herdr/config.toml "$HOME/.config/herdr/config.toml"
+
+  # nvim config is its own repo (ADR 0022); clone and symlink it by hand since there's no brew here.
+  if [ ! -d "$HOME/workspace/pickled-lazyvim" ]; then
+    git clone https://github.com/technicalpickles/pickled-lazyvim.git "$HOME/workspace/pickled-lazyvim" || echo "  ⚠ pickled-lazyvim clone failed" >&2
+  fi
+  [ -d "$HOME/workspace/pickled-lazyvim" ] && ln -sfn "$HOME/workspace/pickled-lazyvim" "$HOME/.config/nvim"
 fi
 
 echo

@@ -139,8 +139,6 @@ description = "open file from agent output"
 # redundant)
 [[keys.command]]
 key = "prefix+shift+n"
-type = "popup"
-command = "~/pickleton/herdr/bin/workspace-picker"
+type = "shell"
+command = "herdr plugin pane open --plugin pickleton.herdr --entrypoint picker"
 description = "switch pickletown workspace"
-width = "80%"
-height = "70%"
