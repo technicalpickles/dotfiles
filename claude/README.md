@@ -248,6 +248,8 @@ The `autoMode` block feeds the LLM classifier that adjudicates tool calls while 
 - An `allow`/`soft_deny`/`hard_deny` array without `$defaults` **replaces** the shipped rules instead of extending them. The generator prepends it if it is missing.
 - `environment` is header-grouped: `### Org-wide` and `### User-specific`, each holding `**Label**: value` bullets from a fixed label list. The generator regroups by section after concatenating, and a later source's bullet **replaces** an earlier one with the same `**Label**`, in the earlier one's position.
 
+**Write `allow` and `soft_deny` entries as prose.** The classifier reads sentences, not permission patterns. An entry like `Bash(task:*) in technicalpickles/dotfiles` is permission-rule syntax; `claude auto-mode critique` flags it, and in practice `task <id> done` in other repos was still denied while that entry was in place. Say what the tool is, what is routine, and what still needs the user to have asked, and name the default label the entry overrides (for example "not External System Writes"). Run `claude auto-mode critique` after regenerating.
+
 **Where things go:**
 
 | Content                                           | File                                     |
