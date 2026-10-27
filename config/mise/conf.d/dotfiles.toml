@@ -22,6 +22,18 @@ fzf = "0.74.5"
 go = "1.26"
 node = "lts"
 "npm:markdownlint-cli2" = "0.22.0"
+# Renovate CLI, for `renovate-config-validator` and local `--dry-run=full` runs
+# against the repos the hosted app manages (config here: renovate.json).
+# trust_policy_excludes: renovate -> @yarnpkg/core -> @yarnpkg/libzip@3.2.2 was
+# published without provenance (3.2.0/3.2.1 had it), which trips mise's
+# no-downgrade trust policy. Vetted 2026-10-27: commit 2eb9830 is a Yarn Bot
+# release commit on yarnpkg/berry master with a matching tag, the tarball is
+# near-identical to 3.2.1 with no install scripts, and upstream confirms it as a
+# release-process slip (yarnpkg/berry#7182). Exact version only; drop the
+# exclude once libzip ships a release with provenance.
+"npm:renovate" = { version = "44.184.1", trust_policy_excludes = [
+  "@yarnpkg/libzip@3.2.2",
+] }
 # Claude Code statusline (claude/roles/base.jsonc). Installed here instead of
 # `npx -y ccstatusline@x.y.z` because npm startup alone cost 21-68% CPU per
 # refresh, per session. Pinned: bump on purpose.
