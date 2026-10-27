@@ -14,3 +14,5 @@ scratch
 .claude/actually-lsp.json
 .bk.yaml
 .claude/settings.local.json
+mise.local.toml
+.mise.local.toml
