@@ -67,7 +67,6 @@
     "pstack-claude": {
       "repo": "michael-denyer/pstack-claude",
       "autoUpdate": true,
-      "excludeRoles": ["work", "work-coder"],
     },
   },
 
