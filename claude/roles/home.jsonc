@@ -78,6 +78,21 @@
   // is real infrastructure (including physical-world effects: HVAC, the
   // garage door) and should get the same caution as any other prod system.
   "autoMode": {
+    // Deploys. `just deploy-*` from the picklehome checkout is the one deploy
+    // path to picklelab (pushes a clean main, then one ssh). picklehome's own
+    // .claude/settings.json pre-authorizes it, but only for sessions started
+    // in that repo; from ~/github.com the classifier's Production Deploy rule
+    // applied and wanted the message to spell out the deploy. Three real
+    // denials on "go ahead with merge and whatnot"-shaped asks; see
+    // taskwarrior 198edeb1.
+    //
+    // deploy-openclaw and deploy-brineworks-server are the consequential
+    // ones: both restart what a live Brent turn runs on. Their guard is not
+    // this rule but the host-side quiet check (picklehome ADR 0003) plus the
+    // PreToolUse hook below, which turns a busy host into a prompt.
+    "allow": [
+      "`just deploy-<service>`, run with the cwd (or a preceding `cd`) under `~/github.com/technicalpickles/picklehome` or one of its git worktrees, is the user's (Josh's) one documented deploy path to picklelab. The recipe pushes a clean `main` and then runs one ssh command on picklelab; that push and that ssh are part of the deploy, not separate Remote Shell Writes or pushes to judge on their own. When the user's message in this session asked to deploy, ship, release or roll out that service, or to merge and deploy its PR, the deploy is wanted even if the message did not spell out the `just` recipe; that is not Production Deploy without consent. This rule clears only the deploy: a merge step still falls under Merge Without Review, and the rule does not apply if the agent edited the `Justfile` or the deploy scripts it calls during this session. `deploy-openclaw` and `deploy-brineworks-server` restart Brent (the Telegram bot) and carry their own guard: the deploy refuses while a Brent session was active in the last 5 minutes and a PreToolUse hook asks the user first, so judge them the same way. `HOMELAB_DEPLOY_EVEN_IF_BUSY=1` is that guard's documented override: not a Safety Bypass Flag when the user said to deploy even if Brent is busy, and a Safety Bypass Flag otherwise. A deploy nobody asked for is still Production Deploy.",
+    ],
     "environment": [
       "### Org-wide",
       "**Trusted internal domains**: `brineworks.tail2023b7.ts.net` (Tailscale tailnet, this machine's own node) and `woodpecker.tail2023b7.ts.net` (Woodpecker CI, same tailnet) — both allowlisted in the sandbox above; nothing else is internal",
@@ -125,6 +140,24 @@
           {
             "type": "command",
             "command": "jq -c '(.tool_input.command // \"\") as $c | ($c | test(\"\\\\btask\\\\s+([0-9]{1,6})\\\\s+(done|annotate|modify|depends|delete|start|stop)\\\\b\")) as $risky | if $risky then ($c | capture(\"\\\\btask\\\\s+(?<id>[0-9]{1,6})\\\\s+(?<verb>done|annotate|modify|depends|delete|start|stop)\\\\b\")) as $m | {hookSpecificOutput:{hookEventName:\"PreToolUse\", permissionDecision:\"allow\", additionalContext:\"This mutates taskwarrior task \\($m.id) by its plain numeric ID (`\\($m.verb)`). Numeric IDs are reused as the pending list reorders -- if this ID was captured more than a couple of commands ago (or anything else touched taskwarrior in between), re-resolve it first: `task \\($m.id) info` (or re-grep by description) to confirm it still points at the task you mean. See the taskwarrior skill Durable references section.\"}} else {} end' 2>/dev/null || true",
+          },
+        ],
+      },
+      // Brent quiet gate. Before `just deploy-openclaw` / `just
+      // deploy-brineworks-server`, ask picklelab whether a Brent session was
+      // active in the last 5 minutes (homelab/scripts/openclaw-quiet.sh in
+      // picklehome, run over ssh). Busy becomes permissionDecision "ask", so
+      // auto mode cannot approve the deploy silently; quiet is no opinion.
+      // The deploy script repeats the check on the host, so this is the
+      // early, human-facing copy of the same gate, not the only one.
+      {
+        "matcher": "Bash",
+        "if": "Bash(just deploy-*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.pickles/bin/claude-deploy-quiet-hook",
+            "timeout": 45,
           },
         ],
       },

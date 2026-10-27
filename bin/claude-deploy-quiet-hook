@@ -20,17 +20,17 @@
 set -uo pipefail
 
 input=$(cat)
-cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null) || exit 0
+cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2> /dev/null) || exit 0
 
 case "$cmd" in
-    *"just deploy-openclaw"*|*"just deploy-brineworks-server"*) ;;
-    *) exit 0 ;;
+  *"just deploy-openclaw"* | *"just deploy-brineworks-server"*) ;;
+  *) exit 0 ;;
 esac
 
 # The override in the command means the user already chose. Asking again would
 # turn an explicit "deploy even if busy" into a second prompt.
 case "$cmd" in
-    *HOMELAB_DEPLOY_EVEN_IF_BUSY=1*) exit 0 ;;
+  *HOMELAB_DEPLOY_EVEN_IF_BUSY=1*) exit 0 ;;
 esac
 
 repo=${PICKLEHOME_DIR:-$HOME/github.com/technicalpickles/picklehome}
@@ -38,32 +38,32 @@ script=$repo/homelab/scripts/openclaw-quiet.sh
 [ -r "$script" ] || exit 0
 host=${PICKLEHOME_DEPLOY_HOST:-picklelab}
 minutes=${HOMELAB_DEPLOY_QUIET_MINUTES:-5}
-case "$minutes" in *[!0-9]*|'') minutes=5 ;; esac
+case "$minutes" in *[!0-9]* | '') minutes=5 ;; esac
 
 # The script runs on the host (docker exec is local there). Feeding it over
 # stdin keeps the check in one file, the same way `just openclaw-quiet` does.
-out=$(ssh -o BatchMode=yes -o ConnectTimeout=10 "$host" "bash -s -- $minutes" <"$script" 2>&1)
+out=$(ssh -o BatchMode=yes -o ConnectTimeout=10 "$host" "bash -s -- $minutes" < "$script" 2>&1)
 rc=$?
 
 case $rc in
-    0)
-        exit 0
-        ;;
-    75)
-        jq -cn --arg out "$out" '{
+  0)
+    exit 0
+    ;;
+  75)
+    jq -cn --arg out "$out" '{
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
                 permissionDecision: "ask",
                 permissionDecisionReason: ("Brent is active on picklelab; this deploy restarts the service under a live turn.\n" + $out + "\nApprove to deploy anyway, or wait and retry.")
             }
         }'
-        ;;
-    *)
-        jq -cn --arg out "$out" --arg rc "$rc" '{
+    ;;
+  *)
+    jq -cn --arg out "$out" --arg rc "$rc" '{
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
                 additionalContext: ("The Brent quiet check could not run from this Mac (exit " + $rc + "); the deploy script repeats it on picklelab, so a busy host still refuses there.\n" + $out)
             }
         }'
-        ;;
+    ;;
 esac
