@@ -36,6 +36,7 @@ Spotlight is kept enabled (Alfred requires it) but specific directories are excl
 - `bin/claude-status-line`: Status line wrapper (fixes Opus context window size, formats model name, wraps claude-powerline with capsule style)
 - `bin/claude-ollama`: Launch Claude Code with ollama models. Auto-sets `CLAUDE_CODE_AUTO_COMPACT_WINDOW` to 80% of the model's context_length (queried from ollama API). Use `OLLAMA_MODEL` env or pass model as first arg.
 - `bin/claude-permissions`: Query Claude Code permissions across all known config locations
+- `bin/claude-deploy-quiet-hook`: PreToolUse hook (Bash, wired in `claude/roles/home.jsonc` with `"if": "Bash(just deploy-*)"`). Before `just deploy-openclaw` or `just deploy-brineworks-server` it runs picklehome's `homelab/scripts/openclaw-quiet.sh` on picklelab over ssh; a Brent session active in the last 5 minutes (`HOMELAB_DEPLOY_QUIET_MINUTES`) comes back as `permissionDecision: ask`, so auto mode has to prompt instead of approving the restart silently. Quiet, a non-Brent service, or `HOMELAB_DEPLOY_EVEN_IF_BUSY=1` already in the command: no output, no opinion. An unreachable host is reported as context, never a block, since the deploy script repeats the check on the host (picklehome ADR 0003).
 - `bin/claude-with`: Run Claude with a named environment (isolated `CLAUDE_CONFIG_DIR` per env under `~/.local/share/claude-env/<name>/`)
 - `bin/analyze-claude-sessions`: Analyze Claude Code sessions (via cq) to identify projects and skill usage
 - `bin/ccusage-refresh`: Refresh ccusage cache (run by LaunchAgent every 5 min)
