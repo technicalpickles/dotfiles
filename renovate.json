@@ -1,0 +1,44 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "schedule": ["before 5am on monday"],
+  "minimumReleaseAge": "7 days",
+  "mise": {
+    "managerFilePatterns": ["/^config/mise/(config|conf\\.d/[^/]+)\\.toml$/"]
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "automerge": true
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "npm dev dependencies",
+      "automerge": true
+    },
+    {
+      "description": "mise strips the v prefix from github tags, but Renovate writes the raw tag back.",
+      "matchManagers": ["mise"],
+      "extractVersion": "^v?(?<version>.+)$"
+    },
+    {
+      "matchManagers": ["mise"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "mise tools",
+      "automerge": true
+    },
+    {
+      "description": "Pinned on purpose (see comments in config/mise/conf.d/dotfiles.toml): bump by hand, never automerge.",
+      "matchManagers": ["mise"],
+      "matchDepNames": [
+        "github:DeusData/codebase-memory-mcp",
+        "npm:ccstatusline"
+      ],
+      "groupName": null,
+      "automerge": false
+    }
+  ]
+}
