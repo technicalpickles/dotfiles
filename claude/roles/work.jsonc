@@ -1,6 +1,5 @@
 {
   // Work role settings (values from live settings, not stale source files)
-  "awsAuthRefresh": "aws sso login --profile $AWS_PROFILE",
   // Work role agent identity (mirrors home.jsonc, see ADR 0031).
   // Claude Code sessions under DOTPICKLES_ROLE=work commit and push as
   // josh.nichols+agent@gusto.com via the agent key at
@@ -12,6 +11,7 @@
     "GIT_CONFIG_GLOBAL": "~/.gitconfig.d/claude-agent-work",
     // too many
     "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
+    "GUSTO_CLAUDE_SETUP": "true",
     // Loses to the harness's injected GIT_SSH_COMMAND inside the sandbox --
     // the SessionStart hook below is what actually makes this stick. See
     // ADR 0055 and home.jsonc for the full explanation.
