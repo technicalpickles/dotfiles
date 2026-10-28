@@ -58,6 +58,11 @@
     "NODE_USE_ENV_PROXY": "1",
     // Dolt pings eventsapi.dolthub.com after every command; disable instead of allowlisting telemetry.
     "DOLT_DISABLE_EVENT_FLUSH": "1",
+    // Don't auto-load claude.ai connectors (Canva, Gmail, Slack, ...) into
+    // every session: about 4.4k tokens a turn for tools I rarely call. Found
+    // in the context pantry audit (2026-10-28). Toggle per session in the
+    // desktop app's connectors pane when one is actually needed.
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
   },
 
   // Auto mode classifier rules (see ADR 0056).
