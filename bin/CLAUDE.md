@@ -38,7 +38,6 @@ Spotlight stays enabled (Alfred needs it) with specific directories excluded. Se
 - `bin/claude-permissions`: query permissions across all Claude Code config locations
 - `bin/claude-deploy-quiet-hook`: PreToolUse hook on `just deploy-*` (wired in `claude/roles/home.jsonc`); returns `ask` when a Brent session was active in the last 5 minutes so auto mode prompts before restarting; `HOMELAB_DEPLOY_EVEN_IF_BUSY=1` in the command skips the check, and an unreachable host comes back as context, never a block (picklehome ADR 0003)
 - `bin/claude-with`: run Claude with a named, isolated `CLAUDE_CONFIG_DIR`
-- `bin/analyze-claude-sessions`: project and skill usage from cq
 - `bin/ccusage-refresh`: refresh the ccusage cache (LaunchAgent, every 5 min)
 - `bin/tmux-auto-rename-session`: name tmux sessions after their directory
 - `bin/setup-agent-ssh-key`, `bin/check-agent-ssh-key`: create and validate a per-role agent SSH identity ([ADR 0031](../doc/adr/0031-role-scoped-agent-git-identity.md))

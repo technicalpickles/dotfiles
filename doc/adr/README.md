@@ -66,3 +66,4 @@
 - [65. prime-agent-setup-in-dotfiles](0065-prime-agent-setup-in-dotfiles.md)
 - [66. turn-off-the-command-sandbox-for-the-home-role](0066-turn-off-the-command-sandbox-for-the-home-role.md)
 - [67. pin-global-mise-tools-and-leave-runtimes-to-projects](0067-pin-global-mise-tools-and-leave-runtimes-to-projects.md)
+- [68. role-scoped-plugin-disables-and-craftdesk-removal](0068-role-scoped-plugin-disables-and-craftdesk-removal.md)

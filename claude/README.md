@@ -19,7 +19,7 @@ claude/
 ├── stacks/
 │   ├── beans.jsonc        # Beans issue tracker
 │   ├── buildkite.jsonc    # Buildkite CI + bktide
-│   ├── claude.jsonc       # Claude Code's own docs, plugin cache, cq, plannotator
+│   ├── claude.jsonc       # Claude Code's own docs, plugin cache, cq
 │   ├── codebase-memory-mcp.jsonc # codebase-memory-mcp cache dir
 │   ├── colima.jsonc       # Colima container runtime
 │   ├── crit.jsonc         # crit code review tool (Tailscale remote-review pattern)
@@ -279,7 +279,7 @@ writes what only _this machine_ needs (so it must not be).
 GitHub repo) and named plugin `profiles` (`core`, `dev`; default `dev`). Two
 consumers read it:
 
-- `claudeconfig.sh` clones the marketplaces globally (`claude/configure-marketplaces.sh`, which also runs standalone, e.g. from pickleton's `coder-setup.sh`). A marketplace with `"autoUpdate": true` gets that flag in `~/.claude/plugins/known_marketplaces.json` (set on new entries, and on existing ones only when the key is absent, so a value chosen in `/plugin` is never overwritten). A marketplace can set `"excludeRoles": [...]` to be skipped for those roles. A marketplace can set `"pin": {"plugin": ..., "sha": ...}` to hold one plugin at a commit (written into the cloned `marketplace.json`; only holds while `autoUpdate` stays false).
+- `claudeconfig.sh` clones the marketplaces globally (`claude/configure-marketplaces.sh`, which also runs standalone, e.g. from pickleton's `coder-setup.sh`). A marketplace with `"autoUpdate": true` gets that flag in `~/.claude/plugins/known_marketplaces.json` (set on new entries, and on existing ones only when the key is absent, so a value chosen in `/plugin` is never overwritten). A marketplace can set `"excludeRoles": [...]` to be skipped for those roles. A marketplace can set `"pin": {"plugin": ..., "sha": ...}` to hold one plugin at a commit (written into the cloned `marketplace.json`; only holds while `autoUpdate` stays false). The top-level `"disabledPlugins"` map (`"<plugin>@<marketplace>": [roles]`) disables a plugin at user scope for those roles via `claude plugin disable` (`enabledPlugins` itself is local-only, so it can't live in a role file).
 - `cloud-project-setup.sh [DIR] [--profile NAME] [--dry-run]` writes a repo's
   **committed** `.claude/settings.json` (`extraKnownMarketplaces` + `enabledPlugins`)
   so Claude Code on the web picks the plugins up. It merges into existing settings
