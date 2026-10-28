@@ -120,6 +120,13 @@
     ],
   },
 
+  // Skill listing overrides. "user-invocable-only" hides a skill from the
+  // model (no listing cost, no auto-invocation) but keeps the /name command.
+  // eli5 is something I only ever type on purpose.
+  "skillOverrides": {
+    "eli5:eli5": "user-invocable-only",
+  },
+
   // Permissions: base safety rules
   "permissions": {
     "defaultMode": "auto",
