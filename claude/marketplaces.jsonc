@@ -73,14 +73,10 @@
   // Named plugin bundles. Each entry is "<plugin-name>@<marketplace-key>".
   "profiles": {
     // Core workflows only.
-    "core": [
-      "superpowers@superpowers-marketplace",
-      "elements-of-style@superpowers-marketplace",
-    ],
+    "core": ["superpowers@superpowers-marketplace"],
     // General-purpose coding set (default for personal repos).
     "dev": [
       "superpowers@superpowers-marketplace",
-      "elements-of-style@superpowers-marketplace",
       "git@pickled-claude-plugins",
       "ci-cd-tools@pickled-claude-plugins",
       "dev-tools@pickled-claude-plugins",
@@ -90,4 +86,11 @@
   },
 
   "defaultProfile": "dev",
+
+  // Plugins to disable at user scope, keyed "<plugin>@<marketplace-key>" with
+  // the roles that disable them. Applied by claude/configure-marketplaces.sh
+  // via `claude plugin disable`; roles not listed are left alone.
+  "disabledPlugins": {
+    "github-actions@pickled-claude-plugins": ["work", "work-coder"],
+  },
 }
