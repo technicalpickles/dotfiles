@@ -58,6 +58,11 @@
     "NODE_USE_ENV_PROXY": "1",
     // Dolt pings eventsapi.dolthub.com after every command; disable instead of allowlisting telemetry.
     "DOLT_DISABLE_EVENT_FLUSH": "1",
+    // Don't auto-load claude.ai connectors (Canva, Gmail, Slack, ...) into
+    // every session: about 4.4k tokens a turn for tools I rarely call. Found
+    // in the context pantry audit (2026-10-28). Toggle per session in the
+    // desktop app's connectors pane when one is actually needed.
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
   },
 
   // Auto mode classifier rules (see ADR 0056).
@@ -118,6 +123,13 @@
       "**Primary use of Claude Code**: software development and infrastructure/tooling maintenance across whatever repo and machine the session is running on — this is a multi-project setup, not one project; infer the specific purpose of the current repo from its own README/CLAUDE.md rather than assuming a single fixed project",
       "**Trusted repo**: The git repository the agent started in (its working directory) and its configured remote(s). When the repo's public/private visibility is given — by the Repository visibility entry or the user's own message — use it to scope what is OK to commit or push there: confidential material is fine in a private repo; in a public one, only that repo's own work is — and content ported, repointed, or first read from outside this session's repo is not its own work, whoever directed the port. Visibility scopes confidential material only: secrets and sensitive data (personal & entrusted) are never cleared into any repo by its visibility.",
     ],
+  },
+
+  // Skill listing overrides. "user-invocable-only" hides a skill from the
+  // model (no listing cost, no auto-invocation) but keeps the /name command.
+  // eli5 is something I only ever type on purpose.
+  "skillOverrides": {
+    "eli5:eli5": "user-invocable-only",
   },
 
   // Permissions: base safety rules
