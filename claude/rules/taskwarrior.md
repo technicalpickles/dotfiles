@@ -21,10 +21,8 @@ Integer task IDs are reused after tasks complete or the pending list otherwise r
 
 For the full detail (why, how to verify a citation before it goes stale, re-resolving a cached ID mid-session) invoke the `taskwarrior` skill from the `pickled-claude-plugins` marketplace — see its "Durable references" section.
 
-## Same principle: plan step numbers rot
+## Plan Steps Get Slugs, Not Numbers
 
-The "integer identifiers drift, stable identifiers don't" rule extends beyond taskwarrior. When writing an implementation plan with multiple steps, use stable kebab-case slugs as step headers (`classifier-scaffold`, `docket-migration`, `external-data-audit`), not integer ordinals (`Task 1`, `Task 11`). Commit messages and downstream references cite the slug.
+In a plan with more than about 3 steps, name each step with a stable kebab-case slug (`docket-migration`), not an ordinal (`Task 11`), and cite the slug in commits and cross-references.
 
-**Why:** plan step numbers shift when a step is inserted or reordered. Every commit message or cross-reference that said "Task 11" now points at the wrong thing. Slugs are insertion-stable — adding a new step between two existing ones doesn't renumber anything.
-
-**When:** any plan with more than ~3 steps, especially when steps will be executed across multiple commits or referenced from other docs.
+**Why:** same drift as task IDs. Inserting or reordering a step renumbers every ordinal after it; a slug doesn't move.
