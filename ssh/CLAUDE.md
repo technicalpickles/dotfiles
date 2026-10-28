@@ -32,39 +32,21 @@ SSH settings use `ssh/config.d/` fragments with SSH's native `Include` directive
 
 ## Agent-Session Key Override
 
-`ssh/config.d/auth` also has `Match exec` blocks, keyed on `$CLAUDECODE` (set by every Claude Code session) or `$AGENT_SESSION` (set by wrappers for other harnesses, e.g. prime-agent) and `$DOTPICKLES_ROLE`, that come before `Host *`. When both are set, ssh uses the Keychain-loaded per-role agent key (`~/.ssh/agents/<role>/id_ed25519`) over fish-ssh-agent instead of 1Password -- no interactive TouchID, and it applies to any host without per-host config. Outside an agent session, `Host *` still routes through 1Password as normal. See [ADR 0031](../doc/adr/0031-role-scoped-agent-git-identity.md) and [ADR 0030](../doc/adr/0030-ssh-keychain-loading-at-login.md).
-
-This only helps once the agent key's public half is authorized on the target host (`~/.ssh/authorized_keys`) -- it doesn't grant access, it just picks which already-known key to offer.
+`ssh/config.d/auth` has `Match exec` blocks before `Host *`, keyed on `$CLAUDECODE` (every Claude Code session) or `$AGENT_SESSION` (other harness wrappers, e.g. prime-agent) plus `$DOTPICKLES_ROLE`. In an agent session ssh offers the Keychain-loaded per-role agent key (`~/.ssh/agents/<role>/id_ed25519`) instead of 1Password, so there's no TouchID prompt. It only picks which key to offer; the target still has to authorize that key. See [ADR 0031](../doc/adr/0031-role-scoped-agent-git-identity.md), [ADR 0030](../doc/adr/0030-ssh-keychain-loading-at-login.md).
 
 ## Agent-Session SSH Relay
 
-The Claude Code macOS sandbox (Seatbelt) denies outbound port 22 at the TCP connect level, but allows localhost. `ssh/config.d/agent-relay` has a `Match exec "test -n \"$CLAUDECODE$AGENT_SESSION\""` block that, in agent sessions only, routes every SSH connection through a local SOCKS5 proxy via `ProxyCommand /opt/homebrew/bin/ncat --proxy 127.0.0.1:1080 --proxy-type socks5 %h %p` (qualified, since a launchd-adjacent SSH child process can't be relied on to inherit the same PATH as an interactive shell). Because `%h`/`%p` pass the real host and port straight through, this one block covers every destination -- no per-host `Host`/`Match` block, no `HostKeyAlias` rewrite, `known_hosts` matches normally.
+The command sandbox denies outbound port 22 but allows localhost. In agent sessions only, `ssh/config.d/agent-relay` sends every SSH connection through a local SOCKS5 proxy (`ProxyCommand /opt/homebrew/bin/ncat --proxy 127.0.0.1:1080 --proxy-type socks5 %h %p`, full path because launchd children don't share the shell's PATH). `%h`/`%p` pass the real host through, so `known_hosts` matches normally. Outside an agent session SSH goes direct. `home` and `work` both use it; why SSH instead of HTTPS, and each layer's job, are in [ADR 0055](../doc/adr/0055-agent-git-over-ssh-through-the-relay.md). A `work`-role push through the relay is still unverified (bean dotfiles-11qr).
 
-The other end is the `com.technicalpickles.agent-ssh-relay` LaunchAgent (`LaunchAgents/arm64-macos/`), which runs `gost` (an unsandboxed SOCKS5 server) restricted by `config/gost/agent-ssh-relay.yml` to an explicit host:port allowlist. This isn't git-only: any host an agent session needs to SSH into (a git remote, or an admin target like a homelab box for `just disk-report`/`deploy-*`) has to be listed here, e.g. `picklelab:22` and `picklelab.tail2023b7.ts.net:22` are allowlisted alongside `github.com:22`. Adding a host means adding a `<host>:22` line to that YAML, not touching ssh config or the LaunchAgent. gost was chosen after comparing it with `dante`/`sockd` (same idea, more verbose per-host config blocks, no code) and `mitmproxy` (closest to how Claude Code's own sandbox proxy filters CONNECT tunnels without decrypting, but adds a Python runtime and an addon script to maintain) -- gost won on a single binary plus a one-line-per-host YAML allowlist.
+The other end is the `com.technicalpickles.agent-ssh-relay` LaunchAgent running `gost`, limited to the host:port allowlist in `config/gost/agent-ssh-relay.yml`. Any host an agent needs to SSH into (git remotes, admin targets like `picklelab:22`) needs a `<host>:22` line there; nothing else changes.
 
-This exists as an alternative to routing agent git operations over HTTPS: HTTPS authenticates via `gh`'s shared personal OAuth token, while this relay lets agent sessions keep using the real per-role SSH key end to end. `home` role fully uses the relay now, agent and interactive alike. `work` role (`home/.gitconfig.d/claude-agent-work`) is on the same setup since commit 8a0831a (no `core.sshCommand` override, no HTTPS rewrite). Last verified 2026-10-20: a sandboxed `git ls-remote` against a private org repo as the `work` role succeeds through the relay. A push has not been verified, so bean dotfiles-11qr stays open. Outside an agent session (neither `$CLAUDECODE` nor `$AGENT_SESSION` set), SSH is untouched and goes direct.
+- Status: `./launchagents.sh status com.technicalpickles.agent-ssh-relay`
+- Reload after a YAML edit: `launchctl kickstart -k gui/$(id -u)/com.technicalpickles.agent-ssh-relay` (unsandboxed; `launchctl` is blocked in the sandbox)
+- A missing host fails as `Ncat: Error: connection not allowed by ruleset.` then `kex_exchange_identification: Connection closed by remote host`. That means add it to the YAML and reload, not a key or sandbox problem.
 
-Check the relay is running with `./launchagents.sh status com.technicalpickles.agent-ssh-relay`. The YAML is symlinked into `~/.config/gost/`, so an edit takes effect on the next restart -- reload it with `launchctl kickstart -k gui/$(id -u)/com.technicalpickles.agent-ssh-relay` (this needs `dangerouslyDisableSandbox` in an agent session; plain `launchctl` calls are themselves sandbox-blocked). A missing host fails as `Ncat: Error: connection not allowed by ruleset.` followed by `kex_exchange_identification: Connection closed by remote host` -- that signature means "add it to the YAML and reload," not a sandbox or key problem.
+## The `GIT_SSH_COMMAND` Conflict
 
-### The `GIT_SSH_COMMAND` conflict
-
-Claude Code's sandbox injects its own `GIT_SSH_COMMAND` into every Bash tool call, pointing git at the harness's SOCKS proxy on a per-session localhost port. Git resolves that env var ahead of both `core.sshCommand` and `ssh_config`, so it silently defeats the relay above -- git never even reaches the `Match` blocks. That's why `home/.gitconfig.d/claude-agent-home` carries no `core.sshCommand` override: it could never win.
-
-The harness proxy refuses SSH by design rather than failing to tunnel it. It answers the handshake itself as `SSH-2.0-policy_refusal` ("This proxy requires authentication, and this client did not offer an authentication method"), drops the connection after KEXINIT, and never dials the real host. Git surfaces this as:
-
-```
-ssh_dispatch_run_fatal: Connection to UNKNOWN port 65535: Broken pipe
-```
-
-This is not a missing `allowedDomains` entry -- a denied host gives `SOCKS error 2` on :443, a different failure. It is also not specific to the desktop app; it reproduces identically in the terminal CLI.
-
-See [ADR 0055](../doc/adr/0055-agent-git-over-ssh-through-the-relay.md) for why agent git is on SSH at all and what each layer is responsible for. The fix is the `SessionStart` hook in `claude/roles/home.jsonc`, which appends `export GIT_SSH_COMMAND=ssh` to `$CLAUDE_ENV_FILE`. That hands resolution back to `~/.ssh/config`, where the relay lives. Verified on 2.1.263: sandboxed `git fetch`/`ls-remote` against `git@github.com:` succeed, no `dangerouslyDisableSandbox` needed.
-
-**The channel matters, and only one of them works.** The role `env` block also sets `GIT_SSH_COMMAND=ssh`, and it loses -- the harness injects its value after role env, so sandboxed Bash calls get the proxy command regardless. `$CLAUDE_ENV_FILE` is read later, into a cached session-environment script, and wins. Two other routes are dead ends: there's no opt-out flag (the injection is unconditional, part of a blanket proxy block alongside `ALL_PROXY`, `FTP_PROXY`, `RSYNC_PROXY` and the Docker vars), and a shell startup file can't undo it either, because the shell snapshot only captures functions, aliases, setopts and `PATH`, so a bare `unset` in `.zshrc` never arrives.
-
-If the broken-pipe error comes back after a CLI upgrade, check `env | grep GIT_SSH_COMMAND` first -- it means the ordering changed and the hook stopped winning. Fall back to `GIT_SSH_COMMAND=ssh git ...` per command until it's sorted.
-
-Upstream this is [anthropics/claude-code#70684](https://github.com/anthropics/claude-code/issues/70684), open since 2026-06-24 and unfixed as of 2.1.263, plus its sharper duplicate #82255 (closed as stale, not fixed). Root cause is in `sandbox-runtime`'s `generateProxyEnvVars()`: the macOS branch builds the SOCKS5 `nc -X 5` ProxyCommand with no credentials even when a proxy auth token is set, while the Linux branch passes `proxyauth` to `socat`. The proxy then refuses with an `SSH-2.0-policy_refusal` banner. Most of that thread reaches for an HTTP CONNECT helper or an `insteadOf` rewrite to HTTPS, because the harness proxy is their only way out -- we don't need either, since the relay on localhost already works.
+Under the sandbox, Claude Code injects its own `GIT_SSH_COMMAND` into every Bash call, pointing at a harness proxy that refuses SSH. Git resolves that ahead of `core.sshCommand` and `ssh_config`, so it bypasses the relay and fails as `ssh_dispatch_run_fatal: Connection to UNKNOWN port 65535: Broken pipe`. That is not a missing `allowedDomains` entry, which fails as `SOCKS error 2` on :443. The fix is the `SessionStart` hook in `claude/roles/home.jsonc` that appends `export GIT_SSH_COMMAND=ssh` to `$CLAUDE_ENV_FILE`; setting it in the role `env` block loses to the injection. If the broken pipe comes back after a CLI upgrade, check `env | grep GIT_SSH_COMMAND` first, and use `GIT_SSH_COMMAND=ssh git ...` per command meanwhile. Full story and dead ends: ADR 0055, upstream [anthropics/claude-code#70684](https://github.com/anthropics/claude-code/issues/70684).
 
 ## Inbound SSH (being SSH'd into, e.g. over Tailscale)
 
@@ -77,7 +59,7 @@ Upstream this is [anthropics/claude-code#70684](https://github.com/anthropics/cl
 
 ## 1Password SSH Agent Allowlist
 
-> **Since 2026-10-02:** `~/.ssh/config` starts with an `av`-managed `Automic Vault SSH Agent` block that sets `IdentityAgent` to `~/.local/share/automic-vault/ssh-agent.sock` for all hosts, ahead of everything below. Agent sessions ssh unattended (no 1Password approval), so "1Password needs interactive approval" no longer holds for agent ssh. The rest of this section describes the 1Password agent path. Commit signing and the agent key's lifecycle on AV machines: [ADR 0059](../doc/adr/0059-automic-vault-for-git-signing-and-agent-ssh.md).
+> On Automic Vault machines, `~/.ssh/config` starts with an `av`-managed block that sets `IdentityAgent` to `~/.local/share/automic-vault/ssh-agent.sock` for all hosts, ahead of everything below, so agent ssh runs without 1Password approval. This section describes the 1Password path. AV signing and key lifecycle: [ADR 0059](../doc/adr/0059-automic-vault-for-git-signing-and-agent-ssh.md).
 
 `Host *` in `ssh/config.d/auth` points at the 1Password agent. By default 1Password offers every key in the unlocked vault. Per-role allowlists live at `config/1password/agent.toml.<role>` and are symlinked to `~/.config/1Password/ssh/agent.toml` by `sshconfig.sh` based on `$DOTPICKLES_ROLE`. See [ADR 0033](../doc/adr/0033-1password-ssh-agent-allowlist.md).
 
@@ -90,6 +72,4 @@ SSH_AUTH_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.s
 ## Important
 
 - Edit `ssh/config.d/auth` and `ssh/config.d/term` for versioned changes
-- Never edit `~/.ssh/config` directly -- it's managed by `sshconfig.sh`
 - `~/.ssh/config.d/hosts` is machine-local and gitignored; recreate it per machine
-- Never edit `~/.config/1Password/ssh/agent.toml` directly -- edit `config/1password/agent.toml.<role>` instead
