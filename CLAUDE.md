@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This is a personal dotfiles repository managing shell configs, git settings, and macOS preferences. It uses a **role-based configuration system** (home/work) that adapts settings based on hostname or `DOTPICKLES_ROLE`.
+This is a personal dotfiles repository managing shell configs, git settings, and macOS preferences. It uses a **role-based configuration system** keyed on `DOTPICKLES_ROLE`: `home` or `work` from the hostname, `work-coder`, `container` and `claude-code-remote` detected from the environment (detection order in `config/fish/conf.d/dotpickles-role.fish`), or `coi-host` set explicitly.
 
 See [doc/architecture.md](doc/architecture.md) for how the systems fit together.
 
@@ -16,7 +16,7 @@ Pre-commit hooks via `lefthook`: Prettier formats staged files, TypeScript check
 
 There are no traditional unit tests. "Testing" means `npm run lint` + manual install verification.
 
-**Sandbox and SSH.** `home` runs with the command sandbox off ([ADR 0066](doc/adr/0066-turn-off-the-command-sandbox-for-the-home-role.md)); other roles inherit it on from `claude/roles/base.jsonc`. The sandbox denies outbound port 22, so agent sessions on `home` and `work` send SSH through the `com.technicalpickles.agent-ssh-relay` SOCKS5 relay, which only reaches hosts listed in `config/gost/agent-ssh-relay.yml` (see [ssh/CLAUDE.md](ssh/CLAUDE.md), [ADR 0055](doc/adr/0055-agent-git-over-ssh-through-the-relay.md)). `home/.gitconfig.d/claude-agent-work` rewrites `https://github.com/` to SSH so https remotes don't fall through to a keychain prompt; only `gist.github.com` stays on HTTPS via `gh`.
+**Sandbox and SSH.** `home`, `work-coder` and `claude-code-remote` run with the command sandbox off ([ADR 0066](doc/adr/0066-turn-off-the-command-sandbox-for-the-home-role.md)); `work`, `container` and `coi-host` inherit it on from `claude/roles/base.jsonc`. The sandbox denies outbound port 22, so agent sessions on `home` and `work` send SSH through the `com.technicalpickles.agent-ssh-relay` SOCKS5 relay, which only reaches hosts listed in `config/gost/agent-ssh-relay.yml` (see [ssh/CLAUDE.md](ssh/CLAUDE.md), [ADR 0055](doc/adr/0055-agent-git-over-ssh-through-the-relay.md)). `home/.gitconfig.d/claude-agent-work` rewrites `https://github.com/` to SSH so https remotes don't fall through to a keychain prompt; only `gist.github.com` stays on HTTPS via `gh`.
 
 ## Architecture Decision Records
 
