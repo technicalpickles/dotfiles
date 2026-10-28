@@ -62,6 +62,12 @@
       "autoUpdate": true,
       "excludeRoles": ["work", "work-coder"],
     },
+    // pstack (michael-denyer's port of Lauren Tan's Cursor pstack). Install the
+    // plugin by hand: `/plugin install pstack@pstack-claude`.
+    "pstack-claude": {
+      "repo": "michael-denyer/pstack-claude",
+      "autoUpdate": true,
+    },
   },
 
   // Named plugin bundles. Each entry is "<plugin-name>@<marketplace-key>".

@@ -573,6 +573,29 @@ generate_settings() {
 
 generate_settings
 
+# herdr resumes Claude panes after a server restart (host shutdown, Coder
+# workspace stop) only if its Claude integration reported each pane's session
+# ID. The integration writes ~/.claude/hooks/herdr-agent-state.sh and merges a
+# SessionStart entry into settings.json -- which generate_settings just
+# replaced -- so it has to be (re)installed after every regeneration. Letting
+# herdr write its own entry keeps the versioned hook script and its matcher in
+# sync with the installed herdr. The hook exits early outside herdr panes, so
+# it's safe for every role.
+install_herdr_claude_integration() {
+  if ! command_available herdr; then
+    return
+  fi
+
+  echo "Installing herdr Claude integration..."
+  if herdr integration install claude > /dev/null; then
+    echo "  ✓ herdr session hook installed"
+  else
+    echo "  ✗ herdr integration install failed (continuing anyway)" >&2
+  fi
+}
+
+install_herdr_claude_integration
+
 # Configure marketplaces (non-interactive). Lives in its own script so it can
 # run without the rest of this file (see claude/configure-marketplaces.sh).
 DOTPICKLES_ROLE="$ROLE" "$DIR/claude/configure-marketplaces.sh"
