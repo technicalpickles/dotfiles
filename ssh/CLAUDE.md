@@ -1,6 +1,6 @@
 # SSH Config
 
-SSH settings use `ssh/config.d/` fragments with SSH's native `Include` directive. See [doc/architecture.md](../doc/architecture.md#ssh-configuration) and [ADR 0024](../doc/adr/0024-versioned-ssh-config-with-config-d.md).
+SSH settings use `ssh/config.d/` fragments with SSH's native `Include` directive. See [doc/architecture.md](../doc/architecture.md#ssh-configuration) and [ADR 0026](../doc/adr/0026-versioned-ssh-config-with-config-d.md).
 
 ## Fragments
 
