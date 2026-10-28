@@ -1,51 +1,48 @@
 # bin/
 
-Scripts and utilities. Most are wrappers or helpers used by other scripts and hooks.
+Scripts and utilities, most used by other scripts, hooks and LaunchAgents. This is an index. Each script's header comment or `--help` has its flags, env vars and details, so read that before changing or running one.
 
 ## General Utilities
 
-- `bin/prettier`: Wraps npm prettier with custom ignore and config paths
-- `bin/adr`: Wrapper for adr-tools (`bin/adr new "title"`, `bin/adr list`)
-- `bin/shell`: Helper for shell-related operations
-- `bin/qmd`: Runs the qmd semantic-search CLI (`@tobilu/qmd` via npx) under a pinned Node version with `mise exec`. Locates mise itself so it works under launchd (no PATH/mise activation). Used by the qmd-refresh and qmd-mcp LaunchAgents. Override version with `QMD_NODE_VERSION` (default `24`). The qmd-mcp agent runs `qmd mcp --http --port 18181` (localhost-only HTTP MCP server); register with Claude via `claude mcp add --transport http qmd http://localhost:18181/mcp --scope user`.
-- `bin/cbm-reindex`: Incrementally reindexes codebase-memory-mcp for each pickletown repo's default checkout (`repos/<repo>/worktrees/main` or `repos/<repo>/checkout`) under the same path-derived project name a session in that checkout uses (so its watcher attaches to the same db), with a mkdir lock, and a one-shot stale-daemon restart after version bumps. Also takes plain checkouts (`<root>/<repo>/.git`). Corpus root: `CBM_REPOS` if set, else `$PT_ROOT/repos` when pickletown is present, else `~/github.com/technicalpickles`. Run hourly by the `com.technicalpickles.cbm-reindex` LaunchAgent.
-- `bin/cbm-sweep`: Diagnostic sweep for the same corpus as `cbm-reindex`, meant to be run by hand (overnight): indexes each repo under a per-repo cap (`--timeout`, default 900s), optionally cold (`--fresh` deletes each db first), or a subset (`--only a,b`). On timeout it captures the index worker's `sample` stack, `vmmap`, `lsof` and CBM log tail, then kills the worker explicitly (it's forked by the CBM daemon, not the CLI client). Writes `results.jsonl` plus per-repo diagnostics under `~/.cache/codebase-memory-mcp/sweeps/<stamp>/`. Holds `cbm-reindex`'s lock and wraps itself in `caffeinate`. Run outside the Claude Code sandbox (`sample`/`vmmap`/`ps` are blocked in it).
-- `bin/cbm-sweep-report`: Summarizes a sweep (newest by default): status counts, per-failure CPU/RSS trend, footprint, open files and largest tracked files, slowest repos, repos with a tracked file over 10MB, and a ready `cbm-sweep --only <failures>` retry line.
-- `bin/safari-reading-list`: Exports Safari's Reading List by parsing `~/Library/Safari/Bookmarks.plist` directly (stdlib `plistlib`, no deps). Requires exactly one mode flag -- `--all`, `--read`, `--unread`, or `--debug` (dumps one raw item's plist keys for troubleshooting); running with none prints usage. Human-readable title/url list by default, `--json` for full JSON (title, url, preview, date_added, unread). Requires Full Disk Access for the terminal app running it -- macOS TCC blocks reading Safari's data otherwise.
-- `bin/task-sync-status`: Reports when the `com.technicalpickles.task-sync` LaunchAgent last succeeded/failed (log mtimes in `/tmp`), its run count and last exit code. Replaces the `sync` verbose nag dropped from `home/.taskrc`.
-- `bin/dotfiles-doctor`: Read-only health check for role detection, dotfile symlink health (`home/*`, `config/*`), LaunchAgents symlink health (macOS), and tool availability (git, mise, brew). Reports pass/fail per check and exits non-zero if anything failed.
-- `bin/yt-digest` (formerly `yt-infographics`): Pulls everything worth summarizing out of a video (YouTube or any yt-dlp-supported source) -- spoken transcript plus clean on-screen infographic/slide text -- merged into one chronological `full_context.md`. A self-contained `uv run --script` (PEP 723 inline deps: `claude-agent-sdk`, `yt-dlp`, `imageio-ffmpeg`, `rapidocr-onnxruntime`, `wordfreq`); no `brew install` needed beyond `uv` itself and a logged-in `claude` CLI. Pipeline: yt-dlp downloads video + captions -> ffmpeg scene-change detection extracts keyframes -> RapidOCR does a cheap first-pass OCR on every frame -> a word-frequency heuristic triages real slide text vs incidental HUD/logo noise -> near-duplicate frames (same slide re-triggering a scene cut) collapse via recognized-word-set overlap -> each surviving frame gets a clean re-transcription via Claude vision, since OCR still mangles colored/underlined text. `./bin/yt-digest "<url>" --out-dir ./out`; `--skip-download` reuses an existing `video.mp4`/transcript for iterating on later stages; `--no-transcript` for infographics only; `--transcript-only` for the opposite -- skips video download, keyframes, OCR, and vision entirely and just writes `transcript.md` (a manual opt-in for talking-head content you've already identified, e.g. capture workflows -- there's no auto-detection of talking-head vs infographic video).
+- `bin/prettier`: npm prettier with this repo's ignore and config paths
+- `bin/adr`: adr-tools wrapper (`bin/adr new "title"`, `bin/adr list`)
+- `bin/shell`: shell-related helper
+- `bin/qmd`: qmd semantic-search CLI under a pinned Node via `mise exec`; works under launchd. Used by the qmd-refresh and qmd-mcp LaunchAgents (the MCP server is `http://localhost:18181/mcp`)
+- `bin/cbm-reindex`: hourly codebase-memory-mcp reindex of each repo's default checkout (LaunchAgent `com.technicalpickles.cbm-reindex`)
+- `bin/cbm-sweep`: by-hand overnight diagnostic index of the same corpus, with per-repo timeouts and failure captures. Run outside the sandbox
+- `bin/cbm-sweep-report`: summarize a `cbm-sweep` run
+- `bin/safari-reading-list`: export Safari's Reading List (needs Full Disk Access for the terminal)
+- `bin/task-sync-status`: last result of the `com.technicalpickles.task-sync` LaunchAgent
+- `bin/dotfiles-doctor`: read-only health check (role, symlinks, LaunchAgents, tools)
+- `bin/yt-digest`: video transcript plus on-screen slide text into one `full_context.md` (`uv run --script`)
 
 ## Spotlight Management
 
-Spotlight is kept enabled (Alfred requires it) but specific directories are excluded. See [doc/spotlight-exclusions.md](../doc/spotlight-exclusions.md) for full usage.
+Spotlight stays enabled (Alfred needs it) with specific directories excluded. See [doc/spotlight-exclusions.md](../doc/spotlight-exclusions.md).
 
-- `bin/spotlight-apply-exclusions`: Apply exclusions from `~/.config/spotlight-exclusions` pattern file
-- `bin/spotlight-expand-patterns`: Expand gitignore-style patterns to concrete paths
-- `bin/spotlight-add-exclusion`: Add a directory via AppleScript UI automation
-- `bin/spotlight-list-exclusions`: List current exclusions from VolumeConfiguration.plist
+- `bin/spotlight-apply-exclusions`: apply exclusions from `~/.config/spotlight-exclusions`
+- `bin/spotlight-expand-patterns`: expand gitignore-style patterns to paths
+- `bin/spotlight-add-exclusion`: add a directory via AppleScript UI automation
+- `bin/spotlight-list-exclusions`: list current exclusions
 
 ## Process Filesystem Activity
 
-- `bin/proc-analyze-activity`: Analyze filesystem activity for a background process over a time window. Presets (`-p`): `spotlight` (mds/mdworker/etc, default), `opendirectoryd`, `falcon` (`com.crowdstrike.falcon.Agent`); or pass a raw `fs_usage` process pattern via `-f`/`--pattern`.
-- `bin/proc-monitor-live`: Same presets, live/real-time view instead of a fixed-duration capture.
+- `bin/proc-analyze-activity`: filesystem activity for a background process over a window (presets `spotlight`, `opendirectoryd`, `falcon`, or `-f <pattern>`)
+- `bin/proc-monitor-live`: same presets, live view
 
-## Claude Code Utilities
+## Claude Code and Agent Utilities
 
-- `bin/claude-spend-today`: Read today's Claude spend from ccusage cache (for tmux status bar)
-- `bin/claude-status-line`: Status line wrapper (fixes Opus context window size, formats model name, wraps claude-powerline with capsule style)
-- `bin/claude-ollama`: Launch Claude Code with ollama models. Auto-sets `CLAUDE_CODE_AUTO_COMPACT_WINDOW` to 80% of the model's context_length (queried from ollama API). Use `OLLAMA_MODEL` env or pass model as first arg.
-- `bin/claude-permissions`: Query Claude Code permissions across all known config locations
-- `bin/claude-with`: Run Claude with a named environment (isolated `CLAUDE_CONFIG_DIR` per env under `~/.local/share/claude-env/<name>/`)
-- `bin/analyze-claude-sessions`: Analyze Claude Code sessions (via cq) to identify projects and skill usage
-- `bin/ccusage-refresh`: Refresh ccusage cache (run by LaunchAgent every 5 min)
-- `bin/tmux-auto-rename-session`: Auto-name sessions after their directory
-- `bin/setup-agent-ssh-key`: Generate a per-role agent SSH identity (see [ADR 0031](../doc/adr/0031-role-scoped-agent-git-identity.md)). Accepts `--email <addr>` to override the default `joshua.nichols+<role>-agent@gmail.com` (e.g. for the work role: `--email josh.nichols+agent@gusto.com`).
-- `bin/load-agent-ssh-keys`: Load every `~/.ssh/agents/*/id_ed25519` into the ssh-agent, skipping ones already there. Run at login by the `com.technicalpickles.agent-ssh-keys` LaunchAgent so _launchd's_ agent gets populated, not just the fish shell's -- without it, scheduled jobs can't sign commits (see [LaunchAgents/README.md](../LaunchAgents/README.md)). Skips keys Automic Vault's agent already serves.
-- `bin/av-ssh-agent-holds-key <pub>`: Exit 0 (printing the socket) when ssh resolves to Automic Vault's agent and it serves that key. The per-machine "is AV set up?" gate; see [ADR 0059](../doc/adr/0059-automic-vault-for-git-signing-and-agent-ssh.md).
-- `bin/retire-agent-ssh-key <identity>`: Delete an agent key's private file once AV holds it, after a live GitHub auth through AV only. Keeps the `.pub`. Refuses on machines where AV isn't serving the key.
-- `bin/setup-av-signing-key`: Create the personal GPG key Automic Vault's GPG Signing Gate uses as its default credential (AV can only import a default, not generate one). No-op if GitHub already lists a GPG key for the email (`--check` only tests that). Otherwise generates an ed25519 key with a random passphrase in a throwaway `GNUPGHOME`, backs the key, revocation cert and passphrase up to 1Password first (stops and keeps the keyring if any backup fails), walks the AV import and GitHub upload through the clipboard, then clears the clipboard and deletes the keyring. Needs a terminal (or `--yes`), `op` signed in, and network, so run it outside the Claude Code sandbox. See [ADR 0059](../doc/adr/0059-automic-vault-for-git-signing-and-agent-ssh.md).
-- `bin/safe <cmd>`: Run an agent CLI under agent-safehouse (`safe pi`) with `config/agent-safehouse/{common,role-<role>}.sb` appended, clipboard enabled, and a dedicated ssh-agent holding only the agent keys so in-sandbox commits sign as the agent. Tool profiles in `config/agent-safehouse/tools/<name>.{sb,sh}` (picked by command name or `SAFE_TOOL`) add per-tool grants, env and an isolated cache/state root. `config/agent-safehouse/role-<role>.sh` is the role's hook (work: AWS credentials from `AWS_PROFILE`, opt-in docker socket via `SAFE_DOCKER=1`), and `SAFE_FNOX_KEYS` names secrets resolved with `fnox export`. Per-invocation grants come from safehouse's `SAFEHOUSE_ADD_DIRS`/`SAFEHOUSE_ADD_DIRS_RO`/`SAFEHOUSE_ENV_PASS` and `SAFE_SOCKET_DIRS` (unix-socket dirs). See [ADR 0060](../doc/adr/0060-agent-safehouse-wrapper.md), [ADR 0063](../doc/adr/0063-per-invocation-grants-for-safe.md), [ADR 0064](../doc/adr/0064-isolation-policy-for-sandboxed-agents.md).
-- `bin/safe-tmux`: Drive a shell under `safe` from a detached tmux session (`start`/`run`/`capture`/`stop`), so commands can be sent and output read back without an interactive terminal. `SAFE_TMUX_CMD` overrides what the session runs. Start it outside any agent sandbox.
-- `bin/prime-models`: Regenerates `prime/models.home.json` (the home role's prime-agent Ollama provider; `prime.sh` links `prime/models.<role>.json` and skips roles without one) from the public Ollama Cloud catalog (`ollama.com/v1/models`): newest version of each model family with its variants, date-pinned tags skipped, `:cloud` names. `--check` sends each model one tiny request through the local Ollama server and drops the ones it rejects (retired models, `/v1/systemone`-only ones); `--stdout` prints instead of writing. Needs network, so run it outside the Claude Code sandbox.
-- `bin/check-agent-ssh-key`: Validate an agent SSH identity setup (local files, Keychain, GitHub registration, Claude settings, and -- for the work role -- per-org SAML SSO authorization). Pass the same `--email` used at setup time. When the identity name differs from the role (the `home` role signs as the `personal` identity, per [ADR 0035](../doc/adr/0035-canonical-dotpickles-role-names.md)), pass `--key <path>` so it checks the real key (claudeconfig.sh derives this from the role's gitconfig include automatically).
+- `bin/claude-spend-today`: today's Claude spend from the ccusage cache (tmux status bar)
+- `bin/claude-status-line`: status line wrapper around claude-powerline
+- `bin/claude-ollama`: launch Claude Code on an Ollama model
+- `bin/claude-permissions`: query permissions across all Claude Code config locations
+- `bin/claude-with`: run Claude with a named, isolated `CLAUDE_CONFIG_DIR`
+- `bin/analyze-claude-sessions`: project and skill usage from cq
+- `bin/ccusage-refresh`: refresh the ccusage cache (LaunchAgent, every 5 min)
+- `bin/tmux-auto-rename-session`: name tmux sessions after their directory
+- `bin/setup-agent-ssh-key`, `bin/check-agent-ssh-key`: create and validate a per-role agent SSH identity ([ADR 0031](../doc/adr/0031-role-scoped-agent-git-identity.md))
+- `bin/load-agent-ssh-keys`: load agent keys into launchd's ssh-agent at login so scheduled jobs can sign
+- `bin/av-ssh-agent-holds-key`, `bin/retire-agent-ssh-key`, `bin/setup-av-signing-key`: Automic Vault key gate, key retirement, and GPG signing-key setup ([ADR 0059](../doc/adr/0059-automic-vault-for-git-signing-and-agent-ssh.md)). `setup-av-signing-key` needs a terminal, `op` and network, so run it outside the sandbox
+- `bin/safe <cmd>`: run an agent CLI under agent-safehouse with dotfiles' profiles ([ADR 0060](../doc/adr/0060-agent-safehouse-wrapper.md), [0063](../doc/adr/0063-per-invocation-grants-for-safe.md), [0064](../doc/adr/0064-isolation-policy-for-sandboxed-agents.md))
+- `bin/safe-tmux`: drive a `safe` shell from a detached tmux session
+- `bin/prime-models`: regenerate `prime/models.home.json` from the Ollama Cloud catalog (needs network, run outside the sandbox)
