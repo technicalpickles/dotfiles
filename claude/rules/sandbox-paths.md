@@ -1,4 +1,4 @@
-<!-- dotpickles_role: base,work,container,coi-host -->
+<!-- dotpickles_role: work,container,coi-host -->
 
 ## Sandbox `allowWrite`: Spell macOS Paths Canonically
 
