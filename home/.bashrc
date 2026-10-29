@@ -14,6 +14,13 @@ if [[ -z "$DOTPICKLES_ROLE" ]]; then
   fi
 fi
 
+# prime-agent's models.json (written by the Coder template) reads its AI Gateway token from this
+# variable, but the template only sets it when the workspace harness is prime_agent. Claude Code's
+# token reaches the same gateway, so borrow it. Mirrors config/fish/conf.d/prime-agent-coder.fish.
+if [[ "$DOTPICKLES_ROLE" == "work-coder" && -z "$PRIME_AGENT_CODER_AIGATEWAY_SESSION_TOKEN" && -n "$ANTHROPIC_AUTH_TOKEN" ]]; then
+  export PRIME_AGENT_CODER_AIGATEWAY_SESSION_TOKEN="$ANTHROPIC_AUTH_TOKEN"
+fi
+
 # Enable the subsequent settings only in interactive sessions
 case $- in
   *i*) ;;
