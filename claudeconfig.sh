@@ -345,7 +345,7 @@ generate_settings() {
     overlay_json=$(read_json "$private_overlay")
 
     local overlay_settings
-    overlay_settings=$(echo "$overlay_json" | jq 'del(.permissions, .sandbox, .autoMode, .requiresPrivateOverlay)')
+    overlay_settings=$(echo "$overlay_json" | jq 'del(.permissions, .sandbox, .autoMode, .requiresPrivateOverlay, .mcpServers)')
     merged_settings=$(echo "$merged_settings" | jq --argjson o "$overlay_settings" '. * $o')
 
     merged_allow=$(echo "$merged_allow" | jq --argjson o "$(echo "$overlay_json" | jq '.permissions.allow // []')" '. + $o')
@@ -617,6 +617,15 @@ configure_mcp_servers() {
   local servers_json
   servers_json=$(read_json "$manifest" | jq -c '.servers // {}')
 
+  # The private overlay (see the settings merge above) may add servers under
+  # "mcpServers", same entry shape as the manifest plus optional "headers".
+  # That is where servers naming internal hosts go, since this repo is public.
+  local private_overlay="${XDG_CONFIG_HOME:-$HOME/.config}/dotpickles/roles/$ROLE.jsonc"
+  if [ -f "$private_overlay" ]; then
+    servers_json=$(jq -c -n --argjson a "$servers_json" \
+      --argjson b "$(read_json "$private_overlay" | jq -c '.mcpServers // {}')" '$a + $b')
+  fi
+
   local names
   names=$(echo "$servers_json" | jq -r 'keys[]')
   if [ -z "$names" ]; then
@@ -646,8 +655,27 @@ configure_mcp_servers() {
           echo "  ✗ $name: transport '$transport' requires a url; skipping" >&2
           continue
         fi
+        # Header values may reference ${VAR}; resolve from the environment so
+        # secrets never sit in a config file. Unset var skips the server.
+        local header_args=() hname hvalue hvar unset_var=""
+        while IFS=$'\t' read -r hname hvalue; do
+          [ -z "$hname" ] && continue
+          while [[ "$hvalue" =~ \$\{([A-Za-z_][A-Za-z0-9_]*)\} ]]; do
+            hvar="${BASH_REMATCH[1]}"
+            if [ -z "${!hvar:-}" ]; then
+              unset_var="$hvar"
+              break 2
+            fi
+            hvalue="${hvalue//\$\{$hvar\}/${!hvar}}"
+          done
+          header_args+=(--header "$hname: $hvalue")
+        done < <(echo "$servers_json" | jq -r --arg n "$name" '.[$n].headers // {} | to_entries[] | [.key, .value] | @tsv')
+        if [ -n "$unset_var" ]; then
+          echo "  ✗ $name: header needs \$$unset_var, which is not set; skipping" >&2
+          continue
+        fi
         echo "  + Registering $name ($transport -> $url)..."
-        if claude mcp add --transport "$transport" "$name" "$url" --scope user > /dev/null 2>&1; then
+        if claude mcp add --transport "$transport" "$name" "$url" "${header_args[@]}" --scope user > /dev/null 2>&1; then
           echo "    ✓ Added to user config"
         else
           echo "    ✗ Failed to register $name (continuing anyway)" >&2

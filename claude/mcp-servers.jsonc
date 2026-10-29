@@ -14,6 +14,11 @@
   // Each entry key is the server name. Supported transports: "http" and "sse"
   // (take "url"), and "stdio" (takes "command" plus optional "args" array).
   // Optional "excludeRoles" lists DOTPICKLES_ROLE values that skip the server.
+  //
+  // This file is public, so nothing here may name internal hosts. Servers that
+  // do go under "mcpServers" in the private role overlay
+  // (~/.config/dotpickles/roles/<role>.jsonc), same entry shape plus optional
+  // "headers" whose ${VAR} values resolve from the environment at registration.
   "servers": {
     // DeusData/codebase-memory-mcp, installed via mise. Upstream's `install`
     // also adds agents/skill/hooks to ~/.claude; only the hooks are used,
