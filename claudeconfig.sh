@@ -345,8 +345,16 @@ generate_settings() {
     overlay_json=$(read_json "$private_overlay")
 
     local overlay_settings
-    overlay_settings=$(echo "$overlay_json" | jq 'del(.permissions, .sandbox, .autoMode, .requiresPrivateOverlay, .mcpServers)')
+    overlay_settings=$(echo "$overlay_json" | jq 'del(.permissions, .sandbox, .autoMode, .requiresPrivateOverlay, .mcpServers, .hooks)')
     merged_settings=$(echo "$merged_settings" | jq --argjson o "$overlay_settings" '. * $o')
+
+    # Append overlay hooks per event rather than replacing the event's array
+    # (a plain deep merge would drop every hook the base and role defined),
+    # skipping entries already present. Lets the overlay carry hooks that
+    # name machine-specific paths without dropping the ones a tool installs.
+    merged_settings=$(echo "$merged_settings" | jq --argjson o "$(echo "$overlay_json" | jq '.hooks // {}')" '
+      reduce ($o | keys[]) as $event (.;
+        .hooks[$event] = reduce (($o[$event])[]) as $h ((.hooks[$event] // []); if index([$h]) then . else . + [$h] end))')
 
     merged_allow=$(echo "$merged_allow" | jq --argjson o "$(echo "$overlay_json" | jq '.permissions.allow // []')" '. + $o')
     merged_ask=$(echo "$merged_ask" | jq --argjson o "$(echo "$overlay_json" | jq '.permissions.ask // []')" '. + $o')
