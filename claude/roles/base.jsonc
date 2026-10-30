@@ -93,7 +93,12 @@
   // claude/README.md's Auto Mode Rules table for where things go.
   // Roles and stacks omit "$defaults" -- the generator guarantees it.
   "autoMode": {
-    "allow": ["$defaults", "Bash(herdr:*) in technicalpickles/dotfiles"],
+    "allow": [
+      "$defaults",
+      // Prose, not `Bash(herdr:*) in <repo>` syntax, so the classifier can use
+      // it; the one denial was `herdr channel set` in pickled-coi.
+      "`herdr` is the user's plugin manager CLI for agent tooling; `config/herdr/plugins.toml` in technicalpickles/dotfiles is its manifest. `herdr plugin install`, `link`, `update` and `herdr channel set`, run in one of the user's own repos (`~/github.com/technicalpickles/*`), are local tooling changes on this machine, not External System Writes or Unauthorized Persistence. Installing a plugin the user did not name in this session still needs the user to have asked for it.",
+    ],
     "soft_deny": [
       "$defaults",
       "Bash(rm -rf:*) in technicalpickles/dotfiles — repo docs show a prior EPERM/sandbox workaround pattern around forced writes; keep destructive rm under review",
