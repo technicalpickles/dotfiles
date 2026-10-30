@@ -43,6 +43,10 @@ node = "lts"
 # `npx -y ccstatusline@x.y.z` because npm startup alone cost 21-68% CPU per
 # refresh, per session. Pinned: bump on purpose.
 "npm:ccstatusline" = "2.2.32"
+# 1Password CLI. The app's "Integrate with 1Password CLI" toggle only lets `op`
+# talk to the app; it doesn't install the binary. Here, not Brewfile, so Coder
+# gets it too.
+"aqua:1password/cli" = "2.41.1"
 pitchfork = "2.14.0"
 pkl = "0.30.0"
 python = "3.13"
