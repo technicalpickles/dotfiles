@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+# av-load-from-op: copy secrets from 1Password into Automic Vault, one key at a time.
+#
+# Usage:
+#   av-load-from-op [-C DIR] (--map FILE | --template FILE) [--dry-run] [KEY...]
+#
+#   --map FILE       lines of KEY=<op reference>; blank lines and #-comments allowed
+#   --template FILE  an .env.template: lines of KEY={{ <op reference> }}; other lines ignored
+#   -C DIR           change to DIR first (like git -C). `av save --project-directory=.`
+#                    binds the saved key to the cwd, so run this from the repo that
+#                    varlock reads, or point -C at it. FILE paths resolve after -C.
+#   --dry-run        list what would be loaded; never calls op or av
+#   KEY...           load only these keys (default: every key in the file)
+#
+# A reference containing TODO is a placeholder. Named explicitly it is an error;
+# when loading everything it is skipped with a note.
+#
+# Values go straight from `op read -n` into `av save --stdin`, so they never touch
+# disk, argv, or the terminal. -n matters: --stdin saves exactly what it reads,
+# trailing newline included. Output is one status line per key; only key names and
+# op references (not secrets) are ever printed.
+#
+# Exit: 0 all done, 1 a key failed or was refused, 2 usage or file problem.
+# Run in a terminal: 1Password and Automic Vault each ask to approve.
+#
+# Not implemented: --missing (skip keys av already has). It needs the output format
+# of `av list`, which hasn't been confirmed. See ADR 0069.
+#
+# bash 3.2 compatible (macOS /bin/bash), so no associative arrays.
+
+set -uo pipefail
+
+die() {
+  echo "av-load-from-op: $*" >&2
+  exit 2
+}
+
+usage() {
+  awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"
+}
+
+dir=""
+map=""
+template=""
+dry=0
+want=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    -C)
+      [[ $# -ge 2 ]] || die "-C needs a directory"
+      dir="$2"
+      shift 2
+      ;;
+    --map)
+      [[ $# -ge 2 ]] || die "--map needs a file"
+      map="$2"
+      shift 2
+      ;;
+    --template)
+      [[ $# -ge 2 ]] || die "--template needs a file"
+      template="$2"
+      shift 2
+      ;;
+    --dry-run)
+      dry=1
+      shift
+      ;;
+    --)
+      shift
+      want+=("$@")
+      break
+      ;;
+    -*) die "unknown option: $1 (try --help)" ;;
+    *)
+      want+=("$1")
+      shift
+      ;;
+  esac
+done
+
+[[ -n "$map" && -n "$template" ]] && die "use --map or --template, not both"
+[[ -n "$map" || -n "$template" ]] || die "need --map FILE or --template FILE (try --help)"
+
+if [[ -n "$dir" ]]; then
+  cd "$dir" 2> /dev/null || die "can't cd to $dir"
+fi
+
+file="${map:-$template}"
+[[ -r "$file" ]] || die "can't read $file"
+
+keys=()
+refs=()
+
+# Parse FILE into the parallel arrays keys/refs. Bad lines are collected and
+# reported together, so one run shows every problem.
+bad=0
+lineno=0
+while IFS= read -r line || [[ -n "$line" ]]; do
+  lineno=$((lineno + 1))
+  line="${line%$'\r'}"
+  # trim leading whitespace
+  line="${line#"${line%%[![:space:]]*}"}"
+  [[ -z "$line" || "$line" == \#* ]] && continue
+
+  if [[ -n "$template" ]]; then
+    # KEY={{ ref }}; anything else (plain values, other shapes) isn't ours
+    if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)=\{\{[[:space:]]*(.*[^[:space:]])[[:space:]]*\}\}[[:space:]]*$ ]]; then
+      key="${BASH_REMATCH[1]}"
+      ref="${BASH_REMATCH[2]}"
+    else
+      continue
+    fi
+  else
+    if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*[^[:space:]])[[:space:]]*$ ]]; then
+      key="${BASH_REMATCH[1]}"
+      ref="${BASH_REMATCH[2]}"
+    else
+      echo "av-load-from-op: ${file}:${lineno}: expected KEY=reference" >&2
+      bad=1
+      continue
+    fi
+  fi
+
+  for seen in ${keys[@]+"${keys[@]}"}; do
+    if [[ "$seen" == "$key" ]]; then
+      echo "av-load-from-op: ${file}:${lineno}: duplicate key ${key}" >&2
+      bad=1
+      continue 2
+    fi
+  done
+  keys+=("$key")
+  refs+=("$ref")
+done < "$file"
+
+[[ "$bad" -eq 0 ]] || exit 2
+[[ ${#keys[@]} -gt 0 ]] || die "no keys found in $file"
+
+ref_for() {
+  local i
+  for i in "${!keys[@]}"; do
+    [[ "${keys[$i]}" == "$1" ]] && {
+      printf '%s\n' "${refs[$i]}"
+      return 0
+    }
+  done
+  return 1
+}
+
+explicit=1
+if [[ ${#want[@]} -eq 0 ]]; then
+  explicit=0
+  want=("${keys[@]}")
+fi
+
+# Validate everything before touching op or av, so a typo doesn't half-load.
+todo=()
+refused=0
+for key in "${want[@]}"; do
+  if ! ref=$(ref_for "$key"); then
+    echo "av-load-from-op: unknown key ${key} (known: ${keys[*]})" >&2
+    exit 2
+  fi
+  if [[ "$ref" == *TODO* ]]; then
+    if [[ "$explicit" -eq 1 ]]; then
+      echo "${key}: refused, placeholder reference (TODO) in ${file}" >&2
+      refused=1
+    else
+      echo "${key}: skipped, placeholder reference (TODO)"
+    fi
+    continue
+  fi
+  if [[ "$ref" != op://* ]]; then
+    echo "${key}: refused, reference is not an op reference" >&2
+    refused=1
+    continue
+  fi
+  todo+=("$key")
+done
+[[ "$refused" -eq 0 ]] || exit 1
+
+if [[ "$dry" -eq 1 ]]; then
+  for key in ${todo[@]+"${todo[@]}"}; do
+    echo "${key}: would load from $(ref_for "$key")"
+  done
+  exit 0
+fi
+
+command -v op > /dev/null 2>&1 || die "op not found on PATH"
+command -v av > /dev/null 2>&1 || die "av not found on PATH"
+
+failed=0
+for key in ${todo[@]+"${todo[@]}"}; do
+  ref=$(ref_for "$key")
+  op read -n "$ref" | av save --stdin --project-directory=. "$key"
+  rc=("${PIPESTATUS[@]}")
+  if [[ "${rc[0]}" -ne 0 || "${rc[1]}" -ne 0 ]]; then
+    echo "${key}: FAILED (op read exit ${rc[0]}, av save exit ${rc[1]})" >&2
+    failed=1
+  else
+    echo "${key}: loaded"
+  fi
+done
+
+exit "$failed"
