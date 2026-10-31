@@ -40,3 +40,14 @@ jobs:
 
       - name: Run agent gitconfig test
         run: ./scripts/test-agent-gitconfig.sh
+
+  av-load-from-op:
+    name: av-load-from-op with stub op and av
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run av-load-from-op test
+        run: ./scripts/test-av-load-from-op.sh

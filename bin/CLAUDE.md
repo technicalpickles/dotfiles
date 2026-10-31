@@ -43,6 +43,7 @@ Spotlight stays enabled (Alfred needs it) with specific directories excluded. Se
 - `bin/setup-agent-ssh-key`, `bin/check-agent-ssh-key`: create and validate a per-role agent SSH identity ([ADR 0031](../doc/adr/0031-role-scoped-agent-git-identity.md))
 - `bin/load-agent-ssh-keys`: load agent keys into launchd's ssh-agent at login so scheduled jobs can sign
 - `bin/av-ssh-agent-holds-key`, `bin/retire-agent-ssh-key`, `bin/setup-av-signing-key`: Automic Vault key gate, key retirement, and GPG signing-key setup ([ADR 0059](../doc/adr/0059-automic-vault-for-git-signing-and-agent-ssh.md)). `setup-av-signing-key` needs a terminal, `op` and network, so run it outside the sandbox
+- `bin/av-load-from-op`: copy secrets from 1Password into Automic Vault from a map file or `.env.template` (`--dry-run`, `-C DIR`, `KEY...` subset). Needs a terminal for approvals ([ADR 0069](../doc/adr/0069-shared-av-load-from-op-tool.md)); tests: `scripts/test-av-load-from-op.sh`
 - `bin/safe <cmd>`: run an agent CLI under agent-safehouse with dotfiles' profiles ([ADR 0060](../doc/adr/0060-agent-safehouse-wrapper.md), [0063](../doc/adr/0063-per-invocation-grants-for-safe.md), [0064](../doc/adr/0064-isolation-policy-for-sandboxed-agents.md))
 - `bin/safe-tmux`: drive a `safe` shell from a detached tmux session
 - `bin/prime-models`: regenerate `prime/models.home.json` from the Ollama Cloud catalog (needs network, run outside the sandbox)
