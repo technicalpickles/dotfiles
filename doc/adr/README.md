@@ -67,3 +67,4 @@
 - [66. turn-off-the-command-sandbox-for-the-home-role](0066-turn-off-the-command-sandbox-for-the-home-role.md)
 - [67. pin-global-mise-tools-and-leave-runtimes-to-projects](0067-pin-global-mise-tools-and-leave-runtimes-to-projects.md)
 - [68. role-scoped-plugin-disables-and-craftdesk-removal](0068-role-scoped-plugin-disables-and-craftdesk-removal.md)
+- [69. prime-agent-on-work-coder](0069-prime-agent-on-work-coder.md)

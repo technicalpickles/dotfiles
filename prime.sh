@@ -23,7 +23,8 @@ echo "  📁 ~/.prime/agent -> ready"
 
 # Model providers are per role: prime/models.<role>.json (home is local Ollama,
 # whose cloud models ride through it). A role with no file gets no models.json,
-# so it keeps whatever /login or its safe hook provides.
+# so it keeps whatever /login or its safe hook provides. work-coder points at
+# Coder's AI Bridge (ADR 0069).
 if [ -f "$DIR/prime/models.$DOTPICKLES_ROLE.json" ]; then
   link "prime/models.$DOTPICKLES_ROLE.json" "$agent_dir/models.json"
 else

@@ -1,0 +1,12 @@
+{
+  "providers": {
+    "anthropic": {
+      "baseUrl": "https://coder.staging.zp-int.com/api/v2/aibridge/anthropic",
+      "apiKey": "PRIME_AGENT_CODER_AIGATEWAY_SESSION_TOKEN"
+    },
+    "openai": {
+      "baseUrl": "https://coder.staging.zp-int.com/api/v2/aibridge/openai/v1",
+      "apiKey": "PRIME_AGENT_CODER_AIGATEWAY_SESSION_TOKEN"
+    }
+  }
+}
