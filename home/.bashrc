@@ -44,6 +44,21 @@ else
   export STARSHIP_CTX="$DOTPICKLES_ROLE"
 fi
 
+# prime-agent: telemetry off on every role. On work-coder, hand it the Coder AI
+# Bridge token per call. Mirrors config/fish/conf.d/prime-agent.fish (ADR 0069).
+export PRIME_AGENT_TELEMETRY=0
+if [[ "$DOTPICKLES_ROLE" == work-coder ]]; then
+  prime-agent() {
+    local settings=/etc/claude-code/managed-settings.d/10-coder.json
+    if [[ -z "$PRIME_AGENT_CODER_AIGATEWAY_SESSION_TOKEN" && -r "$settings" ]]; then
+      PRIME_AGENT_CODER_AIGATEWAY_SESSION_TOKEN="$(jq -r '.env.ANTHROPIC_AUTH_TOKEN // empty' "$settings")" \
+        command prime-agent "$@"
+    else
+      command prime-agent "$@"
+    fi
+  }
+fi
+
 # Path to your oh-my-bash installation.
 export OSH="$HOME/.oh-my-bash"
 
