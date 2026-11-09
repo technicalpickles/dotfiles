@@ -14,6 +14,7 @@ Scripts and utilities, most used by other scripts, hooks and LaunchAgents. This 
 - `bin/safari-reading-list`: export Safari's Reading List (needs Full Disk Access for the terminal)
 - `bin/task-sync-status`: last result of the `com.technicalpickles.task-sync` LaunchAgent
 - `bin/dotfiles-doctor`: read-only health check (role, symlinks, LaunchAgents, tools)
+- `bin/crit-ts`: run a live [crit](https://crit.md) review reachable over Tailscale; gives each review a stable port, a `tailscale serve` entry and a matching `--public-url` (`crit-ts --ls`, `--gc`). Tailnet ACLs are the only access control, since crit has no network auth
 - `bin/yt-digest`: video transcript plus on-screen slide text into one `full_context.md` (`uv run --script`)
 
 ## Spotlight Management

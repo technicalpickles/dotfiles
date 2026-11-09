@@ -1,0 +1,211 @@
+#!/usr/bin/env bash
+#
+# Run a live crit review that is reachable over Tailscale, without picking or
+# tracking ports. crit runs one daemon per review on its own port; this wrapper
+# gives each review a stable port, publishes it with `tailscale serve`, and
+# advertises the matching tailnet URL.
+#
+# Usage:
+#   crit-ts [crit args...]   same arguments as `crit` (files, --range, ...)
+#   crit-ts --ls             live reviews and their tailnet URLs
+#   crit-ts --gc             drop serve entries whose daemon is gone
+#   crit-ts --help
+#
+# How it works:
+#   - The port comes from a hash of the directory and file arguments, in
+#     CRIT_TS_BASE_PORT..+999 (default 41000), so a review keeps its URL.
+#   - A review already running for the same directory and arguments is reused.
+#   - Only serve entries in that range are ever created or removed.
+#   - crit binds loopback. Tailscale ACLs are the only access control, because
+#     crit has no network auth (hence --allow-unauthenticated-network).
+#
+# Env:
+#   CRIT_TS_BASE_PORT   first port of the range (default 41000)
+#   CRIT_TS_OPEN=1      let crit open a local browser (default: --no-open)
+#   TAILSCALE_BIN       tailscale CLI path (default: PATH, then the macOS app)
+set -euo pipefail
+
+BASE_PORT="${CRIT_TS_BASE_PORT:-41000}"
+SPAN=1000
+SESSIONS_DIR="${HOME}/.crit/sessions"
+
+die() {
+  echo "crit-ts: $*" >&2
+  exit 1
+}
+
+usage() {
+  sed -n '2,/^set -euo/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'
+}
+
+find_tailscale() {
+  if [[ -n "${TAILSCALE_BIN:-}" ]]; then
+    echo "$TAILSCALE_BIN"
+  elif command -v tailscale > /dev/null 2>&1; then
+    command -v tailscale
+  elif [[ -x /Applications/Tailscale.app/Contents/MacOS/Tailscale ]]; then
+    echo /Applications/Tailscale.app/Contents/MacOS/Tailscale
+  else
+    die "tailscale CLI not found (set TAILSCALE_BIN)"
+  fi
+}
+
+TS="$(find_tailscale)"
+
+tailnet_host() {
+  "$TS" status --json | jq -er '.Self.DNSName | sub("\\.$"; "")' \
+    || die "could not read this node's tailnet name; is Tailscale running?"
+}
+
+daemon_alive() {
+  local pid="$1" port="$2"
+  kill -0 "$pid" 2> /dev/null \
+    && curl -fsS -m 2 -o /dev/null "http://127.0.0.1:${port}/api/health"
+}
+
+in_range() {
+  local port="$1"
+  ((port >= BASE_PORT && port < BASE_PORT + SPAN))
+}
+
+# Ports in our range that currently have a serve entry.
+served_ports() {
+  "$TS" serve status --json 2> /dev/null \
+    | jq -r '(.Web // {}) | keys[] | capture(":(?<p>[0-9]+)$").p' 2> /dev/null \
+    | while read -r p; do
+      if in_range "$p"; then echo "$p"; fi
+    done
+}
+
+# Print "<pid> <port> <public_url>" for the live session matching cwd and args.
+find_session() {
+  local cwd="$1" branch="$2"
+  shift 2
+  local want
+  want="$(printf '%s\n' "$@" | sort | jq -R . | jq -sc .)"
+  local f
+  for f in "$SESSIONS_DIR"/*.json; do
+    [[ -e "$f" ]] || continue
+    jq -er --arg cwd "$cwd" --arg branch "$branch" --argjson want "$want" '
+      select(.cwd == $cwd)
+      | select((.args // [] | sort) == $want)
+      | select(($want | length) > 0 or .branch == $branch)
+      | "\(.pid) \(.port) \(.public_url // "")"' "$f" 2> /dev/null || continue
+  done | while read -r pid port url; do
+    if daemon_alive "$pid" "$port"; then
+      echo "$pid $port $url"
+      break
+    fi
+  done
+}
+
+pick_port() {
+  local key="$1" offset p i
+  offset=$(($(printf '%s' "$key" | cksum | cut -d' ' -f1) % SPAN))
+  for ((i = 0; i < SPAN; i++)); do
+    p=$((BASE_PORT + (offset + i) % SPAN))
+    if ! nc -z 127.0.0.1 "$p" 2> /dev/null; then
+      echo "$p"
+      return
+    fi
+  done
+  die "no free port in ${BASE_PORT}..$((BASE_PORT + SPAN - 1))"
+}
+
+cmd_ls() {
+  local host f found=0
+  host="$(tailnet_host)"
+  for f in "$SESSIONS_DIR"/*.json; do
+    [[ -e "$f" ]] || continue
+    local pid port url cwd
+    read -r pid port url cwd < <(jq -r '"\(.pid) \(.port) \(.public_url // "-") \(.cwd)"' "$f")
+    daemon_alive "$pid" "$port" || continue
+    in_range "$port" || continue
+    found=1
+    printf '%s  %s  (%s)\n' "${url/#-/https://${host}:${port}}" "$port" "$cwd"
+  done
+  ((found)) || echo "no live crit-ts reviews"
+}
+
+cmd_gc() {
+  local live p removed=0
+  live="$(
+    for f in "$SESSIONS_DIR"/*.json; do
+      [[ -e "$f" ]] || continue
+      read -r pid port < <(jq -r '"\(.pid) \(.port)"' "$f")
+      daemon_alive "$pid" "$port" && echo "$port"
+    done
+  )"
+  while read -r p; do
+    [[ -n "$p" ]] || continue
+    if ! grep -qx "$p" <<< "$live"; then
+      "$TS" serve --https="$p" off > /dev/null
+      echo "removed serve entry :$p"
+      removed=1
+    fi
+  done < <(served_ports)
+  ((removed)) || echo "nothing to remove"
+}
+
+case "${1:-}" in
+  -h | --help | help)
+    usage
+    exit 0
+    ;;
+  --ls)
+    cmd_ls
+    exit 0
+    ;;
+  --gc)
+    cmd_gc
+    exit 0
+    ;;
+esac
+
+command -v jq > /dev/null || die "jq is required"
+command -v crit > /dev/null || die "crit is not on PATH"
+
+host="$(tailnet_host)"
+cwd="$(pwd -P)"
+branch="$(git rev-parse --abbrev-ref HEAD 2> /dev/null || true)"
+
+file_args=()
+for a in "$@"; do
+  [[ "$a" == -* ]] || file_args+=("$a")
+done
+
+open_flag=(--no-open)
+[[ "${CRIT_TS_OPEN:-0}" == 1 ]] && open_flag=()
+
+existing=""
+if ((${#file_args[@]})); then
+  existing="$(find_session "$cwd" "$branch" "${file_args[@]}" || true)"
+else
+  existing="$(find_session "$cwd" "$branch" || true)"
+fi
+
+if [[ -n "$existing" ]]; then
+  read -r _ port url <<< "$existing"
+  [[ -n "$url" ]] \
+    || die "a review for this directory is already running without a tailnet URL (port $port); run \`crit stop\` first"
+else
+  port="$(pick_port "${cwd}"$'\0'"${file_args[*]:-}")"
+fi
+
+"$TS" serve --bg --https="$port" "localhost:${port}" > /dev/null \
+  || die "tailscale serve failed for port $port"
+
+status=0
+crit --port "$port" \
+  --public-url "https://${host}:${port}" \
+  --allow-unauthenticated-network \
+  "${open_flag[@]}" "$@" || status=$?
+
+# The client returns when the review finishes. If the daemon went with it,
+# the serve entry is stale.
+sleep 1
+pid_port="$(find_session "$cwd" "$branch" "${file_args[@]}" || true)"
+if [[ -z "$pid_port" ]]; then
+  "$TS" serve --https="$port" off > /dev/null 2>&1 || true
+fi
+exit "$status"
