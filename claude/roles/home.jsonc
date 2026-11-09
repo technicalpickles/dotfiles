@@ -126,6 +126,14 @@
       // Self-Modification, scoped to this repo and to sessions where Josh
       // raised the topic; the result still lands as a reviewed PR.
       "In technicalpickles/dotfiles the auto-mode classifier rules live in `claude/roles/*.jsonc` and `claude/stacks/*.jsonc` and are generated into `~/.claude/settings.json` by `./claudeconfig.sh` (ADR 0056). When the user's (Josh's) task in this session is about those rules, the classifier or auto mode, because the user raised it in a message in this session, the following is routine maintenance, not Self-Modification or Auto-Mode Bypass: reading those sources, running `claude auto-mode config`, `defaults` or `critique`, reading Claude Code's own documentation on permissions, hooks and auto mode and this repo's ADRs and notes about them, editing those role and stack sources, running `./claudeconfig.sh`, and committing the result for review as a PR. It stays Self-Modification to hand-edit `~/.claude/settings.json` or any other generated file under `~/.claude/`, to edit these sources when the user's task in this session was about something else, or to add a rule the user did not ask for in this session.",
+      // Own-PR review upkeep. cq pull of Bash classifier denials since
+      // 2026-10-30 (14 total) had 1 for resolving or replying to a review
+      // thread and 2 for `gh pr ready` or `gh pr edit --add-label`, each
+      // under External System Writes. Both clauses need the user to have
+      // asked in this session, because these actions post under the user's
+      // name. Deliberately leaves out merging, approving and force-pushing.
+      "Replying to and resolving review threads on a pull request the user (Josh) authored is routine upkeep, not External System Writes: `gh api graphql` with `resolveReviewThread` or `addPullRequestReviewThreadReply`, and `gh api repos/<owner>/<repo>/pulls/<n>/comments/<id>/replies`. It applies only when the user's message in this session asked to post, reply to, resolve or address review feedback on that PR. It does not clear Excess Sensitive Detail or ChatOps Trigger Comments: a reply that carries sensitive details, or that is itself a bot command such as `/deploy` or `atlantis apply`, is still judged on its own. Merging, approving and `--admin` or `--force` actions are unchanged.",
+      "`gh pr ready` and `gh pr edit --add-label` on a pull request the agent opened in this session, or that the user told the agent in this session to work on, are routine upkeep, not External System Writes. Adding a label is the whole of the `gh pr edit` clearance: editing the title or body of someone else's PR, removing labels the agent did not add, and `gh pr merge` are unchanged.",
       // Don't inherit the previous denial. The largest bucket (about 28): right
       // after a real block, `git status`, `cat > todo.md` and `--help` took
       // its label. Low confidence this changes anything; re-check with the cq
