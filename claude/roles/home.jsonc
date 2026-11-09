@@ -214,7 +214,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "codebase-memory-mcp hook-augment 2>/dev/null || true",
+            "command": "CBM_HOOK_DEADLINE_MS=4000 codebase-memory-mcp hook-augment 2>/dev/null || true",
             "timeout": 5,
           },
         ],
@@ -246,7 +246,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "codebase-memory-mcp hook-augment 2>/dev/null || true",
+            "command": "CBM_HOOK_DEADLINE_MS=4000 codebase-memory-mcp hook-augment 2>/dev/null || true",
             "timeout": 5,
           },
         ],
@@ -258,7 +258,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "codebase-memory-mcp hook-augment 2>/dev/null || true",
+            "command": "CBM_HOOK_DEADLINE_MS=4000 codebase-memory-mcp hook-augment 2>/dev/null || true",
             "timeout": 5,
           },
         ],
@@ -309,7 +309,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "codebase-memory-mcp hook-augment 2>/dev/null || true",
+            "command": "CBM_HOOK_DEADLINE_MS=4000 codebase-memory-mcp hook-augment 2>/dev/null || true",
             "timeout": 5,
           },
         ],
