@@ -24,8 +24,30 @@ echo "  📁 ~/.prime/agent -> ready"
 # Model providers are per role: prime/models.<role>.json (home is local Ollama,
 # whose cloud models ride through it). A role with no file gets no models.json,
 # so it keeps whatever /login or its safe hook provides.
+#
+# work-coder is generated instead: the AI Bridge URL names internal infrastructure
+# and this repo is public, so it's read from the Coder template's Claude Code
+# managed settings, which already carry it (ADR 0069).
+coder_settings=/etc/claude-code/managed-settings.d/10-coder.json
 if [ -f "$DIR/prime/models.$DOTPICKLES_ROLE.json" ]; then
   link "prime/models.$DOTPICKLES_ROLE.json" "$agent_dir/models.json"
+elif [ "$DOTPICKLES_ROLE" = work-coder ] && [ -r "$coder_settings" ]; then
+  anthropic_url="$(jq -r '.env.ANTHROPIC_BASE_URL // empty' "$coder_settings")"
+  case "$anthropic_url" in
+    */aibridge/anthropic)
+      models="$agent_dir/models.json"
+      [ -L "$models" ] && rm "$models"
+      jq -n --arg anthropic "$anthropic_url" --arg openai "${anthropic_url%/anthropic}/openai/v1" '
+        {providers: {
+          anthropic: {baseUrl: $anthropic, apiKey: "PRIME_AGENT_CODER_AIGATEWAY_SESSION_TOKEN"},
+          openai: {baseUrl: $openai, apiKey: "PRIME_AGENT_CODER_AIGATEWAY_SESSION_TOKEN"}
+        }}' > "$models"
+      echo "  📝 models.json -> Coder AI Bridge (anthropic, openai)"
+      ;;
+    *)
+      echo "  ⚠ models.json -> no AI Bridge URL in $coder_settings, skipping" >&2
+      ;;
+  esac
 else
   echo "  ⏭  models.json -> none for role $DOTPICKLES_ROLE, skipping"
 fi
