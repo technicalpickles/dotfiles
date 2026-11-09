@@ -1,7 +1,8 @@
 [tools]
 bun = "1.3.14"
 # Pinned: all running instances must be the same build; bump, then restart agents.
-"github:DeusData/codebase-memory-mcp" = "0.11.0"
+# 0.11.0 hashed its 289MB binary in software per call, so hook-augment hit its 2s deadline half the time; 0.12.1+ is hardware SHA-256.
+"github:DeusData/codebase-memory-mcp" = "0.12.1"
 # agent-safehouse (bin/safe wrapper, ADR 0060). The release's only asset is a
 # bare safehouse.sh with no platform in its name, so auto-matching fails
 # without asset_pattern; mise renames it to `safehouse`. macOS-only (Seatbelt).
