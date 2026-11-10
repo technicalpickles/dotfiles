@@ -321,8 +321,11 @@ into `~/.claude.json` (user scope, available in all projects). `claudeconfig.sh`
 CLI (Claude owns `~/.claude.json`'s format, so we drive the CLI instead of
 hand-editing the file).
 
-Registration is **add-if-missing** (idempotent), like marketplaces. Supported
-transports: `http` and `sse` (both url-based).
+Registration is idempotent: a missing server is added, and a registered one is
+left alone unless its url (or command + args) no longer matches the manifest, in
+which case it is removed and re-added. Headers are not compared, since they hold
+resolved secrets. Supported transports: `http`, `sse` (both url-based) and
+`stdio`.
 
 ```jsonc
 "servers": {
@@ -330,7 +333,8 @@ transports: `http` and `sse` (both url-based).
 }
 ```
 
-To change an existing server's url/transport, remove it first, then re-run:
+Changing a url or command in the manifest and re-running `./claudeconfig.sh` is
+enough. To change only headers or the transport, remove the server first:
 
 ```bash
 claude mcp remove user < name > -s && ./claudeconfig.sh
