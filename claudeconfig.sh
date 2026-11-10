@@ -611,8 +611,9 @@ DOTPICKLES_ROLE="$ROLE" "$DIR/claude/configure-marketplaces.sh"
 # Register MCP servers into ~/.claude.json (user scope) from the shared
 # manifest. Claude owns ~/.claude.json's format, so we drive the `claude mcp`
 # CLI rather than hand-editing the file. Add-if-missing (idempotent), matching
-# configure_marketplaces. To change an existing server, remove it first
-# (`claude mcp remove <name> -s user`) and re-run.
+# configure_marketplaces, but a registered server whose url (or command + args)
+# drifted from the manifest is removed and re-added. To change only headers or
+# the transport, remove it first (`claude mcp remove <name> -s user`) and re-run.
 configure_mcp_servers() {
   echo "Configuring MCP servers..."
 
@@ -648,14 +649,30 @@ configure_mcp_servers() {
       continue
     fi
 
-    if claude mcp get "$name" > /dev/null 2>&1; then
-      echo "  ✓ $name (already registered)"
-      continue
-    fi
-
     local transport url
     transport=$(echo "$servers_json" | jq -r --arg n "$name" '.[$n].transport // "http"')
     url=$(echo "$servers_json" | jq -r --arg n "$name" '.[$n].url // ""')
+
+    if claude mcp get "$name" > /dev/null 2>&1; then
+      # Compare the user-scope entry's endpoint (url, or command + args) to the
+      # manifest and re-register on drift, so a moved port doesn't leave a dead
+      # URL behind. Headers are not compared: they hold resolved secrets.
+      local want have
+      want=$(echo "$servers_json" | jq -r --arg n "$name" \
+        '.[$n] | if (.transport // "http") == "stdio" then ([.command] + (.args // [])) | join(" ") else (.url // "") end')
+      have=$(jq -r --arg n "$name" \
+        '.mcpServers[$n] // empty | if .type == "stdio" or (.url == null) then ([.command] + (.args // [])) | join(" ") else .url end' \
+        "$HOME/.claude.json" 2> /dev/null)
+      if [ -z "$have" ] || [ "$have" = "$want" ]; then
+        echo "  ✓ $name (already registered)"
+        continue
+      fi
+      echo "  ↻ $name changed ($have -> $want); re-registering"
+      claude mcp remove "$name" -s user > /dev/null 2>&1 || {
+        echo "  ✗ $name: could not remove stale entry; leaving it" >&2
+        continue
+      }
+    fi
 
     case "$transport" in
       http | sse)
