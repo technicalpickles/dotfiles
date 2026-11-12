@@ -188,7 +188,7 @@ generate_settings() {
   local temp_file="$(mktemp)"
 
   # Local-only keys preserved from existing settings across regenerations
-  local local_keys=("enabledPlugins" "extraKnownMarketplaces")
+  local local_keys=("enabledPlugins" "extraKnownMarketplaces" "pluginConfigs")
 
   # Extract local-only settings from existing file
   local local_settings="{}"
