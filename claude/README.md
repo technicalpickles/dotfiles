@@ -125,7 +125,7 @@ When you run `./claudeconfig.sh`:
 3. **Stacks** (`stacks/*.jsonc`, sorted alphabetically): permissions, sandbox and `autoMode` arrays concatenated
 4. **Private overlay** (`~/.config/dotpickles/roles/$ROLE.jsonc`, optional): a full role file kept outside this repo, merged last so it wins over everything above. See [Auto Mode Rules](#auto-mode-rules)
 5. **Deduplication**: permissions and sandbox arrays sorted and deduplicated. `autoMode` arrays are deduplicated but **never sorted** -- order carries meaning there
-6. **Local keys**: `enabledPlugins`, `extraKnownMarketplaces` preserved from existing `~/.claude/settings.json`
+6. **Local keys**: `enabledPlugins`, `extraKnownMarketplaces`, `pluginConfigs` (plugin options set with `claude plugin configure`) preserved from existing `~/.claude/settings.json`
 7. **Validation and write**
 8. **herdr Claude integration**: if `herdr` is on PATH, `herdr integration install claude` runs against the freshly written file, adding its `SessionStart` hook so herdr can `claude --resume` each pane after a server restart. herdr owns that entry and `~/.claude/hooks/herdr-agent-state.sh`; don't copy them into a role
 
