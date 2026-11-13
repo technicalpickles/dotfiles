@@ -10,13 +10,20 @@ Accepted
 
 fish 4.x writes a Primary Device Attributes query (`ESC[0c`) at startup and waits up to 10 seconds for the terminal to answer. Claude desktop's Terminal panel never answers, so every panel tab sat for about 10 seconds, printed "fish could not read response to Primary Device Attribute query", and swallowed any command sent during the wait. Ghostty and tmux answer, so they never stall. Reported upstream as [anthropics/claude-code#109546](https://github.com/anthropics/claude-code/issues/109546).
 
-Load order, traced on a pty that never answers: `conf.d/*.fish` and `config.fish` run first, then fish writes the query and waits. Setting `fish_features` from `conf.d` or `config.fish` (or `-C`) still stalls 10.1s, though, because fish reads the flag once at startup and ignores later changes. Only three inputs are read in time, and each took the prompt from about 10.1s to under 0.2s:
+Load order, from the fish 4.7.1 source (`src/bin/fish.rs`, `src/reader/reader.rs`) and confirmed by tracing a pty that never answers:
+
+1. `env_init` loads the process environment and universal variables.
+2. fish reads `fish_features` from those once, then applies `--features` from the command line on top ("Set features early", `fish.rs`).
+3. `read_init` sources `conf.d/*.fish` and then `config.fish`.
+4. The first interactive reader (`reader_push`) calls `terminal_init`, which checks `querying_allowed` and, if the `query-term` feature is still on, writes the query and waits.
+
+Nothing re-applies `fish_features` after step 2, so setting it from `conf.d`, `config.fish` or `-C` has no effect, even though those run before the query (measured: still 10.1s). Only three inputs arrive in time, and each took the prompt from about 10.1s to under 0.2s:
 
 - `fish_features` in the process environment.
 - `fish_features` as a universal variable (`~/.config/fish/fish_variables`).
 - `fish --features no-query-term` on the command line, also with `-l`.
 
-Nothing in fish's own config files can set it.
+`querying_allowed` has two other off switches that don't help here: `TERM=dumb`, and stdout not being a tty. The panel sets `TERM=xterm-256color` and is a tty.
 
 A panel-only route was tried and failed. Claude desktop captures a login-shell env by running `$SHELL -l -i -c env` with `CLAUDE_DESKTOP_RESOLVING_ENVIRONMENT=1`, and a `conf.d` guard on that marker did export the flag in a simulated capture. After restarting the app, new panel tabs still stalled and `echo $fish_features` was empty there. From the app bundle (minified, so inference), that capture feeds the agent process env. The panel shell is built from the app's own `process.env`, which fish config can't reach. Settings-level `env` keys don't reach it either (checked against the live panel shells).
 
