@@ -37,6 +37,16 @@ Drop a `.fish` file in `config/fish/conf.d/`, then run `./fish.sh --check` (repo
 
 The tradeoff: per-file symlinks don't appear automatically when a new file is added to the repo -- nothing re-runs that link step on its own. A file added and forgotten silently has no effect (its own `conf.d` autoload just never happens) until someone runs `fish.sh` (or `fish.sh --check`) again.
 
+## Claude Desktop Panel Stall (`fish_features`)
+
+Claude desktop's Terminal panel never answers fish's startup terminal query, so each panel tab sits ~10s. The fix is a universal variable, set once per machine and not tracked in this repo (`fish_variables` isn't committed):
+
+```fish
+set -Ua fish_features no-query-term   # undo: set -Ue fish_features
+```
+
+fish reads `fish_features` once at startup, from the environment, a universal variable, or `fish --features`. Setting it in `config.fish` or `conf.d/` has no effect, so don't try. Turning the query off also loses `$fish_terminal_color_theme` (becomes `unknown`) and a few optional features in every terminal. Full measurements and rejected options in [ADR 0070](../../doc/adr/0070-disable-fish-terminal-queries-for-claude-desktop-panel.md).
+
 ## Starship Prompt
 
 Configured at `config/starship.toml`. Uses `tide_rainbow` palette with hardcoded hex colors -- requires true color terminal support. See [ADR 0007](../../doc/adr/0007-switch-to-starship.md).
