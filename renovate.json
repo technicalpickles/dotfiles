@@ -6,7 +6,21 @@
   "mise": {
     "managerFilePatterns": ["/^config/mise/(config|conf\\.d/[^/]+)\\.toml$/"]
   },
+  "customDatasources": {
+    "onepassword-cli": {
+      "defaultRegistryUrlTemplate": "https://app-updates.agilebits.com/check/1/0/CLI2/en/2.0.0/N",
+      "format": "json",
+      "transformTemplates": ["{ \"releases\": [{ \"version\": version }] }"]
+    }
+  },
   "packageRules": [
+    {
+      "description": "1Password CLI is closed source: no GitHub repo for the aqua/github-tags lookup to find. Look it up from 1Password's update feed instead. The feed has no release timestamps, so the cooldown can never be satisfied; skip it.",
+      "matchManagers": ["mise"],
+      "matchPackageNames": ["1password/cli"],
+      "overrideDatasource": "custom.onepassword-cli",
+      "minimumReleaseAge": null
+    },
     {
       "matchManagers": ["github-actions"],
       "groupName": "GitHub Actions",
