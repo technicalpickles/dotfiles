@@ -7,8 +7,13 @@
 : "${PRIME_AGENT_DAEMON_SOCKET:=$SAFE_TOOL_ROOT/daemon.sock}"
 : "${PRIME_AGENT_KERNEL_VENV:=$SAFE_TOOL_ROOT/kernel-venv}"
 
-# prime-agent needs a provider key. Set SAFE_FNOX_KEYS to something else (or empty) to change it.
-: "${SAFE_FNOX_KEYS=OPENROUTER_API_KEY}"
+# The state dir is created by prime.sh, but this hook runs unsandboxed, so a
+# fresh machine works without it: the sandbox can't make ~/.prime itself.
+mkdir -p "$HOME/.prime/agent"
+
+# Home logs in with /login (the credential lives in ~/.prime/agent). Other roles
+# resolve a provider key with fnox. Set SAFE_FNOX_KEYS (or empty) to change it.
+[ "$role" = home ] || : "${SAFE_FNOX_KEYS=OPENROUTER_API_KEY}"
 
 DO_NOT_TRACK=1
 # Marks agent sessions for tools that behave differently under an agent; prime-agent sets no marker itself.

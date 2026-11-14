@@ -1,3 +1,5 @@
+<!-- dotpickles_role: work,container,coi-host -->
+
 ## Sandbox `allowWrite`: Spell macOS Paths Canonically
 
 An `allowWrite` entry rooted at `/tmp`, `/var`, or `/etc` silently does nothing. Write the `/private` form instead.

@@ -29,6 +29,14 @@
     (home-subpath "/Library/Caches/dotslash")
 )
 
+;; Dotslash-launched tools (/opt/gusto/bin/cloudsmith, pi, ...) also need to
+;; stat the cache dir's parent. Without it they exit 255 with no output and no
+;; logged deny, from any cwd except ~ (where safehouse grants all of home).
+;; Metadata only: file-read-data on it isn't enough, and isn't needed.
+(allow file-read-metadata
+    (home-literal "/Library/Caches")
+)
+
 ;; Pre-commit hooks in Gusto's Ruby repos write tool caches (sorbet's gem-rbis
 ;; died with EPERM). Rubocop's lives outside the bundler and rubygems dirs that
 ;; safehouse's ruby profile already covers.

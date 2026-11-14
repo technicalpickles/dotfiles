@@ -29,3 +29,14 @@ jobs:
 
       - name: Check code formatting
         run: npm run format:check
+
+  agent-gitconfig:
+    name: Agent git config never writes tracking
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run agent gitconfig test
+        run: ./scripts/test-agent-gitconfig.sh

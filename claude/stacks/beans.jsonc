@@ -13,10 +13,13 @@
   },
 
   // Auto mode: beans is a non-standard CLI, so the classifier has no prior on
-  // it and would otherwise soft-block routine bean writes. Scoped to the repo
-  // that actually uses it. No "$defaults" here -- claudeconfig.sh keeps the
-  // one from base.jsonc at the front. See ADR 0056.
+  // it and would otherwise soft-block routine bean writes. Prose, not
+  // `Bash(beans:*) in <repo>` syntax, so the classifier can actually use it.
+  // No "$defaults" here -- claudeconfig.sh keeps the one from base.jsonc at
+  // the front. See ADR 0056.
   "autoMode": {
-    "allow": ["Bash(beans:*) in technicalpickles/dotfiles"],
+    "allow": [
+      "`beans` is the issue tracker CLI used in technicalpickles/dotfiles; its data is the `.beans/*.md` files in that repo. `beans create`, `update`, `query`, `list` and `show` there are routine work tracking, not External System Writes. `beans archive` and `beans delete` stay under the defaults.",
+    ],
   },
 }

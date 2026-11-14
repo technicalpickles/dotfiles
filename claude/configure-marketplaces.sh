@@ -117,4 +117,27 @@ configure_marketplaces() {
   fi
 }
 
+# Disables plugins listed in "disabledPlugins" (marketplaces.jsonc) for this
+# role. enabledPlugins is local-only state that claudeconfig.sh preserves, so
+# this goes through the CLI rather than settings.json. Idempotent; a plugin
+# that isn't installed is skipped with a note.
+disable_plugins() {
+  command_available claude || return 0
+
+  local manifest_json plugin
+  manifest_json=$(read_json "$DIR/claude/marketplaces.jsonc")
+  while IFS= read -r plugin; do
+    [ -n "$plugin" ] || continue
+    local out
+    if out=$(claude plugin disable "$plugin" --scope user 2>&1); then
+      echo "  ✓ Disabled $plugin for role '$ROLE'"
+    elif [[ "$out" == *"already disabled"* ]]; then
+      echo "  ✓ $plugin already disabled"
+    else
+      echo "  - $plugin not disabled: ${out##*: }"
+    fi
+  done < <(echo "$manifest_json" | jq -r --arg role "$ROLE" '(.disabledPlugins // {}) | to_entries[] | select(.value | index($role)) | .key')
+}
+
 configure_marketplaces
+disable_plugins

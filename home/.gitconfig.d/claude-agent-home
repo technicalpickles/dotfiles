@@ -34,6 +34,7 @@
 	path = ~/.gitconfig.d/alias
 	path = ~/.gitconfig.d/color
 	path = ~/.gitconfig.d/signing
+	path = ~/.gitconfig.d/claude-agent-common
 [user]
 	email = joshua.nichols+personal-agent@gmail.com
 	signingkey = ~/.ssh/agents/home/id_ed25519.pub

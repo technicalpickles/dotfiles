@@ -10,7 +10,7 @@ claude/
 ├── mcp-servers.jsonc      # MCP servers registered into ~/.claude.json (see below)
 ├── roles/
 │   ├── base.jsonc                # Core settings, base permissions, sandbox scalars
-│   ├── home.jsonc                # Home role: agent git identity env, sandbox rules
+│   ├── home.jsonc                # Home role: agent git identity env, sandbox off (ADR 0066)
 │   ├── work.jsonc                # Work role: AWS/Bedrock env, work permissions
 │   ├── work-coder.jsonc          # Coder workspace: sandbox off, no agent id
 │   ├── container.jsonc           # Local container placeholder
@@ -19,7 +19,7 @@ claude/
 ├── stacks/
 │   ├── beans.jsonc        # Beans issue tracker
 │   ├── buildkite.jsonc    # Buildkite CI + bktide
-│   ├── claude.jsonc       # Claude Code's own docs, plugin cache, cq, plannotator
+│   ├── claude.jsonc       # Claude Code's own docs, plugin cache, cq
 │   ├── codebase-memory-mcp.jsonc # codebase-memory-mcp cache dir
 │   ├── colima.jsonc       # Colima container runtime
 │   ├── crit.jsonc         # crit code review tool (Tailscale remote-review pattern)
@@ -39,6 +39,7 @@ claude/
 │   ├── nvim.jsonc         # Neovim cache
 │   ├── obsidian.jsonc     # Obsidian vault / second-brain
 │   ├── openrouter.jsonc   # OpenRouter model gateway
+│   ├── portool.jsonc      # portool worktree port ledger
 │   ├── python.jsonc       # Python ecosystem (pip, uv, pytest)
 │   ├── ruby.jsonc         # Ruby ecosystem (bundle, rake, rspec)
 │   ├── rust.jsonc         # Rust ecosystem (cargo, rustup)
@@ -124,8 +125,9 @@ When you run `./claudeconfig.sh`:
 3. **Stacks** (`stacks/*.jsonc`, sorted alphabetically): permissions, sandbox and `autoMode` arrays concatenated
 4. **Private overlay** (`~/.config/dotpickles/roles/$ROLE.jsonc`, optional): a full role file kept outside this repo, merged last so it wins over everything above. See [Auto Mode Rules](#auto-mode-rules)
 5. **Deduplication**: permissions and sandbox arrays sorted and deduplicated. `autoMode` arrays are deduplicated but **never sorted** -- order carries meaning there
-6. **Local keys**: `enabledPlugins`, `extraKnownMarketplaces` preserved from existing `~/.claude/settings.json`
+6. **Local keys**: `enabledPlugins`, `extraKnownMarketplaces`, `pluginConfigs` (plugin options set with `claude plugin configure`) preserved from existing `~/.claude/settings.json`
 7. **Validation and write**
+8. **herdr Claude integration**: if `herdr` is on PATH, `herdr integration install claude` runs against the freshly written file, adding its `SessionStart` hook so herdr can `claude --resume` each pane after a server restart. herdr owns that entry and `~/.claude/hooks/herdr-agent-state.sh`; don't copy them into a role
 
 ## Common Tasks
 
@@ -246,6 +248,8 @@ The `autoMode` block feeds the LLM classifier that adjudicates tool calls while 
 - An `allow`/`soft_deny`/`hard_deny` array without `$defaults` **replaces** the shipped rules instead of extending them. The generator prepends it if it is missing.
 - `environment` is header-grouped: `### Org-wide` and `### User-specific`, each holding `**Label**: value` bullets from a fixed label list. The generator regroups by section after concatenating, and a later source's bullet **replaces** an earlier one with the same `**Label**`, in the earlier one's position.
 
+**Write `allow` and `soft_deny` entries as prose.** The classifier reads sentences, not permission patterns. An entry like `Bash(task:*) in technicalpickles/dotfiles` is permission-rule syntax; `claude auto-mode critique` flags it, and in practice `task <id> done` in other repos was still denied while that entry was in place. Say what the tool is, what is routine, and what still needs the user to have asked, and name the default label the entry overrides (for example "not External System Writes"). Run `claude auto-mode critique` after regenerating.
+
 **Where things go:**
 
 | Content                                           | File                                     |
@@ -277,7 +281,7 @@ writes what only _this machine_ needs (so it must not be).
 GitHub repo) and named plugin `profiles` (`core`, `dev`; default `dev`). Two
 consumers read it:
 
-- `claudeconfig.sh` clones the marketplaces globally (`claude/configure-marketplaces.sh`, which also runs standalone, e.g. from pickleton's `coder-setup.sh`). A marketplace with `"autoUpdate": true` gets that flag in `~/.claude/plugins/known_marketplaces.json` (set on new entries, and on existing ones only when the key is absent, so a value chosen in `/plugin` is never overwritten). A marketplace can set `"excludeRoles": [...]` to be skipped for those roles. A marketplace can set `"pin": {"plugin": ..., "sha": ...}` to hold one plugin at a commit (written into the cloned `marketplace.json`; only holds while `autoUpdate` stays false).
+- `claudeconfig.sh` clones the marketplaces globally (`claude/configure-marketplaces.sh`, which also runs standalone, e.g. from pickleton's `coder-setup.sh`). A marketplace with `"autoUpdate": true` gets that flag in `~/.claude/plugins/known_marketplaces.json` (set on new entries, and on existing ones only when the key is absent, so a value chosen in `/plugin` is never overwritten). A marketplace can set `"excludeRoles": [...]` to be skipped for those roles. A marketplace can set `"pin": {"plugin": ..., "sha": ...}` to hold one plugin at a commit (written into the cloned `marketplace.json`; only holds while `autoUpdate` stays false). The top-level `"disabledPlugins"` map (`"<plugin>@<marketplace>": [roles]`) disables a plugin at user scope for those roles via `claude plugin disable` (`enabledPlugins` itself is local-only, so it can't live in a role file).
 - `cloud-project-setup.sh [DIR] [--profile NAME] [--dry-run]` writes a repo's
   **committed** `.claude/settings.json` (`extraKnownMarketplaces` + `enabledPlugins`)
   so Claude Code on the web picks the plugins up. It merges into existing settings
@@ -317,8 +321,11 @@ into `~/.claude.json` (user scope, available in all projects). `claudeconfig.sh`
 CLI (Claude owns `~/.claude.json`'s format, so we drive the CLI instead of
 hand-editing the file).
 
-Registration is **add-if-missing** (idempotent), like marketplaces. Supported
-transports: `http` and `sse` (both url-based).
+Registration is idempotent: a missing server is added, and a registered one is
+left alone unless its url (or command + args) no longer matches the manifest, in
+which case it is removed and re-added. Headers are not compared, since they hold
+resolved secrets. Supported transports: `http`, `sse` (both url-based) and
+`stdio`.
 
 ```jsonc
 "servers": {
@@ -326,7 +333,8 @@ transports: `http` and `sse` (both url-based).
 }
 ```
 
-To change an existing server's url/transport, remove it first, then re-run:
+Changing a url or command in the manifest and re-running `./claudeconfig.sh` is
+enough. To change only headers or the transport, remove the server first:
 
 ```bash
 claude mcp remove user < name > -s && ./claudeconfig.sh

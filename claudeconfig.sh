@@ -188,7 +188,7 @@ generate_settings() {
   local temp_file="$(mktemp)"
 
   # Local-only keys preserved from existing settings across regenerations
-  local local_keys=("enabledPlugins" "extraKnownMarketplaces")
+  local local_keys=("enabledPlugins" "extraKnownMarketplaces" "pluginConfigs")
 
   # Extract local-only settings from existing file
   local local_settings="{}"
@@ -345,8 +345,16 @@ generate_settings() {
     overlay_json=$(read_json "$private_overlay")
 
     local overlay_settings
-    overlay_settings=$(echo "$overlay_json" | jq 'del(.permissions, .sandbox, .autoMode, .requiresPrivateOverlay)')
+    overlay_settings=$(echo "$overlay_json" | jq 'del(.permissions, .sandbox, .autoMode, .requiresPrivateOverlay, .mcpServers, .hooks)')
     merged_settings=$(echo "$merged_settings" | jq --argjson o "$overlay_settings" '. * $o')
+
+    # Append overlay hooks per event rather than replacing the event's array
+    # (a plain deep merge would drop every hook the base and role defined),
+    # skipping entries already present. Lets the overlay carry hooks that
+    # name machine-specific paths without dropping the ones a tool installs.
+    merged_settings=$(echo "$merged_settings" | jq --argjson o "$(echo "$overlay_json" | jq '.hooks // {}')" '
+      reduce ($o | keys[]) as $event (.;
+        .hooks[$event] = reduce (($o[$event])[]) as $h ((.hooks[$event] // []); if index([$h]) then . else . + [$h] end))')
 
     merged_allow=$(echo "$merged_allow" | jq --argjson o "$(echo "$overlay_json" | jq '.permissions.allow // []')" '. + $o')
     merged_ask=$(echo "$merged_ask" | jq --argjson o "$(echo "$overlay_json" | jq '.permissions.ask // []')" '. + $o')
@@ -573,6 +581,29 @@ generate_settings() {
 
 generate_settings
 
+# herdr resumes Claude panes after a server restart (host shutdown, Coder
+# workspace stop) only if its Claude integration reported each pane's session
+# ID. The integration writes ~/.claude/hooks/herdr-agent-state.sh and merges a
+# SessionStart entry into settings.json -- which generate_settings just
+# replaced -- so it has to be (re)installed after every regeneration. Letting
+# herdr write its own entry keeps the versioned hook script and its matcher in
+# sync with the installed herdr. The hook exits early outside herdr panes, so
+# it's safe for every role.
+install_herdr_claude_integration() {
+  if ! command_available herdr; then
+    return
+  fi
+
+  echo "Installing herdr Claude integration..."
+  if herdr integration install claude > /dev/null; then
+    echo "  ✓ herdr session hook installed"
+  else
+    echo "  ✗ herdr integration install failed (continuing anyway)" >&2
+  fi
+}
+
+install_herdr_claude_integration
+
 # Configure marketplaces (non-interactive). Lives in its own script so it can
 # run without the rest of this file (see claude/configure-marketplaces.sh).
 DOTPICKLES_ROLE="$ROLE" "$DIR/claude/configure-marketplaces.sh"
@@ -580,8 +611,10 @@ DOTPICKLES_ROLE="$ROLE" "$DIR/claude/configure-marketplaces.sh"
 # Register MCP servers into ~/.claude.json (user scope) from the shared
 # manifest. Claude owns ~/.claude.json's format, so we drive the `claude mcp`
 # CLI rather than hand-editing the file. Add-if-missing (idempotent), matching
-# configure_marketplaces. To change an existing server, remove it first
-# (`claude mcp remove <name> -s user`) and re-run.
+# configure_marketplaces, but a registered server whose url (or command + args)
+# drifted from the manifest is removed and re-added, after its replacement
+# passes validation, so a bad manifest entry never deletes a working one. To change only headers or
+# the transport, remove it first (`claude mcp remove <name> -s user`) and re-run.
 configure_mcp_servers() {
   echo "Configuring MCP servers..."
 
@@ -594,6 +627,15 @@ configure_mcp_servers() {
   local servers_json
   servers_json=$(read_json "$manifest" | jq -c '.servers // {}')
 
+  # The private overlay (see the settings merge above) may add servers under
+  # "mcpServers", same entry shape as the manifest plus optional "headers".
+  # That is where servers naming internal hosts go, since this repo is public.
+  local private_overlay="${XDG_CONFIG_HOME:-$HOME/.config}/dotpickles/roles/$ROLE.jsonc"
+  if [ -f "$private_overlay" ]; then
+    servers_json=$(jq -c -n --argjson a "$servers_json" \
+      --argjson b "$(read_json "$private_overlay" | jq -c '.mcpServers // {}')" '$a + $b')
+  fi
+
   local names
   names=$(echo "$servers_json" | jq -r 'keys[]')
   if [ -z "$names" ]; then
@@ -601,21 +643,35 @@ configure_mcp_servers() {
     return 0
   fi
 
-  local name
+  local name stale
   while IFS= read -r name; do
     if echo "$servers_json" | jq -e --arg n "$name" --arg r "$ROLE" '.[$n].excludeRoles // [] | index($r)' > /dev/null; then
       echo "  - $name (skipped for role '$ROLE')"
       continue
     fi
 
-    if claude mcp get "$name" > /dev/null 2>&1; then
-      echo "  ✓ $name (already registered)"
-      continue
-    fi
-
     local transport url
+    stale=0
     transport=$(echo "$servers_json" | jq -r --arg n "$name" '.[$n].transport // "http"')
     url=$(echo "$servers_json" | jq -r --arg n "$name" '.[$n].url // ""')
+
+    if claude mcp get "$name" > /dev/null 2>&1; then
+      # Compare the user-scope entry's endpoint (url, or command + args) to the
+      # manifest and re-register on drift, so a moved port doesn't leave a dead
+      # URL behind. Headers are not compared: they hold resolved secrets.
+      local want have
+      want=$(echo "$servers_json" | jq -r --arg n "$name" \
+        '.[$n] | if (.transport // "http") == "stdio" then ([.command] + (.args // [])) | join(" ") else (.url // "") end')
+      have=$(jq -r --arg n "$name" \
+        '.mcpServers[$n] // empty | if .type == "stdio" or (.url == null) then ([.command] + (.args // [])) | join(" ") else .url end' \
+        "$HOME/.claude.json" 2> /dev/null) || have=""
+      if [ -z "$have" ] || [ "$have" = "$want" ]; then
+        echo "  ✓ $name (already registered)"
+        continue
+      fi
+      echo "  ↻ $name changed ($have -> $want); re-registering"
+      stale=1
+    fi
 
     case "$transport" in
       http | sse)
@@ -623,8 +679,33 @@ configure_mcp_servers() {
           echo "  ✗ $name: transport '$transport' requires a url; skipping" >&2
           continue
         fi
+        # Header values may reference ${VAR}; resolve from the environment so
+        # secrets never sit in a config file. Unset var skips the server.
+        local header_args=() hname hvalue hvar unset_var=""
+        while IFS=$'\t' read -r hname hvalue; do
+          [ -z "$hname" ] && continue
+          while [[ "$hvalue" =~ \$\{([A-Za-z_][A-Za-z0-9_]*)\} ]]; do
+            hvar="${BASH_REMATCH[1]}"
+            if [ -z "${!hvar:-}" ]; then
+              unset_var="$hvar"
+              break 2
+            fi
+            hvalue="${hvalue//\$\{$hvar\}/${!hvar}}"
+          done
+          header_args+=(--header "$hname: $hvalue")
+        done < <(echo "$servers_json" | jq -r --arg n "$name" '.[$n].headers // {} | to_entries[] | [.key, .value] | @tsv')
+        if [ -n "$unset_var" ]; then
+          echo "  ✗ $name: header needs \$$unset_var, which is not set; skipping" >&2
+          continue
+        fi
+        if [ "$stale" = 1 ]; then
+          claude mcp remove "$name" -s user > /dev/null 2>&1 || {
+            echo "  ✗ $name: could not remove stale entry; leaving it" >&2
+            continue
+          }
+        fi
         echo "  + Registering $name ($transport -> $url)..."
-        if claude mcp add --transport "$transport" "$name" "$url" --scope user > /dev/null 2>&1; then
+        if claude mcp add --transport "$transport" "$name" "$url" "${header_args[@]}" --scope user > /dev/null 2>&1; then
           echo "    ✓ Added to user config"
         else
           echo "    ✗ Failed to register $name (continuing anyway)" >&2
@@ -642,6 +723,12 @@ configure_mcp_servers() {
         while IFS= read -r arg; do
           args+=("$arg")
         done < <(echo "$servers_json" | jq -r --arg n "$name" '.[$n].args // [] | .[]')
+        if [ "$stale" = 1 ]; then
+          claude mcp remove "$name" -s user > /dev/null 2>&1 || {
+            echo "  ✗ $name: could not remove stale entry; leaving it" >&2
+            continue
+          }
+        fi
         echo "  + Registering $name (stdio -> $command${args[*]:+ ${args[*]}})..."
         if claude mcp add --scope user "$name" -- "$command" "${args[@]}" > /dev/null 2>&1; then
           echo "    ✓ Added to user config"
