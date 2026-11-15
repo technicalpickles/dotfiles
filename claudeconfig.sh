@@ -75,6 +75,10 @@ setup_claude_directory() {
   link "claude/ccline/config.toml" "$HOME/.claude/ccline/config.toml"
   link "claude/ccline/models.toml" "$HOME/.claude/ccline/models.toml"
 
+  # pstack model overrides (loaded via the @ include in claude/CLAUDE.md; pstack
+  # reads its session hook setting from the same path).
+  link "claude/pstack-models.md" "$HOME/.claude/pstack-models.md"
+
   # Symlink rules/ (topic-specific global agent instructions, loaded like CLAUDE.md).
   # Per-file, not a single directory symlink, so a rule can opt out of roles it
   # doesn't apply to via a `<!-- dotpickles_role: role1,role2 -->` marker on its
