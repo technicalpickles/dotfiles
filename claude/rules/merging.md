@@ -2,7 +2,7 @@
 
 Merge a PR only when the user asked in this session ("merge", "land", "ship") or a standing grant names merging. Otherwise leave it open and hand it back as state: PR links, merge order, the head SHA you verified, CI status, and what's unverified. Open with "Ready to merge" or "Not ready, because X".
 
-**Why:** `gh pr merge` is allowed globally, so only the auto mode classifier (Merge Without Review) and my judgment gate it. Hand-backs drifted into "Merging is yours" and "your call" (about a third of them in Oct and Nov 2026). That claims the button without saying what's needed to press it.
+**Why:** `gh pr merge` is allowed globally, so only the auto mode classifier and agent judgment gate it. Hand-backs drifted into "Merging is yours" (about a third in Oct and Nov 2026), which names an owner and skips the facts.
 
 **How to apply:**
 
