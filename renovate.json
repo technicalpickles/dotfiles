@@ -6,7 +6,24 @@
   "mise": {
     "managerFilePatterns": ["/^config/mise/(config|conf\\.d/[^/]+)\\.toml$/"]
   },
+  "customManagers": [
+    {
+      "description": "Cursor CLI has no releases API; its install script embeds the current version. Annotated entries in config/mise/conf.d.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^config/mise/conf\\.d/[^/]+\\.toml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?\\s+version = \"(?<currentValue>[^\"]+)\""
+      ]
+    }
+  ],
   "customDatasources": {
+    "cursor-agent": {
+      "defaultRegistryUrlTemplate": "https://cursor.com/install",
+      "format": "plain",
+      "transformTemplates": [
+        "{ \"releases\": [releases[$contains(version, /DOWNLOAD_URL=/)].{ \"version\": $match(version, /lab\\/([^\\/]+)\\//).groups[0] }] }"
+      ]
+    },
     "onepassword-cli": {
       "defaultRegistryUrlTemplate": "https://app-updates.agilebits.com/check/1/0/CLI2/en/2.0.0/N",
       "format": "json",
@@ -14,6 +31,12 @@
     }
   },
   "packageRules": [
+    {
+      "description": "Cursor's install script has no release timestamps, so the cooldown can never be satisfied; skip it. Weekly build-stamped versions: no automerge, bump by PR.",
+      "matchDatasources": ["custom.cursor-agent"],
+      "minimumReleaseAge": null,
+      "automerge": false
+    },
     {
       "description": "1Password CLI is closed source: no GitHub repo for the aqua/github-tags lookup to find. Look it up from 1Password's update feed instead. The feed has no release timestamps, so the cooldown can never be satisfied; skip it.",
       "matchManagers": ["mise"],
