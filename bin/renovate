@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#
+# renovate wrapper, also run as renovate-config-validator (a symlink to this
+# file) -- runs the mise-installed Renovate CLI under Node 24 via `mise exec`.
+#
+# Why a wrapper: Renovate 44 needs Node ^24.11 (it calls RegExp.escape), but
+# mise picks node from the cwd's config. Any repo pinning an older node, this
+# one included (22.23.4), made `renovate` die with "RegExp.escape is not a
+# function". Pinning the runtime here fixes it for every directory.
+#
+# Bump the default when Renovate's `engines.node` moves. Override with
+# RENOVATE_NODE_VERSION.
+
+set -euo pipefail
+
+RENOVATE_NODE_VERSION="${RENOVATE_NODE_VERSION:-24}"
+
+name="$(basename "$0")"
+
+# Resolve the real binary by absolute path. Calling `renovate` by name inside
+# `mise exec` would find this wrapper again if the tool isn't in the toolset.
+real="$(mise which "$name")"
+
+exec mise exec "node@${RENOVATE_NODE_VERSION}" -- "$real" "$@"
