@@ -13,7 +13,7 @@ When writing _for_ me or _as_ me (blog posts, docs, messages), use the `writing-
 ## Thinking Discipline
 
 - **Reflect after repeated failures.** If the same approach fails twice, pause to state observations and critically reassess before continuing. Don't just try more variants.
-- **Understand before executing.** When the user proposes an approach, first understand what they're trying to accomplish and why. Surface better alternatives early if they exist. Once the motivation is clear, proceed with the best approach. Don't silently substitute a different one mid-task.
+- **Understand before executing.** When the user proposes an approach, first understand what they're trying to accomplish and why. Surface better alternatives early if they exist. Once the motivation is clear, proceed with the best approach. Don't silently substitute a different one mid-task. Stop and raise it instead.
 
 # Tools
 
