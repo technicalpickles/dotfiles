@@ -7,6 +7,7 @@ Scripts and utilities, most used by other scripts, hooks and LaunchAgents. This 
 - `bin/prettier`: npm prettier with this repo's ignore and config paths
 - `bin/adr`: adr-tools wrapper (`bin/adr new "title"`, `bin/adr list`)
 - `bin/shell`: shell-related helper
+- `bin/renovate`: Renovate CLI under Node 24 via `mise exec`, since Renovate 44 needs `^24.11` and mise otherwise uses the cwd's node pin (this repo pins 22). `bin/renovate-config-validator` is a symlink to it
 - `bin/qmd`: qmd semantic-search CLI under a pinned Node via `mise exec`; works under launchd. Used by the qmd-refresh and qmd-mcp LaunchAgents (the MCP server is `http://localhost:18181/mcp`)
 - `bin/cbm-reindex`: hourly codebase-memory-mcp reindex of each repo's default checkout (LaunchAgent `com.technicalpickles.cbm-reindex`)
 - `bin/cbm-sweep`: by-hand overnight diagnostic index of the same corpus, with per-repo timeouts and failure captures. Run outside the sandbox
