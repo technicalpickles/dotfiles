@@ -43,8 +43,14 @@ node = "lts"
 # near-identical to 3.2.1 with no install scripts, and upstream confirms it as a
 # release-process slip (yarnpkg/berry#7182). Exact version only; drop the
 # exclude once libzip ships a release with provenance.
+# allow_builds: mise skips dependency install scripts by default, so re2 never
+# fetched its prebuilt native module and every run logged "Cannot find module
+# ./build/Release/re2.node" before falling back to slower JS regex. Approves
+# re2 only.
 "npm:renovate" = { version = "44.184.1", trust_policy_excludes = [
   "@yarnpkg/libzip@3.2.2",
+], allow_builds = [
+  "re2",
 ] }
 # Claude Code statusline (claude/roles/base.jsonc). Installed here instead of
 # `npx -y ccstatusline@x.y.z` because npm startup alone cost 21-68% CPU per
