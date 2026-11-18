@@ -40,6 +40,10 @@ The command sandbox denies outbound port 22 but allows localhost. In agent sessi
 
 The other end is the `com.technicalpickles.agent-ssh-relay` LaunchAgent running `gost`, limited to the host:port allowlist in `config/gost/agent-ssh-relay.yml`. Any host an agent needs to SSH into (git remotes, admin targets like `picklelab:22`) needs a `<host>:22` line there; nothing else changes.
 
+Coder workspaces (`<workspace>.coder` via Coder Connect) are the exception. Those names only resolve through macOS split DNS, and gost's pure-Go resolver skips it (`lookup ... on 127.0.2.2:53: no such host` in `/tmp/com.technicalpickles.agent-ssh-relay.out`). So `agent-relay` has a `Match host *.coder` block that passes `--proxy-dns local` to ncat, and the YAML allowlists Coder's fixed tailnet prefix `fd60:627a:a42b::/48` rather than names.
+
+`sshconfig.sh` links `auth` and `agent-relay` only on macOS, and removes them elsewhere. Linux hosts (Coder workspaces run with the sandbox off) don't need them, and their escaped quotes (`\"`) inside `Match exec "..."` make Ubuntu 24.04's OpenSSH 9.6 reject the whole config with `Bad Match condition`, breaking every ssh command. Keep that in mind before linking any fragment with `Match exec` cross-platform.
+
 - Status: `./launchagents.sh status com.technicalpickles.agent-ssh-relay`
 - Reload after a YAML edit: `launchctl kickstart -k gui/$(id -u)/com.technicalpickles.agent-ssh-relay` (unsandboxed; `launchctl` is blocked in the sandbox)
 - A missing host fails as `Ncat: Error: connection not allowed by ruleset.` then `kex_exchange_identification: Connection closed by remote host`. That means add it to the YAML and reload, not a key or sandbox problem.

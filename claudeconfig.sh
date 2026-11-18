@@ -608,6 +608,47 @@ install_herdr_claude_integration() {
 
 install_herdr_claude_integration
 
+# Rex (superlogical.com/rex) merges its SessionStart hook into settings.json, so like herdr it's
+# reinstalled every run. Outside Rex terminals on macOS the CLI is only in the app bundle.
+rex_bin() {
+  if command_available rex; then
+    command -v rex
+    return
+  fi
+  local candidate
+  for candidate in \
+    "${REX_BIN_DIR:+$REX_BIN_DIR/rex}" \
+    "/Applications/Rex.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex" \
+    "/Applications/Rex Beta.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex"; do
+    if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+      echo "$candidate"
+      return
+    fi
+  done
+  return 1
+}
+
+install_rex_claude_integration() {
+  local rex skill_md="$HOME/.claude/skills/rex/SKILL.md"
+  if ! rex=$(rex_bin); then
+    # The hook went away with the regenerated settings.json; the skill would linger and point at a missing CLI.
+    if grep -qs 'Installed by "rex skill setup"' "$skill_md"; then
+      rm -rf "$HOME/.claude/skills/rex"
+      echo "  → removed stale rex skill (rex not installed)"
+    fi
+    return 0
+  fi
+
+  echo "Installing Rex Claude integration..."
+  if "$rex" skill setup --agent claude > /dev/null; then
+    echo "  ✓ rex skill and session hook installed"
+  else
+    echo "  ✗ rex skill setup failed (continuing anyway)" >&2
+  fi
+}
+
+install_rex_claude_integration
+
 # Configure marketplaces (non-interactive). Lives in its own script so it can
 # run without the rest of this file (see claude/configure-marketplaces.sh).
 DOTPICKLES_ROLE="$ROLE" "$DIR/claude/configure-marketplaces.sh"

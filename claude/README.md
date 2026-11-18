@@ -128,6 +128,7 @@ When you run `./claudeconfig.sh`:
 6. **Local keys**: `enabledPlugins`, `extraKnownMarketplaces`, `pluginConfigs` (plugin options set with `claude plugin configure`) preserved from existing `~/.claude/settings.json`
 7. **Validation and write**
 8. **herdr Claude integration**: if `herdr` is on PATH, `herdr integration install claude` runs against the freshly written file, adding its `SessionStart` hook so herdr can `claude --resume` each pane after a server restart. herdr owns that entry and `~/.claude/hooks/herdr-agent-state.sh`; don't copy them into a role
+9. **Rex Claude integration**: if Rex is installed (on PATH, or the macOS app bundle), `rex skill setup --agent claude` reinstalls `~/.claude/skills/rex` and its `SessionStart` hook. Same deal as herdr: rex owns that entry, don't copy it into a role
 
 ## Common Tasks
 
