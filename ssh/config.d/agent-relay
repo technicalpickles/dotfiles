@@ -6,5 +6,10 @@
 # applies to every destination in an agent session -- the allowlist, not
 # this file, decides what's actually reachable. Add a git host by editing
 # the YAML, not by adding another Match block here.
+#
+# gost can't resolve *.coder (macOS split DNS), so ncat resolves it; must precede the catch-all.
+Match host *.coder exec "test -n \"$CLAUDECODE$AGENT_SESSION\""
+  ProxyCommand /opt/homebrew/bin/ncat --proxy 127.0.0.1:1080 --proxy-type socks5 --proxy-dns local %h %p
+
 Match exec "test -n \"$CLAUDECODE$AGENT_SESSION\""
   ProxyCommand /opt/homebrew/bin/ncat --proxy 127.0.0.1:1080 --proxy-type socks5 %h %p

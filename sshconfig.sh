@@ -12,10 +12,20 @@ echo "🔑 setting up ~/.ssh/config"
 mkdir -p ~/.ssh/config.d
 chmod 700 ~/.ssh/config.d
 
-# Symlink versioned fragments
+# Off macOS these break all ssh on OpenSSH 9.6, so existing links are removed, not just skipped (see ssh/CLAUDE.md).
+macos_only_fragments=" auth agent-relay "
+
 for fragment in "$DIR/ssh/config.d/"*; do
   basename=$(basename "$fragment")
-  link "ssh/config.d/$basename" "$HOME/.ssh/config.d/$basename"
+  target="$HOME/.ssh/config.d/$basename"
+  if [ "$(uname -s)" != Darwin ] && [[ "$macos_only_fragments" == *" $basename "* ]]; then
+    if [ -L "$target" ] && [ "$(readlink "$target")" = "$fragment" ]; then
+      rm "$target"
+      echo "🔗 ${target/$HOME/~} -> removed (macOS-only)"
+    fi
+    continue
+  fi
+  link "ssh/config.d/$basename" "$target"
 done
 
 # Generate colima fragment if colima is installed
