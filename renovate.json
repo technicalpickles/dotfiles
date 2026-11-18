@@ -4,7 +4,9 @@
   "schedule": ["before 5am on monday"],
   "minimumReleaseAge": "7 days",
   "mise": {
-    "managerFilePatterns": ["/^config/mise/(config|(conf\\.d|home)/[^/]+)\\.toml$/"]
+    "managerFilePatterns": [
+      "/^config/mise/(config|(conf\\.d|home)/[^/]+)\\.toml$/"
+    ]
   },
   "customManagers": [
     {
