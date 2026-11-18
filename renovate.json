@@ -4,13 +4,13 @@
   "schedule": ["before 5am on monday"],
   "minimumReleaseAge": "7 days",
   "mise": {
-    "managerFilePatterns": ["/^config/mise/(config|conf\\.d/[^/]+)\\.toml$/"]
+    "managerFilePatterns": ["/^config/mise/(config|(conf\\.d|home)/[^/]+)\\.toml$/"]
   },
   "customManagers": [
     {
-      "description": "Cursor CLI has no releases API; its install script embeds the current version. Annotated entries in config/mise/conf.d.",
+      "description": "Cursor CLI has no releases API; its install script embeds the current version. Annotated entries in config/mise/conf.d and config/mise/home.",
       "customType": "regex",
-      "managerFilePatterns": ["/^config/mise/conf\\.d/[^/]+\\.toml$/"],
+      "managerFilePatterns": ["/^config/mise/(conf\\.d|home)/[^/]+\\.toml$/"],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: versioning=(?<versioning>\\S+))?\\s+version = \"(?<currentValue>[^\"]+)\""
       ]
