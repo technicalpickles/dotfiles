@@ -1,0 +1,25 @@
+# Agent sessions only: share one authenticated connection per host.
+#
+# Every new connection through Automic Vault's ssh-agent takes ~13s to sign
+# (measured 2026-11-18: `ssh picklelab true` 13.6s three times, github.com 14s),
+# even though the signature is auto-approved. `just deploy-openclaw` opens ~10
+# connections, so it spent ~2 minutes in auth alone. With a ControlMaster the
+# first connection pays once and later ssh/scp calls to the same host take ~0s.
+#
+# Scoped to agent sessions ($CLAUDECODE / $AGENT_SESSION), like agent-relay and
+# auth, on purpose:
+#   - Own socket directory (~/.ssh/cm-agent, created by sshconfig.sh). A master
+#     opened by a human terminal must not be reachable by an agent session, or
+#     it could reuse a connection to a host outside the relay allowlist in
+#     config/gost/agent-ssh-relay.yml. Humans get no multiplexing from this file.
+#   - Multiplexed sessions don't go through the ssh-agent, so `av history` shows
+#     one entry per master instead of one per use.
+# The path must stay short: a unix socket path is limited to ~104 bytes, and %C
+# is a 40-character hash.
+#
+# `ssh -O exit <host>` (with the same ControlPath) closes a master early. If a
+# connection acts stuck, `rm ~/.ssh/cm-agent/*`.
+Match exec "test -n \"$CLAUDECODE$AGENT_SESSION\""
+  ControlMaster auto
+  ControlPath ~/.ssh/cm-agent/%C
+  ControlPersist 5m

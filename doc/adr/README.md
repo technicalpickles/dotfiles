@@ -69,3 +69,4 @@
 - [68. role-scoped-plugin-disables-and-craftdesk-removal](0068-role-scoped-plugin-disables-and-craftdesk-removal.md)
 - [69. prime-agent-on-work-coder](0069-prime-agent-on-work-coder.md)
 - [70. disable-fish-terminal-queries-for-claude-desktop-panel](0070-disable-fish-terminal-queries-for-claude-desktop-panel.md)
+- [71. share-ssh-connections-in-agent-sessions](0071-share-ssh-connections-in-agent-sessions.md)
