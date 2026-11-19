@@ -12,8 +12,15 @@ echo "🔑 setting up ~/.ssh/config"
 mkdir -p ~/.ssh/config.d
 chmod 700 ~/.ssh/config.d
 
+# Control sockets for agent sessions (ssh/config.d/agent-mux, macOS only). ssh
+# won't create the ControlPath directory itself, and it must be private to the user.
+if [ "$(uname -s)" = Darwin ]; then
+  mkdir -p ~/.ssh/cm-agent
+  chmod 700 ~/.ssh/cm-agent
+fi
+
 # Off macOS these break all ssh on OpenSSH 9.6, so existing links are removed, not just skipped (see ssh/CLAUDE.md).
-macos_only_fragments=" auth agent-relay "
+macos_only_fragments=" auth agent-relay agent-mux "
 
 for fragment in "$DIR/ssh/config.d/"*; do
   basename=$(basename "$fragment")
