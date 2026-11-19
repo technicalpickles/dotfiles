@@ -15,6 +15,21 @@ fi
 
 ROLE="${DOTPICKLES_ROLE:-home}"
 
+# The public manifest, plus the private role overlay's "marketplaces" and
+# "installPlugins" (same shapes) when ~/.config/dotpickles/roles/$ROLE.jsonc
+# exists. Lets Gusto-internal marketplaces live outside this public repo.
+load_manifest() {
+  local manifest_json overlay="${XDG_CONFIG_HOME:-$HOME/.config}/dotpickles/roles/$ROLE.jsonc"
+  manifest_json=$(read_json "$DIR/claude/marketplaces.jsonc")
+  if [ -f "$overlay" ]; then
+    manifest_json=$(jq -n --argjson m "$manifest_json" --argjson o "$(read_json "$overlay")" '
+      $m
+      | .marketplaces = ((.marketplaces // {}) + ($o.marketplaces // {}))
+      | .installPlugins = ((.installPlugins // []) + ($o.installPlugins // []) | unique)')
+  fi
+  echo "$manifest_json"
+}
+
 configure_marketplaces() {
   echo "Configuring marketplaces..."
 
@@ -32,7 +47,7 @@ configure_marketplaces() {
     exit 1
   fi
   local manifest_json
-  manifest_json=$(read_json "$manifest")
+  manifest_json=$(load_manifest)
   local marketplaces=()
   while IFS= read -r entry; do
     marketplaces+=("$entry")
@@ -125,7 +140,7 @@ disable_plugins() {
   command_available claude || return 0
 
   local manifest_json plugin
-  manifest_json=$(read_json "$DIR/claude/marketplaces.jsonc")
+  manifest_json=$(load_manifest)
   while IFS= read -r plugin; do
     [ -n "$plugin" ] || continue
     local out
@@ -139,5 +154,27 @@ disable_plugins() {
   done < <(echo "$manifest_json" | jq -r --arg role "$ROLE" '(.disabledPlugins // {}) | to_entries[] | select(.value | index($role)) | .key')
 }
 
+# Installs plugins listed in "installPlugins" (marketplaces.jsonc plus the
+# private overlay) at user scope. Install-only: a plugin already installed is
+# left alone, so one disabled or pinned by hand sticks. Needs the marketplace
+# to be reachable; a failure is reported and skipped.
+install_plugins() {
+  command_available claude || return 0
+
+  local installed plugin out
+  installed=$(claude plugin list --json 2> /dev/null || echo '[]')
+  while IFS= read -r plugin; do
+    [ -n "$plugin" ] || continue
+    if echo "$installed" | jq -e --arg p "$plugin" 'any(.[]?; .id == $p)' > /dev/null 2>&1; then
+      echo "  ✓ $plugin already installed"
+    elif out=$(claude plugin install "$plugin" --scope user 2>&1); then
+      echo "  + Installed $plugin"
+    else
+      echo "  - $plugin not installed: ${out##*: }"
+    fi
+  done < <(load_manifest | jq -r '.installPlugins // [] | .[]')
+}
+
 configure_marketplaces
+install_plugins
 disable_plugins
