@@ -349,7 +349,7 @@ generate_settings() {
     overlay_json=$(read_json "$private_overlay")
 
     local overlay_settings
-    overlay_settings=$(echo "$overlay_json" | jq 'del(.permissions, .sandbox, .autoMode, .requiresPrivateOverlay, .mcpServers, .hooks)')
+    overlay_settings=$(echo "$overlay_json" | jq 'del(.permissions, .sandbox, .autoMode, .requiresPrivateOverlay, .mcpServers, .hooks, .marketplaces, .installPlugins)')
     merged_settings=$(echo "$merged_settings" | jq --argjson o "$overlay_settings" '. * $o')
 
     # Append overlay hooks per event rather than replacing the event's array
