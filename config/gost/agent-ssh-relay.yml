@@ -18,6 +18,7 @@ bypasses:
       - github.com:22
       - gist.github.com:22
       - picklelab:22
-      - picklelab.tail2023b7.ts.net:22
+      # Every tailnet node by MagicDNS name, port 22 only. Short names (picklelab) still need their own line.
+      - '*.tail2023b7.ts.net:22'
       # Coder Connect's fixed tailnet prefix; *.coder arrives as an IP (see ssh/config.d/agent-relay)
       - 'fd60:627a:a42b::/48'
