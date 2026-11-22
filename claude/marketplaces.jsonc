@@ -62,8 +62,8 @@
       "autoUpdate": true,
       "excludeRoles": ["work", "work-coder"],
     },
-    // pstack (michael-denyer's port of Lauren Tan's Cursor pstack). Install the
-    // plugin by hand: `/plugin install pstack@pstack-claude`.
+    // pstack (michael-denyer's port of Lauren Tan's Cursor pstack). The plugin
+    // is in "installPlugins" below.
     "pstack-claude": {
       "repo": "michael-denyer/pstack-claude",
       "autoUpdate": true,
@@ -86,6 +86,16 @@
   },
 
   "defaultProfile": "dev",
+
+  // Plugins claude/configure-marketplaces.sh installs at user scope on every
+  // role. Install-only: never reconciles, so a plugin you disable or remove by
+  // hand stays that way. The private role overlay
+  // (~/.config/dotpickles/roles/$ROLE.jsonc) can add its own "installPlugins"
+  // and "marketplaces" for anything Gusto-internal.
+  "installPlugins": [
+    "pstack@pstack-claude",
+    "pickle-mode@pickled-claude-plugins",
+  ],
 
   // Plugins to disable at user scope, keyed "<plugin>@<marketplace-key>" with
   // the roles that disable them. Applied by claude/configure-marketplaces.sh
